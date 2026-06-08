@@ -1,0 +1,156 @@
+// Prisma Schema — E-Bike Sharing Platform (PostgreSQL + PostGIS)
+// Run: npx prisma migrate dev
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [postgis]
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────────
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique
+  passwordHash String?  @map("password_hash")
+  name         String
+  phone        String?
+  pushToken    String?  @map("push_token")   // Expo push token — set by client on login
+  role         Role     @default(RIDER)
+  walletCents  Int      @default(0) @map("wallet_cents")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  rides    Ride[]
+  payments Payment[]
+
+  @@map("users")
+}
+
+enum Role {
+  RIDER
+  OPERATOR
+  ADMIN
+}
+
+// ── Bikes ──────────────────────────────────────────────────────────────────────
+model Bike {
+  id         String     @id
+  status     BikeStatus @default(available)
+  batteryPct Int        @map("battery_pct")
+  locationLat Float?    @map("location_lat")
+  locationLng Float?    @map("location_lng")
+  dockId     String?    @map("dock_id")
+  lastSeen   DateTime?  @map("last_seen") @db.Timestamptz
+
+  dock  Dock?  @relation(fields: [dockId], references: [id])
+  rides Ride[]
+
+  @@map("bikes")
+}
+
+enum BikeStatus {
+  available
+  in_use
+  charging
+  maintenance
+  offline
+}
+
+// ── Docking Stations ───────────────────────────────────────────────────────────
+model Dock {
+  id             String @id
+  name           String
+  locationLat    Float  @map("location_lat")
+  locationLng    Float  @map("location_lng")
+  totalSlots     Int    @default(0) @map("total_slots")
+  availableSlots Int    @default(0) @map("available_slots")
+
+  bikes      Bike[]
+  startRides Ride[] @relation("StartDock")
+  endRides   Ride[] @relation("EndDock")
+
+  @@map("docks")
+}
+
+// ── Rides ──────────────────────────────────────────────────────────────────────
+model Ride {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String     @map("user_id") @db.Uuid
+  bikeId        String     @map("bike_id")
+  startDockId   String?    @map("start_dock_id")
+  endDockId     String?    @map("end_dock_id")
+  status        RideStatus @default(RESERVED)
+  startLat      Float?     @map("start_lat")
+  startLng      Float?     @map("start_lng")
+  endLat        Float?     @map("end_lat")
+  endLng        Float?     @map("end_lng")
+  startedAt     DateTime?  @map("started_at") @db.Timestamptz
+  endedAt       DateTime?  @map("ended_at") @db.Timestamptz
+  fareCents     Int?       @map("fare_cents")
+  distanceKm    Decimal?   @map("distance_km") @db.Decimal(6, 2)
+  surgeMult     Decimal    @default(1.0) @map("surge_mult") @db.Decimal(3, 2)
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  user      User      @relation(fields: [userId], references: [id])
+  bike      Bike      @relation(fields: [bikeId], references: [id])
+  startDock Dock?     @relation("StartDock", fields: [startDockId], references: [id])
+  endDock   Dock?     @relation("EndDock", fields: [endDockId], references: [id])
+  payments  Payment[]
+
+  @@map("rides")
+}
+
+enum RideStatus {
+  RESERVED
+  ACTIVE
+  COMPLETING
+  COMPLETED
+  CANCELLED
+}
+
+// ── Payments ───────────────────────────────────────────────────────────────────
+model Payment {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  rideId      String?       @map("ride_id") @db.Uuid
+  amountCents Int           @map("amount_cents")
+  currency    String        @default("NGN")
+  status      PaymentStatus @default(pending)
+  provider    String
+  providerRef String?       @map("provider_ref")
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  user User  @relation(fields: [userId], references: [id])
+  ride Ride? @relation(fields: [rideId], references: [id])
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+  refunded
+}
+
+// ── Geofences ──────────────────────────────────────────────────────────────────
+model Geofence {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name     String
+  type     ZoneType
+  speedCap Int?    @map("speed_cap")
+  // Boundary stored as raw GeoJSON polygon string; index via PostGIS raw SQL
+  boundary Json
+
+  @@map("geofences")
+}
+
+enum ZoneType {
+  operational
+  slow
+  no_ride
+  dock
+}

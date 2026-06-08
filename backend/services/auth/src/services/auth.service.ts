@@ -1,0 +1,162 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  Auth Service — business logic layer
+//
+//  Throws typed AppError subclasses — never raw Error or statusCode objects.
+//  The global error handler maps these to HTTP responses automatically.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import bcrypt        from 'bcryptjs';
+import jwt           from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
+import { OAuth2Client } from 'google-auth-library';
+import {
+  ConflictError,
+  UnauthorizedError,
+  NotFoundError,
+  InternalError,
+  ValidationError,
+  retry,
+} from '@ebike/core';
+import { getRedisClient } from '@ebike/redis';
+import { UserRepository } from '../repositories/user.repository';
+import type { LoginDto, RegisterDto, TokenPair, User, JwtPayload, UserRole } from '@ebike/types';
+
+const ACCESS_SECRET   = process.env.JWT_ACCESS_SECRET!;
+const REFRESH_SECRET  = process.env.JWT_REFRESH_SECRET ?? process.env.JWT_ACCESS_SECRET!;
+const ACCESS_EXPIRY   = process.env.JWT_ACCESS_EXPIRY  ?? '15m';
+const REFRESH_EXPIRY  = process.env.JWT_REFRESH_EXPIRY ?? '30d';
+const REFRESH_TTL_S   = 30 * 24 * 60 * 60; // 30 days
+const BCRYPT_ROUNDS   = 12;
+
+export class AuthService {
+  // ── Register ─────────────────────────────────────────────────────────────────
+  static async register(dto: RegisterDto): Promise<Omit<User, 'walletCents'>> {
+    const existing = await UserRepository.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictError('An account with this email already exists', { email: dto.email });
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+    const user         = await UserRepository.create({ ...dto, passwordHash });
+
+    // Omit sensitive / internal fields before returning
+    const { ...safeUser } = user;
+    return safeUser;
+  }
+
+  // ── Login ────────────────────────────────────────────────────────────────────
+  static async login(dto: LoginDto): Promise<TokenPair> {
+    const user = await UserRepository.findByEmail(dto.email);
+
+    // Use constant-time compare even when user doesn't exist (prevents enumeration)
+    const hashToCompare = user?.passwordHash ?? '$2a$12$invalidhashpadding000000000000000';
+    const match         = await bcrypt.compare(dto.password, hashToCompare);
+
+    if (!user || !match) {
+      // Deliberately vague — don't hint whether email exists
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    return AuthService.issueTokenPair(user);
+  }
+
+  // ── Refresh ──────────────────────────────────────────────────────────────────
+  static async refresh(refreshToken: string): Promise<TokenPair> {
+    let payload: JwtPayload;
+
+    try {
+      payload = jwt.verify(refreshToken, REFRESH_SECRET) as JwtPayload;
+    } catch (err) {
+      throw new UnauthorizedError('Refresh token is invalid or expired');
+    }
+
+    const redis  = await getRedisClient();
+    const stored = await redis.get(`refresh:${payload.sub}`);
+
+    if (stored !== refreshToken) {
+      // Token has been rotated or revoked — potential replay attack
+      throw new UnauthorizedError('Refresh token has been revoked');
+    }
+
+    const user = await UserRepository.findById(payload.sub);
+    if (!user) throw new NotFoundError('User', payload.sub);
+
+    return AuthService.issueTokenPair(user);
+  }
+
+  // ── Logout ───────────────────────────────────────────────────────────────────
+  static async logout(jti: string, userId: string): Promise<void> {
+    const redis = await getRedisClient();
+    // Blacklist the JTI for the remainder of the access token's lifetime
+    await redis.setEx(`blacklist:${jti}`, 60 * 15, '1');
+    await redis.del(`refresh:${userId}`);
+  }
+
+  // ── Get User ─────────────────────────────────────────────────────────────────
+  static async getUser(userId: string): Promise<User> {
+    const user = await UserRepository.findById(userId);
+    if (!user) throw new NotFoundError('User', userId);
+    return user as User;
+  }
+
+  // ── OAuth Google ──────────────────────────────────────────────────────────────
+  static async oauthGoogle(idToken: string): Promise<TokenPair> {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw new InternalError('GOOGLE_CLIENT_ID is not configured');
+    }
+
+    const client  = new OAuth2Client(clientId);
+    let email: string;
+    let name: string;
+
+    try {
+      const ticket  = await client.verifyIdToken({ idToken, audience: clientId });
+      const payload = ticket.getPayload();
+      if (!payload?.email) {
+        throw new ValidationError('Google token payload missing email');
+      }
+      email = payload.email;
+      name  = payload.name ?? payload.email.split('@')[0];
+    } catch (err: any) {
+      if (err.name === 'ValidationError') throw err;
+      throw new UnauthorizedError('Invalid Google ID token');
+    }
+
+    const user = await UserRepository.findOrCreateOAuth(email, name);
+    return AuthService.issueTokenPair(user);
+  }
+
+  // ── Token Issuance ────────────────────────────────────────────────────────────
+  static async issueTokenPair(user: { id: string; role: string }): Promise<TokenPair> {
+    if (!ACCESS_SECRET) {
+      throw new InternalError('JWT_ACCESS_SECRET is not configured');
+    }
+
+    const jti     = uuidv4();
+    const role    = user.role as UserRole;
+
+    const accessToken = jwt.sign(
+      { sub: user.id, role, jti } satisfies Omit<JwtPayload, 'iat' | 'exp'>,
+      ACCESS_SECRET,
+      { expiresIn: ACCESS_EXPIRY as Parameters<typeof jwt.sign>[2] extends { expiresIn?: infer E } ? E : never },
+    );
+
+    const refreshToken = jwt.sign(
+      { sub: user.id, role, jti: uuidv4() } satisfies Omit<JwtPayload, 'iat' | 'exp'>,
+      REFRESH_SECRET,
+      { expiresIn: REFRESH_EXPIRY as Parameters<typeof jwt.sign>[2] extends { expiresIn?: infer E } ? E : never },
+    );
+
+    // Persist refresh token with retry (Redis flap resilience)
+    await retry(
+      async () => {
+        const redis = await getRedisClient();
+        await redis.setEx(`refresh:${user.id}`, REFRESH_TTL_S, refreshToken);
+      },
+      { maxAttempts: 3, label: 'redis:refresh-token-store' },
+    );
+
+    return { accessToken, refreshToken };
+  }
+}

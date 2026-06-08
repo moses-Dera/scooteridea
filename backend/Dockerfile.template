@@ -1,0 +1,24 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy workspace root
+COPY package.json turbo.json ./
+COPY backend/shared ./backend/shared
+
+# Copy this service
+COPY backend/services/SERVICE_NAME ./backend/services/SERVICE_NAME
+
+RUN npm ci --workspaces --include-workspace-root
+RUN npm run build --workspace=@ebike/types
+RUN npm run build --workspace=@ebike/SERVICE_NAME
+
+# ── Runtime image ─────────────────────────────────────────────────────────────
+FROM node:20-alpine AS runtime
+WORKDIR /app
+
+COPY --from=builder /app/backend/services/SERVICE_NAME/dist ./dist
+COPY --from=builder /app/backend/services/SERVICE_NAME/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+ENV NODE_ENV=production
+CMD ["node", "dist/index.js"]

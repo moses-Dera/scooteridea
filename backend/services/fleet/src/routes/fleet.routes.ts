@@ -1,0 +1,37 @@
+import { Router, Request, Response } from 'express';
+import { FleetService } from '../services/fleet.service';
+import { bikeCommander } from '@ebike/mqtt';
+
+export const fleetRouter = Router();
+
+// GET /fleet/bikes — live fleet snapshot from Redis
+fleetRouter.get('/bikes', async (_req, res) => {
+  try {
+    const bikes = await FleetService.getAllBikes();
+    res.json({ success: true, data: bikes });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch fleet' });
+  }
+});
+
+// POST /fleet/bikes/:id/command — remote operator command
+fleetRouter.post('/bikes/:id/command', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { command, value, reason, rideId } = req.body;
+
+  try {
+    switch (command) {
+      case 'LOCK':        await bikeCommander.lock(id); break;
+      case 'UNLOCK':      await bikeCommander.unlock(id, rideId); break;
+      case 'ALARM':       await bikeCommander.alarm(id); break;
+      case 'DISABLE':     await bikeCommander.disable(id, reason ?? 'OPERATOR'); break;
+      case 'SPEED_LIMIT': await bikeCommander.speedLimit(id, value); break;
+      default:
+        res.status(400).json({ success: false, error: `Unknown command: ${command}` });
+        return;
+    }
+    res.json({ success: true, message: `Command ${command} sent to bike ${id}` });
+  } catch {
+    res.status(500).json({ success: false, error: 'Command delivery failed' });
+  }
+});

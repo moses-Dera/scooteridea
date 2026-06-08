@@ -1,0 +1,19 @@
+{
+  "name": "@ebike/mqtt",
+  "version": "1.0.0",
+  "description": "MQTT client wrapper for the E-Bike platform (EMQX broker)",
+  "main": "dist/client.js",
+  "types": "dist/client.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "mqtt": "^5.5.0",
+    "@ebike/types": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}
