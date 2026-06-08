@@ -5,6 +5,9 @@
 
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
+import { getRedisClient } from '@ebike/redis';
+
+const PUSH_TOKEN_TTL_S = 90 * 24 * 60 * 60; // 90 days — matches device session lifetime
 
 export class AuthController {
   static async register(req: Request, res: Response): Promise<void> {
@@ -36,4 +39,21 @@ export class AuthController {
     const tokens = await AuthService.oauthGoogle(req.body.idToken);
     res.json({ success: true, data: tokens });
   }
+
+  /**
+   * POST /auth/push-token
+   * Registers the client's Expo push token.
+   * Called immediately after login / app foreground.
+   * Body: { token: string }
+   */
+  static async registerPushToken(req: Request, res: Response): Promise<void> {
+    const userId = req.user!.sub;
+    const { token } = req.body as { token: string };
+
+    const redis = await getRedisClient();
+    await redis.setEx(`push_token:${userId}`, PUSH_TOKEN_TTL_S, token);
+
+    res.json({ success: true, message: 'Push token registered' });
+  }
 }
+
