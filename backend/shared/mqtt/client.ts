@@ -2,22 +2,44 @@ import mqtt, { MqttClient, IClientOptions } from 'mqtt';
 import type { BikeCommandPayload } from '@ebike/types';
 
 let client: MqttClient | null = null;
+let connectionAttempts = 0;
+const MAX_RETRY_ATTEMPTS = 10;
 
 /** Connect (or return the cached client). Safe to call multiple times. */
 export function getMqttClient(): MqttClient {
   if (!client) {
+    const brokerUrl = process.env.MQTT_BROKER_URL ?? 'mqtt://localhost:1883';
     const options: IClientOptions = {
-      username: process.env.MQTT_USERNAME,
-      password: process.env.MQTT_PASSWORD,
+      username: process.env.MQTT_USERNAME || undefined,
+      password: process.env.MQTT_PASSWORD || undefined,
       clientId: `ebike-backend-${Date.now()}`,
       clean: true,
       reconnectPeriod: 3000,
+      connectTimeout: 10000,
+      keepalive: 60,
+      rejectUnauthorized: false,
     };
-    client = mqtt.connect(process.env.MQTT_BROKER_URL ?? 'mqtt://localhost:1883', options);
+    
+    console.log(`[MQTT] Connecting to broker: ${brokerUrl}`);
+    client = mqtt.connect(brokerUrl, options);
 
-    client.on('connect', () => console.log('[MQTT] Connected to broker'));
-    client.on('error', (err) => console.error('[MQTT] Error', err));
-    client.on('reconnect', () => console.log('[MQTT] Reconnecting…'));
+    client.on('connect', () => {
+      console.log('[MQTT] ✅ Connected to broker');
+      connectionAttempts = 0;
+    });
+    
+    client.on('error', (err) => {
+      console.error('[MQTT] ❌ Error:', err.message);
+    });
+    
+    client.on('reconnect', () => {
+      connectionAttempts++;
+      console.log(`[MQTT] 🔄 Reconnecting... (attempt ${connectionAttempts}/${MAX_RETRY_ATTEMPTS})`);
+    });
+    
+    client.on('offline', () => {
+      console.warn('[MQTT] ⚠️  Broker offline - will reconnect automatically');
+    });
   }
   return client;
 }

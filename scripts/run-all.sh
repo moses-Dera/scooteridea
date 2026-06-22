@@ -52,8 +52,23 @@ npm run engine &
 ENGINE_PID=$!
 
 # Wait for infrastructure to be ready
-echo -e "${BLUE}⏳ Waiting for services to initialize...${RESET}"
-sleep 45
+echo -e "${BLUE}⏳ Waiting for Docker services...${RESET}"
+sleep 15
+
+# Check MQTT specifically
+echo -e "${BLUE}🔍 Waiting for MQTT broker...${RESET}"
+for i in {1..30}; do
+  if timeout 1 bash -c "echo > /dev/tcp/127.0.0.1/1883" 2>/dev/null; then
+    echo -e "${GREEN}✅ MQTT broker ready${RESET}"
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
+
+# Wait a bit more for services to initialize
+echo -e "\n${BLUE}⏳ Waiting for services to initialize (30s more)...${RESET}"
+sleep 30
 
 # Run verification
 echo -e "\n${BLUE}🔍 Verifying all services...${RESET}\n"
