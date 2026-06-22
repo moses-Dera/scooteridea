@@ -93,45 +93,45 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
-      <header className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              🚲
-              <h1 className="text-3xl font-bold text-white">Simulator Dashboard</h1>
+    <div className="min-h-screen bg-white font-sans text-slate-900">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Hardware Simulation Console</h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage virtual fleet and telemetry injection</p>
             </div>
             <div className="flex items-center gap-3">
               {connected ? (
-                <div className="flex items-center gap-2 text-green-400">
-                  📡
-                  <span>Connected</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-sm font-medium whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Connected
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-red-400">
-                  ❌
-                  <span>Disconnected</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm font-medium whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  Disconnected
                 </div>
               )}
             </div>
           </div>
 
           {!connected && (
-            <div className="flex gap-2 items-end">
-              <div className="flex-1">
-                <label className="block text-sm text-gray-400 mb-2">Broker URL</label>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-end w-full max-w-md">
+              <div className="flex-1 w-full">
+                <label className="block text-xs font-medium text-slate-700 mb-1">Target Endpoint</label>
                 <input
                   type="text"
                   value={brokerUrl}
                   onChange={(e) => setBrokerUrl(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 text-slate-900 rounded-md border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm"
                   placeholder="ws://localhost:8884"
                 />
               </div>
               <button
                 onClick={connectToDashboard}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="w-full sm:w-auto px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors whitespace-nowrap"
               >
                 {loading ? 'Connecting...' : 'Connect'}
               </button>
@@ -139,125 +139,123 @@ export default function Dashboard() {
           )}
 
           {error && (
-            <div className="mt-3 flex items-center gap-2 bg-red-500/20 border border-red-500/50 rounded px-3 py-2 text-red-200">
-              ❌
-              <p>{error}</p>
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm break-words">
+              {error}
             </div>
           )}
         </div>
       </header>
 
       {connected && (
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Add New Bike */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              ➕
-              Add New Bike
-            </h2>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newBikeId}
-                onChange={(e) => setNewBikeId(e.target.value)}
-                placeholder="e.g., BK-00011"
-                className="flex-1 px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                onClick={addBike}
-                disabled={!newBikeId.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                Add Bike
-              </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          
+          {/* Controls Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 mb-3 sm:mb-4 uppercase tracking-wider">Provision Virtual Bike</h2>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={newBikeId}
+                  onChange={(e) => setNewBikeId(e.target.value)}
+                  placeholder="e.g., BK-00011"
+                  className="w-full sm:flex-1 px-3 py-2 bg-slate-50 text-slate-900 rounded-md border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm"
+                />
+                <button
+                  onClick={addBike}
+                  disabled={!newBikeId.trim()}
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 disabled:opacity-50 text-sm font-medium transition-colors whitespace-nowrap"
+                >
+                  Provision
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 mb-3 sm:mb-4 uppercase tracking-wider">Provision Virtual Dock</h2>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex gap-2 w-full sm:w-auto sm:flex-1">
+                  <input
+                    type="text"
+                    value={newDockId}
+                    onChange={(e) => setNewDockId(e.target.value)}
+                    placeholder="ID (DOCK-008)"
+                    className="w-1/2 sm:w-1/3 px-3 py-2 bg-slate-50 text-slate-900 rounded-md border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={newDockName}
+                    onChange={(e) => setNewDockName(e.target.value)}
+                    placeholder="Name"
+                    className="w-1/2 sm:flex-1 px-3 py-2 bg-slate-50 text-slate-900 rounded-md border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm"
+                  />
+                </div>
+                <button
+                  onClick={addDock}
+                  disabled={!newDockId.trim() || !newDockName.trim()}
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 disabled:opacity-50 text-sm font-medium transition-colors whitespace-nowrap"
+                >
+                  Provision
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Add New Dock */}
-          <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              ➕
-              Add New Dock
-            </h2>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newDockId}
-                onChange={(e) => setNewDockId(e.target.value)}
-                placeholder="e.g., DOCK-008"
-                className="flex-1 px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                value={newDockName}
-                onChange={(e) => setNewDockName(e.target.value)}
-                placeholder="e.g., Central Park Station"
-                className="flex-1 px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                onClick={addDock}
-                disabled={!newDockId.trim() || !newDockName.trim()}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                Add Dock
-              </button>
+          <div className="border-t border-slate-200 pt-6 sm:pt-8 mb-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+              <h2 className="text-lg font-semibold text-slate-900">Active Fleet Simulator</h2>
+              <span className="self-start sm:self-auto px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium border border-slate-200">
+                {Object.keys(bikes).length} Instances Running
+              </span>
             </div>
-          </div>
-
-          {/* Bikes Section */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              🚲
-              Fleet ({Object.keys(bikes).length} bikes)
-            </h2>
+            
             {Object.keys(bikes).length === 0 ? (
-              <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400 border border-gray-700">
-                <div className="text-6xl mx-auto mb-2">🚲</div>
-                <p>No bikes connected yet</p>
+              <div className="bg-slate-50 rounded-xl p-12 text-center text-slate-500 border border-slate-200 border-dashed">
+                <p>No active bike instances. Provision a new bike to begin simulation.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {Object.values(bikes).map((bike) => (
-                  <div key={bike.bike_id} className="relative">
+                  <div key={bike.bike_id} className="relative bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5">
                     <BikeCard bike={bike} onCommand={sendCommand} />
                     <button
                       onClick={() => removeBike(bike.bike_id)}
-                      className="absolute top-2 right-2 px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+                      className="absolute top-4 right-4 text-slate-400 hover:text-red-600 text-sm font-medium transition-colors"
                     >
-                      Remove
+                      Terminate
                     </button>
                   </div>
                 ))}
               </div>
             )}
-          </section>
+          </div>
 
-          {/* Docks Section */}
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-              📍
-              Docking Stations ({Object.keys(docks).length} docks)
-            </h2>
+          <div className="border-t border-slate-200 pt-6 sm:pt-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+              <h2 className="text-lg font-semibold text-slate-900">Infrastructure Simulator</h2>
+              <span className="self-start sm:self-auto px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium border border-slate-200">
+                {Object.keys(docks).length} Docks Running
+              </span>
+            </div>
+
             {Object.keys(docks).length === 0 ? (
-              <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400 border border-gray-700">
-                <div className="text-6xl mx-auto mb-2">📍</div>
-                <p>No docks connected yet</p>
+              <div className="bg-slate-50 rounded-xl p-12 text-center text-slate-500 border border-slate-200 border-dashed">
+                <p>No active dock instances. Provision a dock to test charging logic.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {Object.values(docks).map((dock) => (
                   <DockCard key={dock.dock_id} dock={dock} />
                 ))}
               </div>
             )}
-          </section>
+          </div>
         </div>
       )}
 
       {!connected && (
-        <div className="max-w-7xl mx-auto px-4 py-12 text-center text-gray-400">
-          <div className="text-8xl mx-auto mb-4">🚲</div>
-          <p className="text-lg">Connect to simulator to view bikes and docks</p>
+        <div className="max-w-7xl mx-auto px-6 py-24 text-center text-slate-500">
+          <p className="text-lg">Connect to the simulator endpoint to initialize the environment.</p>
         </div>
       )}
     </div>
