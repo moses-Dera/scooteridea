@@ -59,7 +59,7 @@ export default function MenuPage() {
   return (
     <div className="w-full h-screen bg-[#0A0D14]">
       {/* Header with back button */}
-      <div className="sticky top-0 z-40 pt-20 px-6 pb-6 border-b border-white/10 bg-[#0A0D14]/95 backdrop-blur">
+      <div className="sticky top-0 z-40 pt-20 px-6 pb-6 border-b border-white/5 bg-background/80 backdrop-blur-2xl">
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => router.back()}
@@ -74,21 +74,32 @@ export default function MenuPage() {
       </div>
 
       {/* Main menu content - scrollable */}
-      <div className="h-[calc(100vh-120px)] overflow-y-auto">
-        <div className="px-6 py-6 space-y-3">
-          {menuItems.map((item) => (
+      <div className="h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide pb-20">
+        <div className="max-w-3xl mx-auto px-6 py-6 space-y-4">
+          {menuItems.map((item, i) => (
             <Link
               key={item.href}
               href={item.href}
-              className="block p-4 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all group"
+              className="group block relative overflow-hidden rounded-2xl bg-surfaceLight/40 backdrop-blur-md border border-white/5 hover:border-primary/30 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,255,135,0.1)]"
+              style={{ animationDelay: `${i * 100}ms` }}
             >
-              <div className="flex items-start gap-4">
-                <div className="text-2xl mt-1">{item.icon}</div>
-                <div>
-                  <h3 className="font-semibold text-white group-hover:text-[#00FFA3] transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-slate-400">{item.description}</p>
+              {/* Hover Glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              <div className="relative p-5 flex items-center justify-between">
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors shadow-inner">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-lg tracking-tight group-hover:text-primary transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-slate-400 font-medium">{item.description}</p>
+                  </div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-black text-slate-400 transition-all">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                 </div>
               </div>
             </Link>
@@ -96,15 +107,18 @@ export default function MenuPage() {
         </div>
 
         {/* Logout button at bottom */}
-        <div className="px-6 py-6 border-t border-white/10 space-y-3">
+        <div className="max-w-3xl mx-auto px-6 py-8 mt-4 border-t border-white/5">
           <button
             onClick={handleLogout}
-            className="w-full py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 font-semibold flex items-center justify-center gap-2 transition-all"
+            className="w-full relative group overflow-hidden py-4 px-6 rounded-2xl bg-red-500/5 border border-red-500/20 text-red-400 hover:text-white font-bold text-lg flex items-center justify-center gap-3 transition-all"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            {/* Hover Background */}
+            <div className="absolute inset-0 bg-red-500/20 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            
+            <svg className="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Logout
+            <span className="relative z-10 tracking-wide uppercase">Logout</span>
           </button>
         </div>
       </div>

@@ -24,6 +24,11 @@ const config: Config = {
       boxShadow: {
         'glow-primary': '0 0 20px rgba(0, 255, 135, 0.4)',
         'glow-secondary': '0 0 20px rgba(0, 212, 255, 0.4)',
+      },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(150%)' },
+        }
       }
     },
   },
