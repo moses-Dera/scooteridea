@@ -48,6 +48,28 @@ async function waitForInfrastructure() {
 
     if (allReady) {
       console.log('🔌 Ports are open! Waiting 10 seconds for services to finish internal initialization...');
+      
+      // Run database migrations
+      console.log('🔄 Running database migrations...');
+      try {
+        await new Promise((resolve, reject) => {
+          const migrate = spawn('npx', ['prisma', 'migrate', 'deploy'], {
+            cwd: 'backend/shared/db',
+            stdio: 'inherit'
+          });
+          migrate.on('close', (code) => {
+            if (code === 0) {
+              console.log('✅ Database migrations complete');
+              resolve();
+            } else {
+              console.warn('⚠️  Migration warning (code: ' + code + ')');
+              resolve(); // Don't fail, migrations might not exist yet
+            }
+          });
+        });
+      } catch (err) {
+        console.warn('⚠️  Migration skipped:', err.message);
+      }
       await new Promise((resolve) => setTimeout(resolve, 10000));
       console.log('✅ Infrastructure is ready!');
       break;
