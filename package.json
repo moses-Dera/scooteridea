@@ -26,6 +26,8 @@
     "engine:dev": "node scripts/run-dev.js",
     "simulator": "bash run-complete-simulator.sh",
     "all": "bash scripts/run-all.sh",
-    "cleanup": "bash scripts/cleanup.sh"
+    "cleanup": "bash scripts/cleanup.sh",
+    "status": "bash scripts/status.sh",
+    "watch": "npm run all 2>&1 | tee /tmp/ebike-debug.log"
   }
 }
