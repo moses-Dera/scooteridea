@@ -111,7 +111,7 @@ export default function DashboardOverview() {
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors border border-slate-700 flex items-center justify-center gap-2">
-            <BarChart3 className="w-4 h-4" />
+            <span className="text-lg">📊</span>
             Generate Report
           </button>
           <div className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
