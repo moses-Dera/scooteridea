@@ -24,6 +24,7 @@
     "engine": "node scripts/run-dev.js",
     "engine:fast": "npm run docker:up && turbo run build && turbo run start --parallel",
     "engine:dev": "node scripts/run-dev.js",
-    "simulator": "bash run-complete-simulator.sh"
+    "simulator": "bash run-complete-simulator.sh",
+    "all": "bash scripts/run-all.sh"
   }
 }
