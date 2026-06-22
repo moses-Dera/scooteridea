@@ -18,7 +18,7 @@
     "build": "turbo run build",
     "start:prod": "turbo run start --parallel",
     "test": "turbo run test",
-    "docker:up": "docker compose -f backend/infra/docker-compose.yml up -d",
+    "docker:up": "docker compose -f backend/infra/docker-compose.yml up -d postgres redis zookeeper kafka emqx",
     "docker:down": "docker compose -f backend/infra/docker-compose.yml down",
     "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v",
     "engine": "node scripts/run-dev.js",

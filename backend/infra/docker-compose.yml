@@ -44,7 +44,8 @@ services:
     environment:
       KAFKA_BROKER_ID:                         1
       KAFKA_ZOOKEEPER_CONNECT:                 zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS:              PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS:                         PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS:              PLAINTEXT://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:    PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME:        PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:  1
@@ -52,7 +53,7 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ['CMD', 'kafka-broker-api-versions', '--bootstrap-server', 'kafka:9092']
+      test: ['CMD', 'kafka-broker-api-versions', '--bootstrap-server', 'localhost:9092']
       interval: 10s
       retries: 10
 
@@ -67,6 +68,10 @@ services:
       EMQX_HOST:           127.0.0.1
     volumes:
       - emqx_data:/opt/emqx/data
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ping"]
+      interval: 5s
+      retries: 5
 
   # ── API Gateway ──────────────────────────────────────────────────────────────
   nginx:
