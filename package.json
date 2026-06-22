@@ -22,6 +22,6 @@
     "docker:down": "docker compose -f backend/infra/docker-compose.yml down",
     "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v",
     "engine:fast": "npm run docker:up && turbo run build && turbo run start --parallel",
-    "engine:dev": "npm run docker:up && npm run dev"
+    "engine:dev": "node scripts/run-dev.js"
   }
 }
