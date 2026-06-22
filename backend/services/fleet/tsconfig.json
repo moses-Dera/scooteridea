@@ -12,16 +12,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@ebike/core":  ["../../shared/core/index.ts"],
-      "@ebike/types": ["../../shared/types/index.ts"],
-      "@ebike/redis": ["../../shared/redis/client.ts"],
-      "@ebike/kafka": ["../../shared/kafka/producer.ts"],
-      "@ebike/mqtt":  ["../../shared/mqtt/client.ts"],
-      "@ebike/db":    ["../../shared/db/index.ts"]
-    }
+    "baseUrl": "."
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

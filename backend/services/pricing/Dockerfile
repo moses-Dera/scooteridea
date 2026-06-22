@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package.json turbo.json ./
+COPY package.json package-lock.json turbo.json ./
 COPY backend/shared/types/package.json         ./backend/shared/types/
 COPY backend/shared/core/package.json          ./backend/shared/core/
 COPY backend/shared/redis/package.json         ./backend/shared/redis/

@@ -49,7 +49,7 @@ export async function disconnectProducer(): Promise<void> {
 }
 
 // ── Generic publish ───────────────────────────────────────────────────────────
-export async function publish<T extends Record<string, unknown>>(
+export async function publish<T extends object>(
   topic: string,
   payload: T,
   key?: string,

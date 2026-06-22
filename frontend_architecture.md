@@ -1,8 +1,9 @@
 # 🖥️ Frontend Architecture — E-Bike Sharing Platform
 
-> **Web:** Next.js 15 (App Router) — Operator Dashboard  
-> **Mobile:** React Native (Expo) — Rider App  
-> **Shared:** TypeScript types + API client library
+> **Operator Dashboard:** Next.js 15 (App Router) — `frontend/web`  
+> **Rider App:** Next.js (Web) — `frontend/rider-web` (port 3010)  
+> **Shared:** TypeScript types + API client library (`packages/api-client`)  
+> **Future:** React Native (Expo) for native mobile
 
 ---
 
@@ -226,9 +227,18 @@ export const rideApi = {
 
 ---
 
-## Part 2 — Mobile: Rider App
+## Part 2 — Rider App (Web Version)
 
-### Stack
+> **Location:** `frontend/rider-web` | **Port:** 3010  
+> **Current Implementation:** Next.js web app  
+> **Future Plan:** Migrate to React Native (Expo) for native mobile
+
+The rider app is currently implemented as a **web-based Next.js application** for rapid prototyping. It runs on port 3010 and uses the same stack as the operator dashboard.
+
+**Transition to React Native:**
+Once the web version is stable, we will migrate to React Native + Expo for iOS/Android native apps using the stack below.
+
+### Stack (React Native - Planned)
 
 | Concern | Choice |
 |---------|--------|

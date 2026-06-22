@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -12,10 +12,13 @@
   },
   "dependencies": {
     "@prisma/client": "^7.0.0",
+    "@prisma/adapter-pg": "^7.0.0",
+    "pg": "^8.11.5",
     "dotenv": "^16.4.0"
   },
   "devDependencies": {
     "prisma": "^7.0.0",
+    "@types/pg": "^8.11.6",
     "typescript": "^5.4.0",
     "@types/node": "^20.0.0"
   }

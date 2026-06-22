@@ -1,0 +1,17 @@
+{
+  "name": "@ebike/ml",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ML matching engine with PPO reinforcement learning",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "echo 'ML service requires Python setup - skipping for now'",
+    "start": "uvicorn src.main:app --host 0.0.0.0 --port 8000",
+    "build": "echo 'No build step for Python'",
+    "test": "pytest tests/ -v",
+    "format": "black src/ tests/",
+    "lint": "flake8 src/ tests/"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

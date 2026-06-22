@@ -13,7 +13,7 @@
 import 'dotenv/config';
 import express from 'express';
 import http    from 'http';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@ebike/db';
 
 import {
   logger,
@@ -33,7 +33,6 @@ import { getRedisClient, disconnectRedis } from '@ebike/redis';
 import { createConsumer, connectProducer, disconnectProducer, publish, TOPICS } from '@ebike/kafka';
 import type { KafkaPaymentChargeEvent } from '@ebike/types';
 
-const prisma = new PrismaClient();
 const app    = express();
 const PORT   = Number(process.env.PORT ?? 3006);
 process.env.SERVICE_NAME = 'payment-service';

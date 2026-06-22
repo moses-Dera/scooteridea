@@ -1,18 +1,27 @@
 {
   "name": "ebike-platform",
   "private": true,
+  "packageManager": "npm@10.2.4",
   "workspaces": [
     "backend/services/*",
     "backend/shared/*",
-    "simulator"
+    "simulator",
+    "frontend/*",
+    "packages/*"
   ],
   "devDependencies": {
     "turbo": "^2.0.0",
     "typescript": "^5.4.0"
   },
   "scripts": {
-    "dev":   "turbo run dev --parallel",
+    "dev": "turbo run dev --parallel",
     "build": "turbo run build",
-    "test":  "turbo run test"
+    "start:prod": "turbo run start --parallel",
+    "test": "turbo run test",
+    "docker:up": "docker compose -f backend/infra/docker-compose.yml up -d",
+    "docker:down": "docker compose -f backend/infra/docker-compose.yml down",
+    "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v",
+    "engine:fast": "npm run docker:up && turbo run build && turbo run start --parallel",
+    "engine:dev": "npm run docker:up && npm run dev"
   }
 }

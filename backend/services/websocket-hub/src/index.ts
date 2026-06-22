@@ -91,7 +91,7 @@ async function startRedisPubSub() {
     } catch { /* ignore malformed messages */ }
   });
 
-  registerCleanup('Redis-Sub', () => sub.quit());
+  registerCleanup('Redis-Sub', async () => { await sub.quit(); });
   logger.info('[WS Hub] Redis pub/sub backplane active');
 }
 
@@ -162,7 +162,7 @@ async function startKafkaConsumer() {
     },
   );
 
-  registerCleanup('Redis-Pub', () => publisher.quit());
+  registerCleanup('Redis-Pub', async () => { await publisher.quit(); });
   logger.info('[WS Hub] Kafka → Redis relay active');
 }
 

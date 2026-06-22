@@ -20,7 +20,7 @@
     "@ebike/kafka": "*",
     "@ebike/mqtt": "*",
     "@ebike/types": "*",
-    "ngeohash": "^0.6.4"
+    "ngeohash": "^0.6.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

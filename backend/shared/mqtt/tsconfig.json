@@ -12,10 +12,7 @@
     "rootDir": ".",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
-    "paths": {
-      "@ebike/types": ["../types/index.ts"]
-    }
+    "sourceMap": true
   },
   "include": ["client.ts"],
   "exclude": ["node_modules", "dist"]

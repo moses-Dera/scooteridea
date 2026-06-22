@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package.json turbo.json ./
+COPY package.json package-lock.json turbo.json ./
 COPY backend/shared/types/package.json         ./backend/shared/types/
 COPY backend/shared/core/package.json          ./backend/shared/core/
 COPY backend/shared/redis/package.json         ./backend/shared/redis/
@@ -19,6 +19,8 @@ RUN npm run build --workspace=@ebike/types
 RUN npm run build --workspace=@ebike/core
 RUN npm run build --workspace=@ebike/redis
 RUN npm run build --workspace=@ebike/kafka
+RUN npm run db:generate --workspace=@ebike/db
+RUN npm run build --workspace=@ebike/db
 RUN npm run build --workspace=@ebike/payment-service
 
 # ── Runtime image ─────────────────────────────────────────────────────────────

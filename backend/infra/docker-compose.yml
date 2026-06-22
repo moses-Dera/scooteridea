@@ -9,7 +9,7 @@ services:
       POSTGRES_USER:     ebike
       POSTGRES_PASSWORD: secret
     ports:
-      - '5432:5432'
+      - '5440:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,7 +20,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - '6379:6379'
+      - '6380:6379'
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -44,13 +44,15 @@ services:
     environment:
       KAFKA_BROKER_ID:                         1
       KAFKA_ZOOKEEPER_CONNECT:                 zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS:              PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS:              PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:    PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME:        PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:  1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE:         'true'
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ['CMD', 'kafka-broker-api-versions', '--bootstrap-server', 'localhost:9092']
+      test: ['CMD', 'kafka-broker-api-versions', '--bootstrap-server', 'kafka:9092']
       interval: 10s
       retries: 10
 
@@ -66,13 +68,32 @@ services:
     volumes:
       - emqx_data:/opt/emqx/data
 
+  # ── API Gateway ──────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - '80:80'       # single public ingress point
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - fleet-service
+      - ride-service
+      - matching-service
+      - pricing-service
+      - payment-service
+      - notification-service
+      - websocket-hub
+      - dock-service
+    restart: unless-stopped
+
   # ── Backend Services ──────────────────────────────────────────────────────────
   auth-service:
     build:
-      context: ../services/auth
-      dockerfile: Dockerfile
-    ports:
-      - '3001:3001'
+      context: ../../
+      dockerfile: backend/services/auth/Dockerfile
+    expose:
+      - '3001'
     environment:
       PORT:                3001
       DATABASE_URL:        postgresql://ebike:secret@postgres:5432/ebike
@@ -80,16 +101,17 @@ services:
       JWT_ACCESS_SECRET:   ${JWT_ACCESS_SECRET}
       JWT_REFRESH_EXPIRY:  30d
       JWT_ACCESS_EXPIRY:   15m
+      GOOGLE_CLIENT_ID:    ${GOOGLE_CLIENT_ID}
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
 
   fleet-service:
     build:
-      context: ../services/fleet
-      dockerfile: Dockerfile
-    ports:
-      - '3002:3002'
+      context: ../../
+      dockerfile: backend/services/fleet/Dockerfile
+    expose:
+      - '3002'
     environment:
       PORT:             3002
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
@@ -105,10 +127,10 @@ services:
 
   ride-service:
     build:
-      context: ../services/ride
-      dockerfile: Dockerfile
-    ports:
-      - '3003:3003'
+      context: ../../
+      dockerfile: backend/services/ride/Dockerfile
+    expose:
+      - '3003'
     environment:
       PORT:             3003
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
@@ -122,10 +144,10 @@ services:
 
   matching-service:
     build:
-      context: ../services/matching
-      dockerfile: Dockerfile
-    ports:
-      - '3004:3004'
+      context: ../../
+      dockerfile: backend/services/matching/Dockerfile
+    expose:
+      - '3004'
     environment:
       PORT:       3004
       REDIS_URL:  redis://redis:6379
@@ -134,10 +156,10 @@ services:
 
   pricing-service:
     build:
-      context: ../services/pricing
-      dockerfile: Dockerfile
-    ports:
-      - '3005:3005'
+      context: ../../
+      dockerfile: backend/services/pricing/Dockerfile
+    expose:
+      - '3005'
     environment:
       PORT:       3005
       REDIS_URL:  redis://redis:6379
@@ -146,10 +168,10 @@ services:
 
   payment-service:
     build:
-      context: ../services/payment
-      dockerfile: Dockerfile
-    ports:
-      - '3006:3006'
+      context: ../../
+      dockerfile: backend/services/payment/Dockerfile
+    expose:
+      - '3006'
     environment:
       PORT:                  3006
       DATABASE_URL:          postgresql://ebike:secret@postgres:5432/ebike
@@ -163,22 +185,25 @@ services:
 
   notification-service:
     build:
-      context: ../services/notification
-      dockerfile: Dockerfile
-    ports:
-      - '3007:3007'
+      context: ../../
+      dockerfile: backend/services/notification/Dockerfile
+    expose:
+      - '3007'
     environment:
-      PORT:          3007
-      KAFKA_BROKERS: kafka:9092
+      PORT:               3007
+      KAFKA_BROKERS:      kafka:9092
+      REDIS_URL:          redis://redis:6379
+      EXPO_ACCESS_TOKEN:  ${EXPO_ACCESS_TOKEN}
     depends_on:
       kafka: { condition: service_healthy }
+      redis: { condition: service_healthy }
 
   websocket-hub:
     build:
-      context: ../services/websocket-hub
-      dockerfile: Dockerfile
-    ports:
-      - '3008:3008'
+      context: ../../
+      dockerfile: backend/services/websocket-hub/Dockerfile
+    expose:
+      - '3008'
     environment:
       PORT:               3008
       REDIS_URL:          redis://redis:6379
@@ -190,10 +215,10 @@ services:
 
   dock-service:
     build:
-      context: ../services/dock
-      dockerfile: Dockerfile
-    ports:
-      - '3009:3009'
+      context: ../../
+      dockerfile: backend/services/dock/Dockerfile
+    expose:
+      - '3009'
     environment:
       PORT:             3009
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
