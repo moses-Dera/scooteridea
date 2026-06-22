@@ -139,4 +139,33 @@ export class FleetService {
     );
     return bikes;
   }
+
+  /** Get recent system alerts */
+  static async getAlerts(limit: number = 10) {
+    try {
+      const alerts = await prisma.alert.findMany({
+        where: { resolved: false },
+        orderBy: { created_at: 'desc' },
+        take: limit,
+      });
+      return alerts;
+    } catch (err) {
+      logger.warn('[Fleet] Failed to fetch alerts from DB', err);
+      return [];
+    }
+  }
+
+  /** Get maintenance issues */
+  static async getMaintenance(status: string = 'open') {
+    try {
+      const maintenance = await prisma.maintenance_issue.findMany({
+        where: { status },
+        orderBy: { created_at: 'desc' },
+      });
+      return maintenance;
+    } catch (err) {
+      logger.warn('[Fleet] Failed to fetch maintenance from DB', err);
+      return [];
+    }
+  }
 }

@@ -51,4 +51,20 @@ export class RideController {
       res.json({ success: true, data: ride });
     } catch (err) { next(err); }
   }
+
+  static async getTopRiders(req: Request, res: Response, next: NextFunction) {
+    try {
+      const limit = Number(req.query.limit) || 5;
+      const riders = await RideService.getTopRiders(limit);
+      res.json({ success: true, data: riders });
+    } catch (err) { next(err); }
+  }
+
+  static async getAnalytics(req: Request, res: Response, next: NextFunction) {
+    try {
+      const timeRange = (req.query.timeRange as string) || 'today';
+      const analytics = await RideService.getAnalytics(timeRange);
+      res.json({ success: true, data: analytics });
+    } catch (err) { next(err); }
+  }
 }

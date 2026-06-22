@@ -214,4 +214,108 @@ export class RideService {
     if (!ride) throw new NotFoundError('Ride', rideId);
     return prisma.ride.update({ where: { id: rideId }, data: { status: 'CANCELLED' } });
   }
+
+  static async getTopRiders(limit: number = 5) {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const topRiders = await prisma.ride.groupBy({
+      by: ['userId'],
+      where: {
+        createdAt: { gte: todayStart },
+        status: { in: ['COMPLETED', 'PAID'] },
+      },
+      _count: { id: true },
+      _sum: { distance_km: true, duration_sec: true },
+      orderBy: [{ _count: { id: 'desc' } }],
+      take: limit,
+    });
+
+    // Get user details
+    const riders = await Promise.all(
+      topRiders.map(async (group) => {
+        const user = await prisma.user.findUnique({ where: { id: group.userId } });
+        return {
+          id: group.userId,
+          name: user?.name || 'Unknown',
+          email: user?.email,
+          rides_count: group._count.id,
+          total_distance: Math.round((group._sum.distance_km || 0) * 1000), // in meters
+          total_duration: group._sum.duration_sec || 0,
+        };
+      })
+    );
+
+    return riders;
+  }
+
+  static async getAnalytics(timeRange: string = 'today') {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeRange) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'today':
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    const [
+      totalRides,
+      totalRevenue,
+      activeUsers,
+      avgDuration,
+      avgDistance,
+      ridesData,
+    ] = await Promise.all([
+      prisma.ride.count({
+        where: { createdAt: { gte: startDate }, status: { in: ['COMPLETED', 'PAID'] } },
+      }),
+      prisma.ride.aggregate({
+        where: { createdAt: { gte: startDate }, status: 'PAID' },
+        _sum: { amount_cents: true },
+      }),
+      prisma.ride.findMany({
+        where: { createdAt: { gte: startDate } },
+        distinct: ['userId'],
+        select: { userId: true },
+      }),
+      prisma.ride.aggregate({
+        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
+        _avg: { duration_sec: true },
+      }),
+      prisma.ride.aggregate({
+        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
+        _avg: { distance_km: true },
+      }),
+      prisma.ride.findMany({
+        where: { createdAt: { gte: startDate }, status: { in: ['COMPLETED', 'PAID'] } },
+        select: { duration_sec: true, distance_km: true },
+      }),
+    ]);
+
+    const avgDurationMins = avgDuration._avg.duration_sec
+      ? Math.round((avgDuration._avg.duration_sec / 60) * 10) / 10
+      : 0;
+
+    const avgDistanceKm = avgDistance._avg.distance_km
+      ? Math.round(avgDistance._avg.distance_km * 10) / 10
+      : 0;
+
+    return {
+      total_rides: totalRides,
+      total_revenue: Math.round((totalRevenue._sum.amount_cents || 0) / 100),
+      active_users: activeUsers.length,
+      fleet_utilization: 78, // Placeholder - would need fleet size
+      avg_ride_duration: avgDurationMins,
+      avg_ride_distance: avgDistanceKm,
+      bikes_active: 156, // Placeholder - would fetch from fleet service
+      bikes_total: 200, // Placeholder
+    };
+  }
 }

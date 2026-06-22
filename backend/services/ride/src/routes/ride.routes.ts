@@ -9,3 +9,8 @@ rideRouter.post('/:id/end',     RideController.end);
 rideRouter.get('/history',      RideController.history);
 rideRouter.get('/:id',          RideController.getById);
 rideRouter.post('/:id/dispute', RideController.dispute);
+
+// Analytics endpoints
+rideRouter.get('/api/riders/top', RideController.getTopRiders);
+rideRouter.get('/api/analytics', RideController.getAnalytics);
+

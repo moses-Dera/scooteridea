@@ -14,6 +14,29 @@ fleetRouter.get('/bikes', async (_req, res) => {
   }
 });
 
+// GET /fleet/alerts — system alerts
+fleetRouter.get('/alerts', async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 10;
+    // Get alerts from Redis or database
+    const alerts = await FleetService.getAlerts(limit);
+    res.json({ success: true, data: alerts || [] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch alerts' });
+  }
+});
+
+// GET /fleet/maintenance — maintenance issues
+fleetRouter.get('/maintenance', async (req, res) => {
+  try {
+    const status = req.query.status as string || 'open';
+    const maintenance = await FleetService.getMaintenance(status);
+    res.json({ success: true, data: maintenance || [] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch maintenance' });
+  }
+});
+
 // POST /fleet/bikes/:id/command — remote operator command
 fleetRouter.post('/bikes/:id/command', async (req: Request, res: Response) => {
   const { id } = req.params;

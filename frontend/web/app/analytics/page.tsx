@@ -1,10 +1,44 @@
 "use client";
 
-import { useState } from 'react';
-import { StatCard, Card, CardHeader, CardContent, Badge } from '@/components';
+import { useState, useEffect } from 'react';
+import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
+
+interface Analytics {
+  total_rides: number;
+  total_revenue: number;
+  active_users: number;
+  fleet_utilization: number;
+  avg_ride_duration: number;
+  avg_ride_distance: number;
+  bikes_active: number;
+  bikes_total: number;
+}
 
 export default function AnalyticsOverview() {
   const [timeRange, setTimeRange] = useState('today');
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`http://localhost:3001/api/analytics?timeRange=${timeRange}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setAnalytics(json.data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch analytics', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [timeRange]);
 
   return (
     <div className="w-full p-6 space-y-6 bg-neutral-950 min-h-screen">
@@ -35,22 +69,22 @@ export default function AnalyticsOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Rides"
-          value="2,847"
+          value={loading ? '-' : analytics?.total_rides?.toLocaleString() || '0'}
           trend={{ value: 12, direction: 'up' }}
         />
         <StatCard
           label="Total Revenue"
-          value="₦427,050"
+          value={loading ? '-' : `₦${(analytics?.total_revenue || 0).toLocaleString()}`}
           trend={{ value: 8, direction: 'up' }}
         />
         <StatCard
           label="Active Users"
-          value="1,234"
+          value={loading ? '-' : (analytics?.active_users || 0).toLocaleString()}
           trend={{ value: 5, direction: 'up' }}
         />
         <StatCard
           label="Fleet Utilization"
-          value="78%"
+          value={loading ? '-' : `${analytics?.fleet_utilization || 0}%`}
           trend={{ value: 3, direction: 'down' }}
         />
       </div>
@@ -59,19 +93,19 @@ export default function AnalyticsOverview() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           label="Avg Ride Duration"
-          value="18.5"
+          value={loading ? '-' : (analytics?.avg_ride_duration || 0).toFixed(1)}
           unit="min"
           trend={{ value: 2, direction: 'up' }}
         />
         <StatCard
           label="Avg Ride Distance"
-          value="4.2"
+          value={loading ? '-' : (analytics?.avg_ride_distance || 0).toFixed(1)}
           unit="km"
           trend={{ value: 1, direction: 'down' }}
         />
         <StatCard
           label="Bikes Active"
-          value="156 / 200"
+          value={loading ? '-' : `${analytics?.bikes_active || 0} / ${analytics?.bikes_total || 0}`}
           trend={{ value: 4, direction: 'up' }}
         />
       </div>

@@ -9,30 +9,89 @@ interface BikeModel {
   status: string;
 }
 
+interface Rider {
+  id: string;
+  name: string;
+  email: string;
+  rides_count: number;
+  total_distance: number;
+}
+
+interface Alert {
+  id: string;
+  type: 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  bike_id: string;
+  created_at: string;
+}
+
+interface MaintenanceIssue {
+  id: string;
+  bike_id: string;
+  issue_type: string;
+  report_count: number;
+  status: string;
+  created_at: string;
+}
+
 export default function DashboardOverview() {
   const [bikes, setBikes] = useState<BikeModel[]>([]);
+  const [riders, setRiders] = useState<Rider[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [maintenance, setMaintenance] = useState<MaintenanceIssue[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch live snapshot from fleet service
-    const fetchFleet = async () => {
+    // Fetch all data
+    const fetchAllData = async () => {
       try {
-        const res = await fetch('http://localhost:3002/bikes'); // Updated to correct port
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success) {
+        setLoading(true);
+        
+        // Fetch fleet data
+        const fleetRes = await fetch('http://localhost:3002/bikes');
+        if (fleetRes.ok) {
+          const json = await fleetRes.json();
+          if (json.success && json.data) {
             setBikes(json.data);
           }
         }
+        
+        // Fetch top riders - get from ride history/stats
+        const ridersRes = await fetch('http://localhost:3001/api/riders/top?limit=5');
+        if (ridersRes.ok) {
+          const json = await ridersRes.json();
+          if (json.success && json.data) {
+            setRiders(json.data);
+          }
+        }
+        
+        // Fetch system alerts
+        const alertsRes = await fetch('http://localhost:3002/alerts?limit=3');
+        if (alertsRes.ok) {
+          const json = await alertsRes.json();
+          if (json.success && json.data) {
+            setAlerts(json.data);
+          }
+        }
+        
+        // Fetch maintenance issues
+        const maintRes = await fetch('http://localhost:3002/maintenance?status=open');
+        if (maintRes.ok) {
+          const json = await maintRes.json();
+          if (json.success && json.data) {
+            setMaintenance(json.data);
+          }
+        }
       } catch (err) {
-        console.error('Failed to fetch fleet data', err);
+        console.error('Failed to fetch dashboard data', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFleet();
-    const interval = setInterval(fetchFleet, 5000);
+    fetchAllData();
+    const interval = setInterval(fetchAllData, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -111,46 +170,54 @@ export default function DashboardOverview() {
               title="System Alerts"
               action={
                 <Badge variant="error">
-                  ⚠️ 3 Critical
+                  ⚠️ {alerts.length} Active
                 </Badge>
               }
             />
             <CardContent>
-              <div className="space-y-3">
-                {/* Alert Items */}
-                <div className="p-3 rounded-lg bg-neutral-900 border border-red-500/30 hover:border-red-500/50 transition-colors cursor-pointer">
-                  <div className="flex gap-3">
-                    <span className="text-lg mt-0.5">🚨</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-red-300">Geofence Violation</p>
-                      <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2">Asset BK-891 breached operational zone</p>
-                      <p className="text-[10px] text-neutral-500 mt-1">2 mins ago</p>
-                    </div>
-                  </div>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner size="md" />
                 </div>
-
-                <div className="p-3 rounded-lg bg-neutral-900 border border-amber-500/30 hover:border-amber-500/50 transition-colors cursor-pointer">
-                  <div className="flex gap-3">
-                    <span className="text-lg mt-0.5">🔋</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-amber-300">Critical Battery</p>
-                      <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2">Asset BK-102 at 5% charge in transit</p>
-                      <p className="text-[10px] text-neutral-500 mt-1">14 mins ago</p>
-                    </div>
-                  </div>
+              ) : alerts.length > 0 ? (
+                <div className="space-y-3">
+                  {alerts.map((alert) => {
+                    const iconMap: Record<string, string> = {
+                      'error': '🚨',
+                      'warning': '⚠️',
+                      'info': 'ℹ️'
+                    };
+                    const colorMap: Record<string, string> = {
+                      'error': 'red',
+                      'warning': 'amber',
+                      'info': 'blue'
+                    };
+                    const color = colorMap[alert.type] || 'neutral';
+                    const borderColor = `border-${color}-500/30`;
+                    const hoverBorderColor = `hover:border-${color}-500/50`;
+                    
+                    return (
+                      <div 
+                        key={alert.id}
+                        className={`p-3 rounded-lg bg-neutral-900 border ${borderColor} ${hoverBorderColor} transition-colors cursor-pointer`}
+                      >
+                        <div className="flex gap-3">
+                          <span className="text-lg mt-0.5">{iconMap[alert.type]}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-semibold text-${color}-300`}>{alert.title}</p>
+                            <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2">{alert.message}</p>
+                            <p className="text-[10px] text-neutral-500 mt-1">
+                              {new Date(alert.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                <div className="p-3 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-neutral-600 transition-colors cursor-pointer">
-                  <div className="flex gap-3">
-                    <span className="text-lg mt-0.5">🔧</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-neutral-300">Maintenance Request</p>
-                      <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2">Flat rear tire on BK-441</p>
-                      <p className="text-[10px] text-neutral-500 mt-1">1 hr ago</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              ) : (
+                <p className="text-neutral-400 text-sm">No active alerts</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -162,23 +229,25 @@ export default function DashboardOverview() {
         <Card>
           <CardHeader title="Top Riders Today" />
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { name: 'Chioma A.', rides: 12, distance: '48.2 km', color: 'emerald' },
-                { name: 'Tunde O.', rides: 10, distance: '42.1 km', color: 'blue' },
-                { name: 'Zainab M.', rides: 9, distance: '38.5 km', color: 'cyan' },
-                { name: 'Seun I.', rides: 8, distance: '35.3 km', color: 'amber' },
-                { name: 'Ada E.', rides: 7, distance: '31.8 km', color: 'purple' },
-              ].map((rider, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors">
-                  <div>
-                    <p className="text-white font-medium text-sm">{rider.name}</p>
-                    <p className="text-xs text-neutral-400">{rider.rides} rides</p>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="md" />
+              </div>
+            ) : riders.length > 0 ? (
+              <div className="space-y-3">
+                {riders.map((rider) => (
+                  <div key={rider.id} className="flex items-center justify-between p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors">
+                    <div>
+                      <p className="text-white font-medium text-sm">{rider.name}</p>
+                      <p className="text-xs text-neutral-400">{rider.rides_count} rides</p>
+                    </div>
+                    <p className="text-emerald-400 font-bold text-sm">{(rider.total_distance / 1000).toFixed(1)} km</p>
                   </div>
-                  <p className="text-emerald-400 font-bold text-sm">{rider.distance}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-neutral-400 text-sm">No rider data available</p>
+            )}
           </CardContent>
         </Card>
 
@@ -186,25 +255,27 @@ export default function DashboardOverview() {
         <Card>
           <CardHeader title="🔧 Bikes Needing Maintenance" />
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { id: 'BIKE-042', issue: 'Brake issue', reports: 3 },
-                { id: 'BIKE-089', issue: 'Flat tire', reports: 2 },
-                { id: 'BIKE-156', issue: 'Chain noise', reports: 2 },
-                { id: 'BIKE-234', issue: 'Battery degradation', reports: 1 },
-                { id: 'BIKE-301', issue: 'Lock jamming', reports: 1 },
-              ].map((bike, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border-l-2 border-red-500/50">
-                  <div>
-                    <p className="text-white font-medium text-sm">{bike.id}</p>
-                    <p className="text-xs text-neutral-400">{bike.issue}</p>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="md" />
+              </div>
+            ) : maintenance.length > 0 ? (
+              <div className="space-y-3">
+                {maintenance.map((bike) => (
+                  <div key={bike.id} className="flex items-center justify-between p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border-l-2 border-red-500/50">
+                    <div>
+                      <p className="text-white font-medium text-sm">{bike.bike_id}</p>
+                      <p className="text-xs text-neutral-400">{bike.issue_type}</p>
+                    </div>
+                    <Badge variant="error">
+                      {bike.report_count} 📋
+                    </Badge>
                   </div>
-                  <Badge variant="error">
-                    {bike.reports} 📋
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-neutral-400 text-sm">No maintenance issues</p>
+            )}
           </CardContent>
         </Card>
       </div>
