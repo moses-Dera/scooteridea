@@ -1,4 +1,4 @@
-version: '3.9'
+
 
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────────
@@ -35,10 +35,16 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
     volumes:
       - zookeeper_data:/var/lib/zookeeper/data
+    healthcheck:
+      test: ['CMD-SHELL', 'bash -c "echo ruok > /dev/tcp/localhost/2181"']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
-    depends_on: [zookeeper]
+    depends_on:
+      zookeeper: { condition: service_healthy }
     ports:
       - '9092:9092'
     environment:
@@ -53,9 +59,11 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ['CMD', 'kafka-broker-api-versions', '--bootstrap-server', 'localhost:9092']
+      test: ['CMD-SHELL', 'kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1']
       interval: 10s
-      retries: 10
+      timeout: 10s
+      start_period: 30s
+      retries: 5
 
   emqx:
     image: emqx/emqx:5.6.0

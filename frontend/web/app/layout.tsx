@@ -4,8 +4,8 @@ import { LayoutDashboard, Map, BatteryCharging, Bike, BarChart3, Bell } from 'lu
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'VoltRide Operator Dashboard',
-  description: 'Fleet management and operations dashboard for VoltRide E-Bikes.',
+  title: 'Scooter Operator Dashboard',
+  description: 'Fleet management and operations dashboard for Scooter E-Bikes.',
 }
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
         <aside className="w-64 border-r border-white/10 glass-panel flex flex-col p-6">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20">V</div>
-            <h1 className="text-xl font-bold tracking-tight">VoltRide <span className="text-primary">Ops</span></h1>
+            <h1 className="text-xl font-bold tracking-tight">Scooter <span className="text-primary">Ops</span></h1>
           </div>
           <nav className="flex flex-col gap-2 flex-grow">
             <Link href="/" className="px-4 py-2.5 rounded-lg bg-primary/10 text-primary font-medium flex items-center gap-3 transition-colors cursor-pointer">
@@ -43,12 +43,16 @@ export default function RootLayout({
               <BarChart3 className="w-5 h-5" />
               <span>Analytics</span>
             </Link>
+            <Link href="/simulator" className="px-4 py-2.5 rounded-lg bg-[#00FFA3]/10 hover:bg-[#00FFA3]/20 text-[#00FFA3] border border-[#00FFA3]/20 font-medium flex items-center gap-3 transition-colors cursor-pointer mt-4">
+              <span className="text-xl">🎮</span>
+              <span>Simulator</span>
+            </Link>
           </nav>
           <div className="mt-auto flex items-center gap-3 pt-6 border-t border-white/10">
              <div className="w-10 h-10 rounded-full bg-slate-700"></div>
              <div>
                <p className="text-sm font-medium">Ops Admin</p>
-               <p className="text-xs text-slate-400">admin@voltride.com</p>
+               <p className="text-xs text-slate-400">admin@scooter.com</p>
              </div>
           </div>
         </aside>

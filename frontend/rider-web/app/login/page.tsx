@@ -52,7 +52,7 @@ export default function LoginPage() {
           Your city,<br /> <span className="text-primary">unlocked.</span>
         </h1>
         <p className="text-xl text-slate-400 max-w-md mb-12">
-          Join thousands of riders using VoltRide to commute faster, cheaper, and greener.
+          Join thousands of riders using Scooter to commute faster, cheaper, and greener.
         </p>
       </div>
 

@@ -58,3 +58,29 @@ fleetRouter.post('/bikes/:id/command', async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: 'Command delivery failed' });
   }
 });
+
+// POST /fleet/simulator/telemetry — Inject fake telemetry for development
+fleetRouter.post('/simulator/telemetry', async (req, res) => {
+  try {
+    const { bikeId, lat, lng, battery_pct, speed_kmh, lock_status, docked_at } = req.body;
+    
+    if (!bikeId || lat === undefined || lng === undefined) {
+      res.status(400).json({ success: false, error: 'Missing required telemetry fields' });
+      return;
+    }
+
+    // Call the exact same method that the MQTT listener uses
+    await FleetService.handleBikeTelemetry(bikeId, {
+      lat,
+      lng,
+      battery_pct: battery_pct ?? 100,
+      speed_kmh: speed_kmh ?? 0,
+      lock_status: lock_status ?? 'LOCKED',
+      docked_at
+    });
+
+    res.json({ success: true, message: `Simulated telemetry injected for ${bikeId}` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to inject telemetry' });
+  }
+});

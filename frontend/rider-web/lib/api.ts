@@ -7,7 +7,7 @@ import { ApiResponse, PaginatedResponse, ApiError, AuthTokens } from './types';
 // ============================================================================
 
 const API_URL = '/api/proxy'; // BFF proxy endpoint
-const TOKEN_KEY = process.env.NEXT_PUBLIC_JWT_STORAGE_KEY || 'voltride_token';
+const TOKEN_KEY = process.env.NEXT_PUBLIC_JWT_STORAGE_KEY || 'scooter_token';
 const REFRESH_TOKEN_KEY = `${TOKEN_KEY}_refresh`;
 
 // ============================================================================

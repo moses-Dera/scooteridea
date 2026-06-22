@@ -1,0 +1,127 @@
+'use client';
+
+import { Mail, Phone, Shield, LogOut } from 'lucide-react';
+import { useProfile } from '@/hooks';
+import { useAuthStore } from '@/store/authStore';
+
+interface ProfilePanelProps {
+  onClose: () => void;
+}
+
+export default function ProfilePanel({ onClose }: ProfilePanelProps) {
+  const { profile: user, loading, error } = useProfile();
+  const logout = useAuthStore((state) => state.logout);
+
+  if (loading) {
+    return (
+      <div className="px-6 py-12 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#00FFA3] mx-auto mb-3"></div>
+          <p className="text-slate-400 text-sm">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="px-6 py-6">
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 pt-2">
+        <h2 className="text-2xl font-bold text-white">Profile</h2>
+        <button
+          onClick={onClose}
+          className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+        >
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Profile Card */}
+      <div className="flex items-center gap-5 mb-6 p-5 rounded-2xl bg-white/5 border border-white/10">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00FFA3] to-[#00CC7F] flex items-center justify-center flex-shrink-0">
+          <span className="text-xl font-bold text-black">{(user?.name?.[0] || 'U') + (user?.email?.[1] || 'U')}</span>
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-xl font-bold text-white truncate">{user?.name || 'User'}</h3>
+          <p className="text-sm text-slate-400 truncate">{user?.email || ''}</p>
+          <div className="flex gap-2 mt-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#00FFA3]/20 text-[#00FFA3] text-[10px] font-bold uppercase tracking-wider">
+              {user?.verified ? 'Verified' : 'Not Verified'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10">
+          <div className="text-2xl font-bold text-[#00FFA3]">0</div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">Rides</p>
+        </div>
+        <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10">
+          <div className="text-2xl font-bold text-[#00FFA3]">0 km</div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">Distance</p>
+        </div>
+        <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10">
+          <div className="text-2xl font-bold text-white">₦{user?.wallet?.current?.toLocaleString() || '0'}</div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">Balance</p>
+        </div>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+          <Mail className="w-4 h-4 text-[#00FFA3] flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Email</p>
+            <p className="text-white font-medium text-xs truncate">{user?.email || 'Not set'}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+          <Phone className="w-4 h-4 text-[#00FFA3] flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Phone</p>
+            <p className="text-white font-medium text-xs">{user?.phone || 'Not added'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="space-y-2 mb-4">
+        <button className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]">
+          Edit Profile
+        </button>
+        <button className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]">
+          Payment Methods
+        </button>
+        <button className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]">
+          Privacy & Security
+        </button>
+      </div>
+
+      {/* Logout */}
+      <button 
+        className="w-full py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98]" 
+        onClick={() => {
+          logout();
+          onClose();
+        }}
+      >
+        <LogOut className="w-4 h-4" />
+        Logout
+      </button>
+    </div>
+  );
+}

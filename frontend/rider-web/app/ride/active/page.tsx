@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import RiderMap from '@/components/Map/RiderMap'
@@ -12,6 +12,50 @@ export default function ActiveRide() {
   const router = useRouter()
   const { state, setError } = useRide()
   const [isEndingRide, setIsEndingRide] = useState(false)
+  const [tetherEnabled, setTetherEnabled] = useState(false)
+  const watchIdRef = useRef<number | null>(null)
+
+  // Developer Feature: Tether Bike to Phone's GPS
+  useEffect(() => {
+    if (tetherEnabled && state.activeRide) {
+      if (navigator.geolocation) {
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          async (position) => {
+            try {
+              // Push our phone's physical location directly to the backend as the Bike's Telemetry
+              await fetch('http://localhost:3002/simulator/telemetry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  bikeId: state.activeRide?.bikeId,
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                  battery_pct: 85,
+                  speed_kmh: position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) : 0,
+                  lock_status: 'UNLOCKED'
+                })
+              });
+            } catch (err) {
+              console.error('Failed to sync telemetry', err);
+            }
+          },
+          (err) => console.error("Tether GPS error", err),
+          { enableHighAccuracy: true, maximumAge: 0 }
+        );
+      }
+    } else {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    }
+
+    return () => {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    }
+  }, [tetherEnabled, state.activeRide?.bikeId])
 
   // Redirect if no active ride
   useEffect(() => {
@@ -111,6 +155,16 @@ export default function ActiveRide() {
 
       {/* Extra Controls */}
       <div className="absolute bottom-28 right-6 flex flex-col gap-3 z-20">
+        
+        {/* Developer Tether Mode */}
+        <button 
+          onClick={() => setTetherEnabled(!tetherEnabled)}
+          className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all shadow-lg ${tetherEnabled ? 'bg-[#00FFA3] shadow-[0_0_15px_rgba(0,255,163,0.5)] scale-110' : 'glass-panel hover:bg-white/10'}`} 
+          title="Tether Bike to Phone (Dev)"
+        >
+          {tetherEnabled ? '🔗' : '📱'}
+        </button>
+
         <button className="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-xl hover:bg-white/10 transition-colors" title="Pause Ride">
           ⏸️
         </button>

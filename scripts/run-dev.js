@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const net = require('net');
 
 function checkPort(port, host = '127.0.0.1') {
@@ -25,30 +25,71 @@ function checkPort(port, host = '127.0.0.1') {
   });
 }
 
+/**
+ * Check Docker container health status using `docker inspect`.
+ * Returns 'healthy', 'starting', 'unhealthy', or 'none' (no healthcheck defined).
+ */
+function getContainerHealth(containerName) {
+  try {
+    const result = execSync(
+      `docker inspect --format "{{.State.Health.Status}}" ${containerName}`,
+      { encoding: 'utf-8', timeout: 5000, stdio: ['pipe', 'pipe', 'pipe'] }
+    ).trim();
+    return result || 'none';
+  } catch (err) {
+    return 'not_found';
+  }
+}
+
 async function waitForInfrastructure() {
-  const ports = [
-    { name: 'PostgreSQL', port: 5440 },
-    { name: 'Redis', port: 6380 },
-    { name: 'MQTT (EMQX)', port: 1883 },
-    { name: 'Kafka', port: 9092 }
+  // Containers that have Docker healthchecks defined
+  const healthCheckedContainers = [
+    { name: 'infra-postgres-1', label: 'PostgreSQL' },
+    { name: 'infra-redis-1', label: 'Redis' },
+    { name: 'infra-kafka-1', label: 'Kafka' },
+    { name: 'infra-emqx-1', label: 'MQTT (EMQX)' },
   ];
 
-  console.log('⏳ Checking database and message broker ports...');
+  console.log('⏳ Waiting for Docker containers to become healthy...');
+
+  const MAX_WAIT_SECONDS = 120;
+  const startTime = Date.now();
 
   while (true) {
-    let allReady = true;
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    if (elapsed > MAX_WAIT_SECONDS) {
+      console.error(`❌ Timed out after ${MAX_WAIT_SECONDS}s waiting for infrastructure. Exiting.`);
+      process.exit(1);
+    }
+
+    let allHealthy = true;
     const pending = [];
-    for (const service of ports) {
-      const ready = await checkPort(service.port);
-      if (!ready) {
-        allReady = false;
-        pending.push(service.name);
+
+    for (const container of healthCheckedContainers) {
+      const health = getContainerHealth(container.name);
+      if (health !== 'healthy') {
+        allHealthy = false;
+        pending.push(`${container.label}(${health})`);
       }
     }
 
-    if (allReady) {
-      console.log('🔌 Ports are open! Waiting 10 seconds for services to finish internal initialization...');
-      
+    if (allHealthy) {
+      console.log(`✅ [${elapsed}s] All Docker containers are healthy!`);
+      console.log('🔌 Waiting 5 seconds for final initialization...');
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      // Verify ports are accepting TCP connections
+      const portChecks = [
+        { name: 'PostgreSQL', port: 5440 },
+        { name: 'Redis', port: 6380 },
+        { name: 'MQTT (EMQX)', port: 1883 },
+        { name: 'Kafka', port: 9092 },
+      ];
+      for (const svc of portChecks) {
+        const ok = await checkPort(svc.port);
+        console.log(`  ${ok ? '✅' : '❌'} ${svc.name} :${svc.port}`);
+      }
+
       // Run database migrations
       console.log('🔄 Running database migrations...');
       try {
@@ -63,20 +104,19 @@ async function waitForInfrastructure() {
               resolve();
             } else {
               console.warn('⚠️  Migration warning (code: ' + code + ')');
-              resolve(); // Don't fail, migrations might not exist yet
+              resolve();
             }
           });
         });
       } catch (err) {
         console.warn('⚠️  Migration skipped:', err.message);
       }
-      await new Promise((resolve) => setTimeout(resolve, 10000));
-      console.log('✅ Infrastructure is ready!');
+      console.log('✅ Infrastructure is ready!\n');
       break;
     }
 
-    console.log(`⏳ Waiting for ports to open: ${pending.join(', ')}...`);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    console.log(`⏳ [${elapsed}s] Waiting: ${pending.join(', ')}`);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 }
 
@@ -89,7 +129,7 @@ dockerUp.on('close', async (code) => {
     process.exit(code);
   }
 
-  // Wait for Postgres, Redis, MQTT, and Kafka to start listening + 10s initialization buffer
+  // Wait for all containers to report healthy via Docker's native healthchecks
   await waitForInfrastructure();
 
   console.log('💻 Starting development servers...');
