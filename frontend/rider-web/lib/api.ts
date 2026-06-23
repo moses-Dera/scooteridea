@@ -49,13 +49,18 @@ function createApiClient(): AxiosInstance {
   client.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-      // If 401, redirect to login (session expired)
       if (error.response?.status === 401) {
         if (typeof window !== 'undefined') {
-          // Instead of a full page redirect, emit an event to open the login panel overlay
-          window.dispatchEvent(new CustomEvent('auth-required'));
+          let feature = 'your account';
+          const url = error.config?.url || '';
+          
+          if (url.includes('wallet') || url.includes('payment')) feature = 'your Wallet';
+          else if (url.includes('history') || url.includes('rides')) feature = 'your Ride History';
+          else if (url.includes('profile') || url.includes('auth/me')) feature = 'your Profile';
+
+          window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature } }));
         }
-        // Return a never-resolving promise to prevent UI from rendering the error while authenticating
+        // Return a never-resolving promise to prevent UI from rendering the error while redirecting
         return new Promise(() => {});
       }
 

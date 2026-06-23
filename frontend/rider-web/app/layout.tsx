@@ -10,7 +10,7 @@ import MenuPanel from '@/components/panels/MenuPanel'
 import ProfilePanel from '@/components/panels/ProfilePanel'
 import WalletPanel from '@/components/panels/WalletPanel'
 import HistoryPanel from '@/components/panels/HistoryPanel'
-import LoginPanel from '@/components/panels/LoginPanel'
+import LoginOverlay from '@/components/panels/LoginOverlay'
 
 import { AlertCircle } from 'lucide-react'
 
@@ -23,6 +23,12 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
   const [activePanel, setActivePanel] = useState<PanelType>(null);
+  const [authFeature, setAuthFeature] = useState<string | null>(null);
+
+  // Clear active panel on route change
+  useEffect(() => {
+    setActivePanel(null);
+  }, [pathname]);
 
   const togglePanel = useCallback((panel: PanelType) => {
     setActivePanel(prev => prev === panel ? null : panel);
@@ -36,16 +42,17 @@ export default function RootLayout({
     setActivePanel(panel);
   }, []);
 
-  // Listen for auth-required events to show login panel instead of redirecting
   useEffect(() => {
-    const handleAuthRequired = () => setActivePanel('login');
-    window.addEventListener('auth-required', handleAuthRequired);
-    return () => window.removeEventListener('auth-required', handleAuthRequired);
+    const handleAuthRequired = (e: CustomEvent<{ feature: string }>) => {
+      setAuthFeature(e.detail?.feature || null);
+      setActivePanel('login');
+    };
+    window.addEventListener('auth-required', handleAuthRequired as EventListener);
+    return () => window.removeEventListener('auth-required', handleAuthRequired as EventListener);
   }, []);
 
-  // Pages that need their own full layout (login, unlock flow, active ride, etc.)
-  const isFullScreenPage = pathname?.startsWith('/login') || 
-                           pathname?.startsWith('/ride/active') ||
+  // Pages that need their own full layout (unlock flow, active ride, etc.)
+  const isFullScreenPage = pathname?.startsWith('/ride/active') ||
                            pathname?.startsWith('/unlock');
 
   return (
@@ -67,12 +74,13 @@ export default function RootLayout({
           ) : (
             <>
               {/* 🗺️ Persistent Map Background */}
-              <div className="absolute inset-0 z-0">
+              <div className="absolute inset-0 z-0 pointer-events-auto">
                 <RiderMap />
               </div>
 
-              {/* Top Navbar - Premium Floating Glass Pill */}
-              <header className={`absolute top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 px-6 py-3 flex items-center justify-between bg-surfaceLight/40 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 ${activePanel ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+              {/* 📱 Main Floating Header Navigation (Hide when login overlay is active) */}
+              {activePanel !== 'login' && !pathname?.startsWith('/login') && !pathname?.startsWith('/register') && (
+                <header className={`absolute top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 px-6 py-3 flex items-center justify-between bg-surfaceLight/40 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 ${activePanel ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
                 
                 {/* Left: Menu & Profile */}
                 <div className="flex items-center gap-2 sm:gap-6">
@@ -124,9 +132,10 @@ export default function RootLayout({
                    </button>
                  </div>
               </header>
+              )}
 
               {/* Overlay Panels - slide up from bottom over the map */}
-              {activePanel && (
+              {activePanel && activePanel !== 'login' && (
                 <div className="absolute inset-0 z-40 flex flex-col justify-end pointer-events-none">
                   {/* Backdrop */}
                   <div 
@@ -144,7 +153,6 @@ export default function RootLayout({
                       {activePanel === 'profile' && <ProfilePanel onClose={closePanel} />}
                       {activePanel === 'wallet' && <WalletPanel onClose={closePanel} />}
                       {activePanel === 'history' && <HistoryPanel onClose={closePanel} />}
-                      {activePanel === 'login' && <LoginPanel onClose={closePanel} />}
                       {['docks', 'settings', 'help', 'safety', 'report'].includes(activePanel || '') && (
                         <div className="px-6 pb-6 text-center py-12">
                           <div className="flex justify-center mb-4"><AlertCircle className="w-12 h-12 text-slate-500" /></div>
@@ -157,14 +165,19 @@ export default function RootLayout({
                 </div>
               )}
 
-              {/* Page-specific overlays (bike details, etc.) */}
-              {pathname === '/' && (
-                <div className="absolute inset-0 z-30 pointer-events-none">
-                  <div className="pointer-events-auto">
-                    {children}
-                  </div>
+              {/* Full-screen Login Overlay */}
+              {activePanel === 'login' && (
+                <div className="absolute inset-0 z-50 pointer-events-auto animate-in fade-in duration-300">
+                  <LoginOverlay feature={authFeature} onClose={closePanel} />
                 </div>
               )}
+
+              {/* Page-specific overlays (bike details, etc.) */}
+              <div className="absolute inset-0 z-30 pointer-events-none">
+                <div className="pointer-events-auto h-full w-full">
+                  {children}
+                </div>
+              </div>
             </>
           )}
           

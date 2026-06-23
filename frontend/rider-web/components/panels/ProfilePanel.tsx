@@ -3,14 +3,31 @@
 import { Mail, Phone, Shield, LogOut } from 'lucide-react';
 import { useProfile } from '@/hooks';
 import { useAuthStore } from '@/store/authStore';
+import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
 
 interface ProfilePanelProps {
   onClose: () => void;
 }
 
 export default function ProfilePanel({ onClose }: ProfilePanelProps) {
+  const { status } = useSession();
   const { profile: user, loading, error } = useProfile();
   const logout = useAuthStore((state) => state.logout);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'your Profile' } }));
+    }
+  }, [status]);
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="px-6 py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00FFA3]"></div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

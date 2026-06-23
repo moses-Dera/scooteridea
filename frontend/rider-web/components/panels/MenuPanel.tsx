@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { BarChart, Settings, Shield, AlertTriangle, Wallet, MapPin, HelpCircle } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import { useEffect } from 'react';
 
 interface MenuPanelProps {
   onClose: () => void;
@@ -10,6 +11,22 @@ interface MenuPanelProps {
 }
 
 export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'the Menu' } }));
+    }
+  }, [status]);
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="px-6 py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00FFA3]"></div>
+      </div>
+    );
+  }
+
   const menuItems = [
     {
       title: 'Wallet',

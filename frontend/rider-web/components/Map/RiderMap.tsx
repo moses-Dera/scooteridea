@@ -14,10 +14,6 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
 
 export default function RiderMap() {
   const router = useRouter();
-  const { bikes: liveBikes } = useLiveFleet();
-  
-  // Use live socket bikes ONLY
-  const displayBikes = liveBikes;
 
   const [viewState, setViewState] = useState({
     latitude: 6.5244,
@@ -28,6 +24,14 @@ export default function RiderMap() {
 
   // Real user geolocation
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  const searchLat = userLocation?.lat || viewState.latitude;
+  const searchLng = userLocation?.lng || viewState.longitude;
+
+  const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng);
+  
+  // Use live socket bikes ONLY
+  const displayBikes = liveBikes;
 
   // Fetch real docks from Postgres based on view center!
   const { docks } = useNearbyDocks(userLocation?.lat || viewState.latitude, userLocation?.lng || viewState.longitude);

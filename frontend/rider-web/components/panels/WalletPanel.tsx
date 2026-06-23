@@ -1,7 +1,8 @@
 'use client';
 
 import { useWallet } from '@/hooks';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Bike, CreditCard } from 'lucide-react';
 
 interface WalletPanelProps {
@@ -9,9 +10,24 @@ interface WalletPanelProps {
 }
 
 export default function WalletPanel({ onClose }: WalletPanelProps) {
+  const { data: session, status } = useSession();
   const { balance, loading, error, refetch } = useWallet();
   const [topUpAmount, setTopUpAmount] = useState('');
   const [isTopping, setIsTopping] = useState(false);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'your Wallet' } }));
+    }
+  }, [status]);
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="px-6 py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00FFA3]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 pb-6">

@@ -1,15 +1,31 @@
 'use client';
 
 import { useRideHistory } from '@/hooks';
-
-import { Bike } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
+import { Bike, Clock, Navigation } from 'lucide-react';
 
 interface HistoryPanelProps {
   onClose: () => void;
 }
 
 export default function HistoryPanel({ onClose }: HistoryPanelProps) {
-  const { rides, loading, error } = useRideHistory();
+  const { status } = useSession();
+  const { rides, loading, error, hasMore, nextPage } = useRideHistory();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'your Ride History' } }));
+    }
+  }, [status]);
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="px-6 py-12 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00FFA3]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 pb-6">
