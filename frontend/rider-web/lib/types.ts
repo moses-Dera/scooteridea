@@ -138,6 +138,7 @@ export interface Ride {
   rating?: number;
   feedback?: string;
   dispute?: RideDispute;
+  bike?: any;
 }
 
 export interface RideDispute {

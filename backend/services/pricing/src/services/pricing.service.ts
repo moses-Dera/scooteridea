@@ -1,11 +1,20 @@
 import { getRedisClient, geoSearch } from '@ebike/redis';
 import Geohash from 'ngeohash';
-
-const BASE_FARE    = 50;   // NGN flat start
-const COST_PER_MIN = 20;   // NGN / min
-const COST_PER_KM  = 30;   // NGN / km
+import { prisma } from '@ebike/db';
 
 export class PricingService {
+  /** Helper to get global system configuration */
+  static async getConfig() {
+    let config = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
+    if (!config) {
+      config = await prisma.systemConfig.create({ data: { id: 'global' } });
+    }
+    return {
+      baseFare: config.unlockFeeCents / 100,
+      perMinute: config.perMinuteCents / 100,
+      perKm: config.perKmCents / 100,
+    };
+  }
   /**
    * Recalculate surge multipliers for all active demand cells.
    * Mirrors backend_architecture.md §3.5.
@@ -60,17 +69,18 @@ export class PricingService {
     surgeMult: number;
     estimatedFareCents: number;
   }> {
+    const config = await PricingService.getConfig();
     const surgeMult = await PricingService.getSurgeMultiplier(lat, lng);
     const estimatedFareCents = Math.round(
-      (BASE_FARE + COST_PER_MIN * estimatedDurationMin + COST_PER_KM * estimatedDistanceKm) *
+      (config.baseFare + config.perMinute * estimatedDurationMin + config.perKm * estimatedDistanceKm) *
         surgeMult *
         100,
     );
 
     return {
-      baseFare: BASE_FARE,
-      perMinute: COST_PER_MIN,
-      perKm: COST_PER_KM,
+      baseFare: config.baseFare,
+      perMinute: config.perMinute,
+      perKm: config.perKm,
       surgeMult,
       estimatedFareCents,
     };

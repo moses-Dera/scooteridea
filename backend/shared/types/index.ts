@@ -32,7 +32,8 @@ export type BikeCommand =
   | 'UNLOCK'
   | 'ALARM'
   | 'DISABLE'
-  | 'SPEED_LIMIT';
+  | 'SPEED_LIMIT'
+  | 'SET_PIN';
 
 export type UnlockMethod = 'remote' | 'qr' | 'nfc' | 'otp';
 
@@ -107,6 +108,7 @@ export interface BikeCommandPayload {
   rideId?: string;
   reason?: string;
   value?: number;   // for SPEED_LIMIT
+  pin?: string;     // for SET_PIN
   ts: number;
 }
 

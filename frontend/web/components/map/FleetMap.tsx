@@ -5,6 +5,8 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
 
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0.xxxxx';
+
 interface Bike {
   id: string;
   lat: number;
@@ -22,15 +24,13 @@ interface Dock {
   total_slots: number;
 }
 
-// Set mapbox token (use environment variable in production)
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0.xxxxx';
-
 export interface FleetMapProps {
   bikes?: Bike[];
   connected?: boolean;
   error?: string | null;
   selectedBikeId?: string | null;
   onSelectBikeId?: (id: string | null) => void;
+  historicalRoute?: {lat: number, lng: number}[];
 }
 
 export function FleetMapComponent({ 
@@ -38,7 +38,8 @@ export function FleetMapComponent({
   connected: externalConnected, 
   error: externalError, 
   selectedBikeId, 
-  onSelectBikeId 
+  onSelectBikeId,
+  historicalRoute
 }: FleetMapProps = {}) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -71,8 +72,8 @@ export function FleetMapComponent({
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
-        center: [3.37, 6.52], // Lagos, Nigeria
-        zoom: 12,
+        center: [0, 0], // Start at 0,0 temporarily
+        zoom: 2,
       });
 
       map.current.addControl(new mapboxgl.NavigationControl());
@@ -87,7 +88,32 @@ export function FleetMapComponent({
           });
           if (res.ok) {
             const data = await res.json();
-            setDocks(data.success && data.data ? data.data : Array.isArray(data) ? data : []);
+            const fetchedDocks = data.success && data.data ? data.data : Array.isArray(data) ? data : [];
+            setDocks(fetchedDocks);
+            
+            // Auto-center map on operator's primary dock
+            if (fetchedDocks.length > 0 && map.current) {
+              map.current.flyTo({
+                center: [fetchedDocks[0].lng, fetchedDocks[0].lat],
+                zoom: 14,
+                duration: 2000
+              });
+            } else if (map.current) {
+              // If NO docks, use the operator's real-world browser location
+              if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    map.current?.flyTo({
+                      center: [position.coords.longitude, position.coords.latitude],
+                      zoom: 14,
+                      duration: 2000
+                    });
+                  },
+                  (error) => console.warn('Geolocation blocked/failed:', error),
+                  { enableHighAccuracy: true }
+                );
+              }
+            }
           }
         } catch (err) {
           console.error('Failed to fetch docks:', err);
@@ -188,12 +214,22 @@ export function FleetMapComponent({
       }
       // Return to global view
       if (map.current) {
-        map.current.flyTo({
-          center: [3.37, 6.52], // Lagos center
-          zoom: 12,
-          duration: 1500,
-          essential: true
-        });
+        if (docks.length > 0) {
+          map.current.flyTo({
+            center: [docks[0].lng, docks[0].lat],
+            zoom: 13,
+            duration: 1500,
+            essential: true
+          });
+        } else {
+          const currentCenter = map.current.getCenter();
+          map.current.flyTo({
+            center: currentCenter,
+            zoom: 12,
+            duration: 1500,
+            essential: true
+          });
+        }
       }
       return;
     }
@@ -230,17 +266,53 @@ export function FleetMapComponent({
     }
 
     return () => clearInterval(interval);
-  }, [selectedBike]);
+  }, [selectedBike, docks]);
+
+  // Focus camera on historical route when it changes
+  useEffect(() => {
+    if (!map.current) return;
+    if (historicalRoute && historicalRoute.length > 0) {
+      map.current.flyTo({
+        center: [historicalRoute[0].lng, historicalRoute[0].lat],
+        zoom: 14,
+        duration: 1500,
+        essential: true
+      });
+    } else if (!selectedBikeId) {
+      // Return to global view if both are cleared
+      if (docks.length > 0 && map.current) {
+        map.current.flyTo({
+          center: [docks[0].lng, docks[0].lat],
+          zoom: 14,
+          duration: 1500,
+          essential: true
+        });
+      } else if (map.current) {
+        // Fall back to zooming out slightly from current center
+        const currentCenter = map.current.getCenter();
+        map.current.flyTo({
+          center: currentCenter,
+          zoom: 12,
+          duration: 1500,
+          essential: true
+        });
+      }
+    }
+  }, [historicalRoute, selectedBikeId, docks]);
 
   // Draw trail on map
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
+    const routeToDraw = historicalRoute && historicalRoute.length > 0 
+      ? historicalRoute 
+      : bikeTrail;
+
     const geojson: any = {
       type: 'Feature',
       geometry: {
         type: 'LineString',
-        coordinates: bikeTrail.map(p => [p.lng, p.lat])
+        coordinates: routeToDraw.map(p => [p.lng, p.lat])
       },
       properties: {}
     };

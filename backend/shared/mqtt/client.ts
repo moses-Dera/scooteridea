@@ -104,4 +104,7 @@ export const bikeCommander = {
 
   speedLimit: (bikeId: string, kmh: number) =>
     publishBikeCommand(bikeId, { command: 'SPEED_LIMIT', value: kmh }),
+    
+  setPin: (bikeId: string, pin: string) =>
+    publishBikeCommand(bikeId, { command: 'SET_PIN', pin }),
 };

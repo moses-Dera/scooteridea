@@ -58,6 +58,7 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
       setError(null)
 
       let rideId = state.activeRide?.id;
+      let actualPin = state.activeRide?.bike?.currentPin;
 
       // If no active ride exists, create one now!
       if (!rideId) {
@@ -65,18 +66,19 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
         const newRide = await ridesService.reserve(bikeId, 'dock-1');
         setActiveRide(newRide);
         rideId = newRide.id;
+        actualPin = newRide.bike?.currentPin;
       }
 
-      // Generate a secure 4-digit PIN pass
-      const pin = Math.floor(1000 + Math.random() * 9000).toString()
-      setUnlockPin(pin)
+      // Read the secure PIN from the backend, or fallback to a generated one if not populated yet
+      const pin = actualPin || Math.floor(1000 + Math.random() * 9000).toString();
+      setUnlockPin(pin);
 
       // Mark ride as started in backend
-      await ridesService.startRide(rideId!)
+      await ridesService.startRide(rideId!);
       
-      setStep('manual-pin')
-      setIsStarting(false)
-      setLoading(false)
+      setStep('manual-pin');
+      setIsStarting(false);
+      setLoading(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to start ride'
       setError(message)

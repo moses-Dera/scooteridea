@@ -1,18 +1,49 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FleetMapComponent } from '@/components/map/FleetMap';
 import { BikeCard } from '@/components/bikes/BikeCard';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
 
 export default function FleetMapPage() {
   const [showList, setShowList] = useState(false);
+  const [activeTab, setActiveTab] = useState<'live' | 'history'>('live');
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
+  const [historicalRoute, setHistoricalRoute] = useState<{lat: number, lng: number}[]>([]);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+
   const { bikes, connected, error } = useFleetSocket({});
 
   const handleSelectBike = (bikeId: string | null) => {
     setSelectedBikeId(bikeId);
+    setHistoricalRoute([]);
     if (bikeId) setShowList(false); // Auto-hide list when a bike is picked to see the map
+  };
+
+  const fetchHistory = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch(`${baseUrl}/api/proxy/rides/all-history`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setHistoryItems(data.data.items || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSelectHistory = (ride: any) => {
+    setSelectedBikeId(null);
+    if (ride.routeGeometry && ride.routeGeometry.length > 0) {
+      setHistoricalRoute(ride.routeGeometry);
+      setShowList(false);
+    } else {
+      alert('No GPS route data available for this ride.');
+    }
   };
 
   return (
@@ -35,7 +66,7 @@ export default function FleetMapPage() {
               onClick={() => setShowList(!showList)}
               className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg transition-all"
             >
-              {showList ? 'Hide List' : `Fleet List (${bikes.length})`}
+              {showList ? 'Hide Dashboard' : `Open Dashboard`}
             </button>
           </div>
         </div>
@@ -49,6 +80,7 @@ export default function FleetMapPage() {
           error={error} 
           selectedBikeId={selectedBikeId}
           onSelectBikeId={handleSelectBike}
+          historicalRoute={historicalRoute}
         />
 
         {/* Slide-over List Drawer */}
@@ -57,24 +89,77 @@ export default function FleetMapPage() {
             showList ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-          <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
-            <h2 className="text-lg font-bold text-white">Fleet Directory</h2>
-            <button onClick={() => setShowList(false)} className="text-slate-400 hover:text-white">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          <div className="p-4 border-b border-slate-700 bg-slate-800">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-bold text-white">Dashboard</h2>
+              <button onClick={() => setShowList(false)} className="text-slate-400 hover:text-white">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex bg-slate-900 rounded-lg p-1">
+              <button 
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md ${activeTab === 'live' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+                onClick={() => { setActiveTab('live'); setHistoricalRoute([]); }}
+              >
+                Live Fleet ({bikes.length})
+              </button>
+              <button 
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md ${activeTab === 'history' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+                onClick={() => { setActiveTab('history'); setSelectedBikeId(null); fetchHistory(); }}
+              >
+                Ride History
+              </button>
+            </div>
           </div>
+          
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {bikes.map((bike) => (
-              <div key={bike.id} onClick={() => handleSelectBike(bike.id)} className="cursor-pointer transition-transform hover:scale-[1.02]">
-                <BikeCard bike={bike} />
-              </div>
-            ))}
-            {bikes.length === 0 && (
-              <div className="text-center py-12 text-slate-400">
-                <p>No bikes available.</p>
-              </div>
+            {activeTab === 'live' ? (
+              <>
+                {bikes.map((bike) => (
+                  <div key={bike.id} onClick={() => handleSelectBike(bike.id)} className="cursor-pointer transition-transform hover:scale-[1.02]">
+                    <BikeCard bike={bike} />
+                  </div>
+                ))}
+                {bikes.length === 0 && (
+                  <div className="text-center py-12 text-slate-400">
+                    <p>No bikes available.</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {historyItems.map((ride) => (
+                  <div 
+                    key={ride.id} 
+                    onClick={() => handleSelectHistory(ride)} 
+                    className="cursor-pointer transition-transform hover:scale-[1.02] bg-slate-800 border border-slate-700 p-4 rounded-xl flex flex-col gap-2"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-400">RIDE • {ride.id.substring(0, 8)}</span>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${ride.status === 'COMPLETED' ? 'bg-green-900 text-green-300' : 'bg-blue-900 text-blue-300'}`}>
+                        {ride.status}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-lg font-bold text-white">₦{((ride.fareCents || 0)/100).toFixed(0)}</p>
+                        <p className="text-sm text-slate-400">{ride.distanceKm ? ride.distanceKm.toFixed(2) : 0} km</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-white">{new Date(ride.createdAt).toLocaleDateString()}</p>
+                        <p className="text-xs text-slate-400">{new Date(ride.createdAt).toLocaleTimeString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {historyItems.length === 0 && (
+                  <div className="text-center py-12 text-slate-400">
+                    <p>No history available.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

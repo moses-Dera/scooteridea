@@ -44,6 +44,15 @@ export class RideController {
     } catch (err) { next(err); }
   }
 
+  static async allHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const page     = Number(req.query.page)     || 1;
+      const pageSize = Number(req.query.pageSize) || 20;
+      const result   = await RideService.getAllHistory(page, pageSize);
+      res.json({ success: true, data: result });
+    } catch (err) { next(err); }
+  }
+
   static async dispute(req: Request, res: Response, next: NextFunction) {
     try {
       const { reason } = req.body;

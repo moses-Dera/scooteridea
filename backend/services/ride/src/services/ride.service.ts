@@ -20,9 +20,35 @@ import { kafka }          from '@ebike/events';
 import { bikeCommander }  from '@ebike/mqtt';
 import Geohash           from 'ngeohash';
 
-const BASE_FARE     = 50;    // NGN flat start
-const COST_PER_MIN  = 20;    // NGN / min
-const COST_PER_KM   = 30;    // NGN / km
+async function getConfig(bikeId?: string) {
+    let globalConfig = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
+    if (!globalConfig) {
+      globalConfig = await prisma.systemConfig.create({ data: { id: 'global' } });
+    }
+
+    let base = globalConfig.unlockFeeCents;
+    let min  = globalConfig.perMinuteCents;
+    let km   = globalConfig.perKmCents;
+
+    if (bikeId) {
+      // Resolve hierarchy: Dock > Geofence > Global
+      const bike = await prisma.bike.findUnique({
+        where: { id: bikeId },
+        include: { dock: true }
+      });
+      if (bike?.dock) {
+        if (bike.dock.baseFareOverride != null) base = bike.dock.baseFareOverride;
+        if (bike.dock.perMinuteOverride != null) min = bike.dock.perMinuteOverride;
+        if (bike.dock.perKmOverride != null) km = bike.dock.perKmOverride;
+      }
+    }
+
+    return {
+      baseFareCents: base,
+      perMinuteCents: min,
+      perKmCents: km,
+    };
+  }
 
 // ── Pure Haversine ────────────────────────────────────────────────────────────
 /** Returns great-circle distance in km between two coordinate pairs. */
@@ -64,9 +90,30 @@ export class RideService {
       throw new ConflictError('You already have an active ride', { userId });
     }
 
+    // Lock in the price for this ride at reservation time
+    const pricing = await getConfig(bikeId);
+
     const ride = await prisma.ride.create({
-      data: { userId, bikeId, status: 'RESERVED' },
+      data: { 
+        userId, 
+        bikeId, 
+        status: 'RESERVED',
+        lockedBaseFareCents: pricing.baseFareCents,
+        lockedPerMinCents: pricing.perMinuteCents,
+        lockedPerKmCents: pricing.perKmCents,
+      },
+      include: { bike: true }
     });
+
+    // If the bike doesn't have a PIN yet, generate one now
+    if (!ride.bike.currentPin) {
+      const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+      await prisma.bike.update({
+        where: { id: bikeId },
+        data: { currentPin: newPin }
+      });
+      ride.bike.currentPin = newPin;
+    }
 
     logger.info({ rideId: ride.id, bikeId, userId }, '[Ride] Reserved');
     return ride;
@@ -151,16 +198,33 @@ export class RideService {
       batteryUsedPct = Math.max(0, ride.batteryStartPct - endBatteryPct);
     }
 
+    const config = await getConfig();
+    const baseFare = (ride.lockedBaseFareCents ?? config.baseFareCents) / 100;
+    const perMinute = (ride.lockedPerMinCents ?? config.perMinuteCents) / 100;
+    const perKm = (ride.lockedPerKmCents ?? config.perKmCents) / 100;
+
     const fareCents = Math.max(
-      50 * 100,  // minimum fare: ₦50
+      Math.round(baseFare * 100),  // minimum fare is base fare
       Math.round(
-        (BASE_FARE + COST_PER_MIN * durationMin + COST_PER_KM * distanceKm) * surgeMult * 100,
+        (baseFare + perMinute * durationMin + perKm * distanceKm) * surgeMult * 100,
       ),
     );
 
-    // Lock the bike (best-effort, don't fail ride-end if MQTT is down)
+    // ── Generate Rolling PIN ────────────────────────────────────────────────
+    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+
+    // Update Bike with new PIN
+    await prisma.bike.update({
+      where: { id: ride.bikeId },
+      data: { currentPin: newPin }
+    });
+
+    // Lock the bike and update PIN on hardware (best-effort, don't fail ride-end if MQTT is down)
     bikeCommander.lock(ride.bikeId).catch((err) =>
       logger.warn({ err, bikeId: ride.bikeId }, '[Ride] MQTT lock command failed — bike may need manual lock'),
+    );
+    bikeCommander.setPin(ride.bikeId, newPin).catch((err: any) =>
+      logger.warn({ err, bikeId: ride.bikeId }, '[Ride] MQTT set_pin command failed — bike PIN not rolled on hardware'),
     );
 
     await prisma.ride.update({
@@ -223,6 +287,19 @@ export class RideService {
         take:    pageSize,
       }),
       prisma.ride.count({ where: { userId } }),
+    ]);
+    return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  }
+
+  static async getAllHistory(page = 1, pageSize = 20) {
+    const skip = (page - 1) * pageSize;
+    const [items, total] = await prisma.$transaction([
+      prisma.ride.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take:    pageSize,
+      }),
+      prisma.ride.count(),
     ]);
     return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }

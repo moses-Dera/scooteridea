@@ -41,6 +41,7 @@ model Bike {
   id         String     @id
   status     BikeStatus @default(available)
   batteryPct Int        @map("battery_pct")
+  currentPin String?    @map("current_pin") // 4-digit rolling PIN for hardware keypad access
   locationLat Float?    @map("location_lat")
   locationLng Float?    @map("location_lng")
   dockId     String?    @map("dock_id")
@@ -70,6 +71,11 @@ model Dock {
   totalSlots     Int    @default(0) @map("total_slots")
   availableSlots Int    @default(0) @map("available_slots")
 
+  // Pricing overrides for this dock
+  baseFareOverride  Int? @map("base_fare_override")
+  perMinuteOverride Int? @map("per_minute_override")
+  perKmOverride     Int? @map("per_km_override")
+
   bikes      Bike[]
   startRides Ride[] @relation("StartDock")
   endRides   Ride[] @relation("EndDock")
@@ -96,7 +102,13 @@ model Ride {
   batteryStartPct Int?       @map("battery_start_pct")
   batteryUsedPct  Int?       @map("battery_used_pct") // Added for battery efficiency tracking
   routeGeometry   Json?      @map("route_geometry")   // Added to permanently save ride trails
-  surgeMult     Decimal    @default(1.0) @map("surge_mult") @db.Decimal(3, 2)
+  surgeMult       Decimal    @default(1.0) @map("surge_mult") @db.Decimal(3, 2)
+  
+  // Locked pricing (prevents mid-ride pricing glitches if admin updates config)
+  lockedBaseFareCents   Int? @map("locked_base_fare_cents")
+  lockedPerMinCents     Int? @map("locked_per_min_cents")
+  lockedPerKmCents      Int? @map("locked_per_km_cents")
+
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
 
   user      User      @relation(fields: [userId], references: [id])
@@ -150,6 +162,11 @@ model Geofence {
   // Boundary stored as raw GeoJSON polygon string; index via PostGIS raw SQL
   boundary Json
 
+  // Pricing overrides for this region
+  baseFareOverride  Int? @map("base_fare_override")
+  perMinuteOverride Int? @map("per_minute_override")
+  perKmOverride     Int? @map("per_km_override")
+
   operators User[] @relation("UserAssignedZones")
   zoneTransitions ZoneTransition[]
 
@@ -187,8 +204,9 @@ enum TransitionType {
 // ── System Configuration ───────────────────────────────────────────────────────
 model SystemConfig {
   id                String   @id @default("global") // Single row pattern
-  unlockFeeCents    Int      @default(10000) @map("unlock_fee_cents")
+  unlockFeeCents    Int      @default(5000) @map("unlock_fee_cents")
   perMinuteCents    Int      @default(2000) @map("per_minute_cents")
+  perKmCents        Int      @default(3000) @map("per_km_cents")
   maxSurgeMult      Decimal  @default(2.5) @map("max_surge_mult") @db.Decimal(3, 2)
   outOfDockFeeCents Int      @default(50000) @map("out_of_dock_fee_cents")
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
