@@ -39,7 +39,5 @@ export const config = {
     '/history/:path*',
     '/settings/:path*',
     '/ride/:path*',
-    '/unlock/:path*',
-    '/bike/:path*',
   ],
 };
