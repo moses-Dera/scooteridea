@@ -11,7 +11,7 @@ export async function GET(
 ) {
   const session = await getServerSession()
   const targetPath = '/' + (params.path || []).join('/')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}`
   
   const headers: HeadersInit = {}
   
@@ -39,7 +39,7 @@ export async function POST(
 ) {
   const session = await getServerSession()
   const targetPath = '/' + (params.path || []).join('/')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}`
   
   const headers: HeadersInit = { 'Content-Type': 'application/json' }
   
@@ -69,7 +69,7 @@ export async function PUT(
 ) {
   const session = await getServerSession()
   const targetPath = '/' + (params.path || []).join('/')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}`
   
   const headers: HeadersInit = { 'Content-Type': 'application/json' }
   
@@ -99,7 +99,7 @@ export async function DELETE(
 ) {
   const session = await getServerSession()
   const targetPath = '/' + (params.path || []).join('/')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}`
   
   const headers: HeadersInit = {}
   

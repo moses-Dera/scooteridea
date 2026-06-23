@@ -54,6 +54,8 @@ services:
       - '80:80'       # single public ingress point
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
       - fleet-service

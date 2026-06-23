@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   
   // Extract the path after /api/proxy
   const targetPath = pathname.replace('/api/proxy', '')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}${search}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${search}`
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   const { pathname, search } = new URL(req.url)
   
   const targetPath = pathname.replace('/api/proxy', '')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}${search}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${search}`
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export async function PUT(req: NextRequest) {
   const { pathname, search } = new URL(req.url)
   
   const targetPath = pathname.replace('/api/proxy', '')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}${search}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${search}`
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ export async function DELETE(req: NextRequest) {
   const { pathname, search } = new URL(req.url)
   
   const targetPath = pathname.replace('/api/proxy', '')
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${targetPath}${search}`
+  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${search}`
   
   const headers: HeadersInit = {}
   

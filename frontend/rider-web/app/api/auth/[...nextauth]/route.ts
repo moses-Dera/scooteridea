@@ -22,7 +22,7 @@ const handler = NextAuth({
           }
           
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/login`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/login`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -90,7 +90,7 @@ const handler = NextAuth({
         try {
           // Exchange Google token for backend JWT via BFF
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/google`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/google`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
