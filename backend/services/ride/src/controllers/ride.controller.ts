@@ -5,7 +5,7 @@ export class RideController {
   static async reserve(req: Request, res: Response, next: NextFunction) {
     try {
       const { bikeId } = req.body;
-      const userId = req.headers['x-user-id'] as string; // populated by gateway
+      const userId = req.user!.sub; // secure, pulled directly from cryptographically verified JWT
       const ride = await RideService.reserve(bikeId, userId);
       res.status(201).json({ success: true, data: ride });
     } catch (err) { next(err); }
@@ -13,7 +13,7 @@ export class RideController {
 
   static async start(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.headers['x-user-id'] as string;
+      const userId = req.user!.sub;
       await RideService.startRide(req.params.id, userId);
       res.json({ success: true, message: 'Ride started' });
     } catch (err) { next(err); }
@@ -36,7 +36,7 @@ export class RideController {
 
   static async history(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId   = req.headers['x-user-id'] as string;
+      const userId   = req.user!.sub;
       const page     = Number(req.query.page)     || 1;
       const pageSize = Number(req.query.pageSize) || 20;
       const result   = await RideService.getHistory(userId, page, pageSize);

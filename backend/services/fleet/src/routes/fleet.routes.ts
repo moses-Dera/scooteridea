@@ -149,7 +149,7 @@ fleetRouter.get('/docks', jwtGuard, async (req: Request, res: Response) => {
 });
 
 // GET /fleet/alerts — system alerts
-fleetRouter.get('/alerts', async (req, res) => {
+fleetRouter.get('/alerts', jwtGuard, requireRole('OPERATOR', 'ADMIN'), async (req, res) => {
   try {
     const limit = Number(req.query.limit) || 10;
     // Get alerts from Redis or database
@@ -161,7 +161,7 @@ fleetRouter.get('/alerts', async (req, res) => {
 });
 
 // GET /fleet/maintenance — maintenance issues
-fleetRouter.get('/maintenance', async (req, res) => {
+fleetRouter.get('/maintenance', jwtGuard, requireRole('OPERATOR', 'ADMIN'), async (req, res) => {
   try {
     const status = req.query.status as string || 'open';
     const maintenance = await FleetService.getMaintenance(status);
@@ -172,7 +172,7 @@ fleetRouter.get('/maintenance', async (req, res) => {
 });
 
 // POST /fleet/bikes/:id/command — remote operator command
-fleetRouter.post('/bikes/:id/command', async (req: Request, res: Response) => {
+fleetRouter.post('/bikes/:id/command', jwtGuard, requireRole('OPERATOR', 'ADMIN'), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { command, value, reason, rideId } = req.body;
 

@@ -1,17 +1,21 @@
 import { Router } from 'express';
+import { jwtGuard, requireRole } from '@ebike/core';
 import { RideController } from '../controllers/ride.controller';
 
 export const rideRouter = Router();
 
+// Apply jwtGuard to all ride routes
+rideRouter.use(jwtGuard);
+
 rideRouter.post('/',             RideController.reserve);
 rideRouter.post('/:id/start',   RideController.start);
 rideRouter.post('/:id/end',     RideController.end);
-rideRouter.get('/all-history',  RideController.allHistory);
 rideRouter.get('/history',      RideController.history);
 rideRouter.get('/:id',          RideController.getById);
 rideRouter.post('/:id/dispute', RideController.dispute);
 
-// Analytics endpoints
-rideRouter.get('/riders/top', RideController.getTopRiders);
-rideRouter.get('/analytics', RideController.getAnalytics);
+// Admin / Operator only
+rideRouter.get('/all-history', requireRole('ADMIN', 'OPERATOR'), RideController.allHistory);
+rideRouter.get('/riders/top', requireRole('ADMIN', 'OPERATOR'), RideController.getTopRiders);
+rideRouter.get('/analytics', requireRole('ADMIN', 'OPERATOR'), RideController.getAnalytics);
 

@@ -59,8 +59,17 @@ wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
     try {
       const msg = JSON.parse(raw.toString()) as WsSubscribeMessage;
       if (Array.isArray(msg.subscribe)) {
-        msg.subscribe.forEach((ch: string) => state.subscriptions.add(ch));
-        logger.debug({ userId: payload.sub, channels: msg.subscribe }, '[WS Hub] Subscribed');
+        msg.subscribe.forEach((ch: string) => {
+          // Security: Block riders from subscribing to mass location feeds
+          if (ch === 'fleet:all' || ch.startsWith('zone:')) {
+            if (payload.role !== 'OPERATOR' && payload.role !== 'ADMIN') {
+              logger.warn({ userId: payload.sub, role: payload.role, channel: ch }, '[WS Hub] Unauthorized subscription blocked');
+              return; // Reject silently
+            }
+          }
+          state.subscriptions.add(ch);
+        });
+        logger.debug({ userId: payload.sub, channels: Array.from(state.subscriptions) }, '[WS Hub] Subscribed');
       }
     } catch { /* ignore malformed messages */ }
   });
