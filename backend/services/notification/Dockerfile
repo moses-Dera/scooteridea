@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json turbo.json ./
 COPY backend/shared/types/package.json              ./backend/shared/types/
 COPY backend/shared/core/package.json               ./backend/shared/core/
-COPY backend/shared/kafka/package.json              ./backend/shared/kafka/
+COPY backend/shared/events/package.json             ./backend/shared/events/
 COPY backend/shared/redis/package.json              ./backend/shared/redis/
 COPY backend/services/notification/package.json     ./backend/services/notification/
 
@@ -16,7 +16,7 @@ COPY backend/services/notification ./backend/services/notification
 
 RUN npm run build --workspace=@ebike/types
 RUN npm run build --workspace=@ebike/core
-RUN npm run build --workspace=@ebike/kafka
+RUN npm run build --workspace=@ebike/events
 RUN npm run build --workspace=@ebike/redis
 RUN npm run build --workspace=@ebike/notification-service
 

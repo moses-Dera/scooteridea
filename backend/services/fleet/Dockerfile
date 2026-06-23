@@ -6,7 +6,7 @@ COPY package.json package-lock.json turbo.json ./
 COPY backend/shared/types/package.json       ./backend/shared/types/
 COPY backend/shared/core/package.json        ./backend/shared/core/
 COPY backend/shared/redis/package.json       ./backend/shared/redis/
-COPY backend/shared/kafka/package.json       ./backend/shared/kafka/
+COPY backend/shared/events/package.json      ./backend/shared/events/
 COPY backend/shared/mqtt/package.json        ./backend/shared/mqtt/
 COPY backend/shared/db/package.json          ./backend/shared/db/
 COPY backend/services/fleet/package.json     ./backend/services/fleet/
@@ -19,7 +19,7 @@ COPY backend/services/fleet ./backend/services/fleet
 RUN npm run build --workspace=@ebike/types
 RUN npm run build --workspace=@ebike/core
 RUN npm run build --workspace=@ebike/redis
-RUN npm run build --workspace=@ebike/kafka
+RUN npm run build --workspace=@ebike/events
 RUN npm run build --workspace=@ebike/mqtt
 RUN npm run db:generate --workspace=@ebike/db
 RUN npm run build --workspace=@ebike/db

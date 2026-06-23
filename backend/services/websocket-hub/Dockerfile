@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json turbo.json ./
 COPY backend/shared/types/package.json               ./backend/shared/types/
-COPY backend/shared/kafka/package.json               ./backend/shared/kafka/
+COPY backend/shared/events/package.json              ./backend/shared/events/
 COPY backend/shared/core/package.json                ./backend/shared/core/
 COPY backend/services/websocket-hub/package.json     ./backend/services/websocket-hub/
 
@@ -15,7 +15,7 @@ COPY backend/services/websocket-hub ./backend/services/websocket-hub
 
 RUN npm run build --workspace=@ebike/types
 RUN npm run build --workspace=@ebike/core
-RUN npm run build --workspace=@ebike/kafka
+RUN npm run build --workspace=@ebike/events
 RUN npm run build --workspace=@ebike/websocket-hub
 
 # ── Runtime image ─────────────────────────────────────────────────────────────
