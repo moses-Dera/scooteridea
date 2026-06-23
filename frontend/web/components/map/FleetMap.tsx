@@ -159,6 +159,15 @@ export function FleetMapComponent() {
           features: []
         });
       }
+      // Return to global view
+      if (map.current) {
+        map.current.flyTo({
+          center: [3.37, 6.52], // Lagos center
+          zoom: 12,
+          duration: 1500,
+          essential: true
+        });
+      }
       return;
     }
 
@@ -182,6 +191,17 @@ export function FleetMapComponent() {
     
     fetchTrail();
     const interval = setInterval(fetchTrail, 5000);
+
+    // Focus camera on the bike
+    if (map.current) {
+      map.current.flyTo({
+        center: [selectedBike.lng, selectedBike.lat],
+        zoom: 16,
+        duration: 1500, // 1.5 second smooth flight
+        essential: true
+      });
+    }
+
     return () => clearInterval(interval);
   }, [selectedBike]);
 
