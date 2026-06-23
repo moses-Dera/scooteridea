@@ -16,22 +16,27 @@ interface UnlockModalProps {
 export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
   const [step, setStep] = useState<UnlockStep>('confirm')
   const router = useRouter()
-  const { state, setLoading, setError } = useRide()
+  const { state, setActiveRide, setLoading, setError } = useRide()
   const [isStarting, setIsStarting] = useState(false)
   const [unlockPin, setUnlockPin] = useState<string>('')
 
   const handleStartRide = async () => {
-    if (!state.activeRide) {
-      setError('No active reservation found')
-      return
-    }
-
     try {
       setIsStarting(true)
       setLoading(true)
       setError(null)
 
-      await ridesService.startRide(state.activeRide.id)
+      let rideId = state.activeRide?.id;
+
+      // If no active ride exists, create one now!
+      if (!rideId) {
+        // Defaulting to 'dock-1' for free-floating mock
+        const newRide = await ridesService.reserve(bikeId, 'dock-1');
+        setActiveRide(newRide);
+        rideId = newRide.id;
+      }
+
+      await ridesService.startRide(rideId!)
       setStep('done')
 
       // Navigate after a short delay to show the success screen
@@ -47,22 +52,27 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
   }
 
   const handleStartManualPin = async () => {
-    if (!state.activeRide) {
-      setError('No active reservation found')
-      return
-    }
-
     try {
       setIsStarting(true)
       setLoading(true)
       setError(null)
+
+      let rideId = state.activeRide?.id;
+
+      // If no active ride exists, create one now!
+      if (!rideId) {
+        // Defaulting to 'dock-1' for free-floating mock
+        const newRide = await ridesService.reserve(bikeId, 'dock-1');
+        setActiveRide(newRide);
+        rideId = newRide.id;
+      }
 
       // Generate a secure 4-digit PIN pass
       const pin = Math.floor(1000 + Math.random() * 9000).toString()
       setUnlockPin(pin)
 
       // Mark ride as started in backend
-      await ridesService.startRide(state.activeRide.id)
+      await ridesService.startRide(rideId!)
       
       setStep('manual-pin')
       setIsStarting(false)

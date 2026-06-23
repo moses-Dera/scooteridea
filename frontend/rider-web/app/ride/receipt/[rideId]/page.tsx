@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ridesService } from '@/lib/ridesService'
 import { useRide } from '@/context/RideContext'
 import { Ride } from '@/lib/types'
+import { Camera, CheckCircle, AlertTriangle } from 'lucide-react'
 
 export default function RideReceipt({ params }: { params: { rideId: string } }) {
   const router = useRouter()
@@ -46,7 +47,9 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
     return (
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-6">
         <div className="max-w-md w-full bg-surfaceLight border border-white/10 rounded-3xl p-8 text-center">
-          <div className="text-6xl mb-4">⚠️</div>
+          <div className="flex justify-center mb-4 text-warning">
+            <AlertTriangle className="w-16 h-16" />
+          </div>
           <h2 className="text-2xl font-bold mb-2 text-white">Error</h2>
           <p className="text-slate-400 mb-6">{error || 'Could not load receipt'}</p>
           <Link
@@ -70,7 +73,7 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
         {/* Success Header */}
         <div className="text-center mb-8 mt-8">
           <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary shadow-glow-primary mx-auto mb-6 relative">
-            <span className="text-5xl">✓</span>
+            <CheckCircle className="w-12 h-12 text-primary" />
             <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20"></div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Ride Complete!</h1>
