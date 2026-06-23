@@ -53,12 +53,14 @@ export function FleetMapComponent() {
       // Fetch docks
       const fetchDocks = async () => {
         try {
-          const res = await fetch('http://localhost:3009/docks', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || 'demo-token'}` },
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          const token = localStorage.getItem('token') || '';
+          const res = await fetch(`${baseUrl}/api/proxy/fleet/docks`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
           });
           if (res.ok) {
             const data = await res.json();
-            setDocks(Array.isArray(data) ? data : data.data || []);
+            setDocks(data.success && data.data ? data.data : Array.isArray(data) ? data : []);
           }
         } catch (err) {
           console.error('Failed to fetch docks:', err);

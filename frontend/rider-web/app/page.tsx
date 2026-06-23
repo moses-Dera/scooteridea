@@ -2,15 +2,8 @@
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useLiveFleet } from '@/hooks/useLiveFleet'
-import { mockDocks } from '@/components/Map/RiderMap'
+import { useNearbyDocks } from '@/hooks/useNearbyDocks'
 import { UnlockModal } from '@/components/UnlockModal'
-
-// Same fallback as RiderMap just in case WS is down
-const fallbackBikes = [
-  { id: 'BK-892', lat: 6.5244, lng: 3.3792, battery: 85, surge: 1.2 },
-  { id: 'BK-104', lat: 6.5260, lng: 3.3770, battery: 42, surge: 1.0 },
-  { id: 'BK-553', lat: 6.5220, lng: 3.3810, battery: 95, surge: 1.0 },
-];
 
 export default function RiderHome() {
   const searchParams = useSearchParams();
@@ -20,10 +13,12 @@ export default function RiderHome() {
   const action = searchParams.get('action');
   
   const { bikes: liveBikes } = useLiveFleet();
-  const displayBikes = liveBikes.length > 0 ? liveBikes : fallbackBikes;
+  const { docks } = useNearbyDocks(6.5244, 3.3792); // Base city coords
+  
+  const displayBikes = liveBikes;
   
   const selectedBike = bikeId ? displayBikes.find(b => b.id === bikeId) : null;
-  const selectedDock = dockId ? mockDocks.find(d => d.id === dockId) : null;
+  const selectedDock = dockId ? docks.find(d => d.id === dockId) : null;
 
   // Don't show anything if neither bike nor dock is selected
   if (!selectedBike && !selectedDock) return <></>;

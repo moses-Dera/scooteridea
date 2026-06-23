@@ -21,10 +21,12 @@ model User {
   pushToken    String?  @map("push_token")   // Expo push token — set by client on login
   role         Role     @default(RIDER)
   walletCents  Int      @default(0) @map("wallet_cents")
+  assignedZoneId String?  @map("assigned_zone_id") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  rides    Ride[]
-  payments Payment[]
+  rides        Ride[]
+  payments     Payment[]
+  assignedZone Geofence? @relation(fields: [assignedZoneId], references: [id])
 
   @@map("users")
 }
@@ -146,6 +148,8 @@ model Geofence {
   // Boundary stored as raw GeoJSON polygon string; index via PostGIS raw SQL
   boundary Json
 
+  operators User[]
+
   @@map("geofences")
 }
 
@@ -154,4 +158,16 @@ enum ZoneType {
   slow
   no_ride
   dock
+}
+
+// ── System Configuration ───────────────────────────────────────────────────────
+model SystemConfig {
+  id                String   @id @default("global") // Single row pattern
+  unlockFeeCents    Int      @default(10000) @map("unlock_fee_cents")
+  perMinuteCents    Int      @default(2000) @map("per_minute_cents")
+  maxSurgeMult      Decimal  @default(2.5) @map("max_surge_mult") @db.Decimal(3, 2)
+  outOfDockFeeCents Int      @default(50000) @map("out_of_dock_fee_cents")
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("system_config")
 }

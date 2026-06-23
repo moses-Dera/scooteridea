@@ -29,15 +29,16 @@ export function DockGridComponent() {
   useEffect(() => {
     const fetchDocks = async () => {
       try {
-        const token = localStorage.getItem('token') || 'demo-token';
-        const res = await fetch('http://localhost:3009/docks', {
-          headers: { 'Authorization': `Bearer ${token}` },
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch(`${baseUrl}/api/proxy/fleet/docks`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         });
 
         if (!res.ok) throw new Error(`Failed to fetch docks: ${res.statusText}`);
 
         const data = await res.json();
-        setDocks(Array.isArray(data) ? data : data.data || []);
+        setDocks(data.success && data.data ? data.data : Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch docks');
       } finally {

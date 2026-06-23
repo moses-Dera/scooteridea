@@ -33,6 +33,35 @@ fleetRouter.get('/nearby', async (req, res) => {
   }
 });
 
+// GET /fleet/docks/nearby — Find matching docks for the rider using PostGIS
+fleetRouter.get('/docks/nearby', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const radius = Number(req.query.radius) || 5; // Default 5km radius for docks
+
+    if (isNaN(lat) || isNaN(lng)) {
+      res.status(400).json({ success: false, error: 'Missing lat/lng parameters' });
+      return;
+    }
+
+    const docks = await FleetService.getNearbyDocks(lat, lng, radius);
+    res.json({ success: true, data: docks });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to find nearby docks' });
+  }
+});
+
+// GET /fleet/docks — Find all docks for Operator Dashboard
+fleetRouter.get('/docks', async (req, res) => {
+  try {
+    const docks = await FleetService.getAllDocks();
+    res.json({ success: true, data: docks });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch docks' });
+  }
+});
+
 // GET /fleet/alerts — system alerts
 fleetRouter.get('/alerts', async (req, res) => {
   try {

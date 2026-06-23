@@ -44,16 +44,8 @@ export default function DashboardOverview() {
   const [maintenance, setMaintenance] = useState<MaintenanceIssue[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data for the utilization chart
-  const chartData = [
-    { time: '08:00', active: 12, available: 45 },
-    { time: '10:00', active: 28, available: 30 },
-    { time: '12:00', active: 45, available: 15 },
-    { time: '14:00', active: 38, available: 22 },
-    { time: '16:00', active: 52, available: 8 },
-    { time: '18:00', active: 65, available: 5 },
-    { time: '20:00', active: 30, available: 35 },
-  ];
+  // Real data for chart will require analytics service
+  const chartData: any[] = [];
 
   useEffect(() => {
     // Fetch all data

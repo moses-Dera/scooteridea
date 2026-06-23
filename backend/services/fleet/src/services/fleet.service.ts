@@ -158,6 +158,73 @@ export class FleetService {
     return availableBikes;
   }
 
+  /** Find nearby docks using PostGIS from Postgres database */
+  static async getNearbyDocks(lat: number, lng: number, radiusKm: number = 5) {
+    // We use ST_DWithin on the raw coordinates. 
+    // radiusKm * 1000 converts km to meters which ST_DWithin expects for geography.
+    const docks = await prisma.$queryRaw<
+      { id: string; name: string; available_slots: number; distance: number; lat: number; lng: number }[]
+    >`
+      SELECT 
+        id, 
+        name, 
+        available_slots, 
+        location_lat as lat,
+        location_lng as lng,
+        ST_Distance(
+          ST_SetSRID(ST_MakePoint(location_lng, location_lat), 4326)::geography,
+          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+        ) / 1000.0 AS distance
+      FROM docks
+      WHERE ST_DWithin(
+        ST_SetSRID(ST_MakePoint(location_lng, location_lat), 4326)::geography,
+        ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+        ${radiusKm * 1000}
+      )
+      ORDER BY distance ASC
+    `;
+    
+    return docks.map(d => ({
+      id: d.id,
+      name: d.name,
+      availableSlots: d.available_slots,
+      lat: d.lat,
+      lng: d.lng,
+      distanceKm: Number(d.distance).toFixed(2)
+    }));
+  }
+
+  /** Get all docks from Postgres (with their connected bikes if needed) */
+  static async getAllDocks() {
+    const docks = await prisma.dock.findMany({
+      include: {
+        bikes: {
+          select: { id: true, status: true, batteryPct: true }
+        }
+      }
+    });
+
+    return docks.map(d => ({
+      id: d.id,
+      name: d.name,
+      location: `${d.locationLat.toFixed(4)}, ${d.locationLng.toFixed(4)}`,
+      lat: d.locationLat,
+      lng: d.locationLng,
+      total_slots: d.totalSlots,
+      available_slots: d.availableSlots,
+      // Map bikes into "slots" so the UI grid works seamlessly
+      slots: Array.from({ length: d.totalSlots }).map((_, i) => {
+        const bike = d.bikes[i];
+        return {
+          id: `${d.id}-s${i+1}`,
+          bike_id: bike?.id || null,
+          charging: !!bike && bike.batteryPct < 90, // mock charging status
+          available: !bike
+        };
+      })
+    }));
+  }
+
   /** Get recent system alerts (stored in Redis as a list) */
   static async getAlerts(limit: number = 10) {
     try {

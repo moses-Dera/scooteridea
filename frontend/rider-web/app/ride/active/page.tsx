@@ -7,6 +7,7 @@ import RiderMap from '@/components/Map/RiderMap'
 import { RideTimer } from '@/components/rides/RideTimer'
 import { useRide } from '@/context/RideContext'
 import { useLiveFleet } from '@/hooks/useLiveFleet'
+import { useNearbyDocks } from '@/hooks/useNearbyDocks'
 import { ridesService } from '@/lib/ridesService'
 import { CheckCircle, Navigation, Pause, AlertTriangle, Link2, Smartphone, Bike, X } from 'lucide-react'
 
@@ -20,6 +21,11 @@ export default function ActiveRide() {
   const [tetherEnabled, setTetherEnabled] = useState(false)
   const [endStep, setEndStep] = useState<EndRideStep>('idle')
   const watchIdRef = useRef<number | null>(null)
+  
+  // Find the live bike to use its coordinates for dock searching
+  const liveBike = state.activeRide?.bikeId ? bikes.find(b => b.id === state.activeRide?.bikeId) : null;
+  const { docks } = useNearbyDocks(liveBike?.lat || 6.5244, liveBike?.lng || 3.3792);
+  const nearestDock = docks.length > 0 ? docks[0] : null;
 
   // Developer Feature: Tether Bike to Phone's GPS
   useEffect(() => {
@@ -82,8 +88,8 @@ export default function ActiveRide() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            // End ride with current location (for demo, using first dock)
-            const endDockId = 'dock-002' // Should be selected by user
+            // End ride using the nearest dock found by PostGIS!
+            const endDockId = nearestDock?.id || 'dock-002' 
             await ridesService.endRide(
               state.activeRide!.id,
               endDockId,
@@ -132,19 +138,29 @@ export default function ActiveRide() {
       </div>
 
       {/* 🧭 Top-Right: Nearest Dock Navigation */}
-      {state.nearestDock && (
-        <div className="absolute top-24 xl:top-8 right-6 glass-panel rounded-2xl p-4 flex flex-col gap-2 z-20 w-[240px]">
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-xs font-bold text-slate-400 uppercase">Nearest Dock</div>
-            <div className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-md font-bold">Free slots</div>
+      <div className="flex flex-col items-end gap-2 absolute top-24 xl:top-8 right-6 z-20">
+        {nearestDock && (
+          <div className="glass-panel rounded-2xl p-4 flex flex-col gap-2 w-[240px]">
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-xs font-bold text-slate-400 uppercase">Nearest Dock</div>
+              <div className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-md font-bold">{nearestDock.availableSlots} slots</div>
+            </div>
+            <div className="font-semibold text-white truncate text-base md:text-lg">{nearestDock.name}</div>
+            <div className="text-slate-400 text-sm">{nearestDock.distanceKm} km away</div>
+            <button className="mt-2 w-full h-10 bg-white/10 hover:bg-white/20 transition-colors rounded-xl text-sm font-semibold flex items-center justify-center gap-2 group">
+              <Navigation className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" /> Navigate
+            </button>
           </div>
-          <div className="font-semibold text-white truncate text-base md:text-lg">{state.nearestDock.name}</div>
-          <div className="text-slate-400 text-sm">{state.nearestDock.distance.toFixed(1)} km away</div>
-          <button className="mt-2 w-full h-10 bg-white/10 hover:bg-white/20 transition-colors rounded-xl text-sm font-semibold flex items-center justify-center gap-2 group">
-            <Navigation className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" /> Navigate
-          </button>
-        </div>
-      )}
+        )}
+        
+        {/* DEV ONLY: Tether Toggle */}
+        <button
+          onClick={() => setTetherEnabled(!tetherEnabled)}
+          className={`px-3 py-2 rounded-xl text-xs font-bold shadow-lg transition-colors border ${tetherEnabled ? 'bg-primary text-black border-primary' : 'bg-surfaceLight text-slate-400 border-white/10'}`}
+        >
+          {tetherEnabled ? '🌍 GPS TETHER: ON' : '📡 ENABLE TETHERING'}
+        </button>
+      </div>
 
       {/* 🛑 Bottom Bar: End Ride Controls */}
       <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md glass-panel rounded-3xl p-2 flex items-center justify-between z-20 shadow-2xl transition-transform duration-500 ${endStep !== 'idle' ? 'translate-y-32' : 'translate-y-0'}`}>

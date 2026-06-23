@@ -30,10 +30,8 @@ export function RideTableComponent() {
   useEffect(() => {
     const fetchRides = async () => {
       try {
-        const token = localStorage.getItem('token') || 'demo-token';
-        const res = await fetch(`http://localhost:3003/rides?page=${page}&limit=${pageSize}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const res = await fetch(`${baseUrl}/api/proxy/ride/history?page=${page}&limit=${pageSize}`);
 
         if (!res.ok) throw new Error(`Failed to fetch rides: ${res.statusText}`);
 

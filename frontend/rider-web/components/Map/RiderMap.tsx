@@ -6,27 +6,17 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useLiveFleet } from '@/hooks/useLiveFleet';
 import { useRouter } from 'next/navigation';
 
+import { useNearbyDocks } from '@/hooks/useNearbyDocks';
+
 // Using a public demo token if env is missing, but env should be configured for production
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
-
-export const mockDocks = [
-  { id: 'dock-1', lat: 6.5220, lng: 3.3750, name: 'Oshodi Transit Hub', freeSlots: 3 },
-  { id: 'dock-2', lat: 6.5270, lng: 3.3830, name: 'Mainland Station', freeSlots: 12 },
-];
-
-// Fallback static bikes if WebSocket hasn't received data yet
-const fallbackBikes = [
-  { id: 'BK-892', lat: 6.5244, lng: 3.3792, battery: 85, surge: 1.2 },
-  { id: 'BK-104', lat: 6.5260, lng: 3.3770, battery: 42, surge: 1.0 },
-  { id: 'BK-553', lat: 6.5220, lng: 3.3810, battery: 95, surge: 1.0 },
-];
 
 export default function RiderMap() {
   const router = useRouter();
   const { bikes: liveBikes } = useLiveFleet();
   
-  // Use live socket bikes if available, otherwise show fallback pins
-  const displayBikes = liveBikes.length > 0 ? liveBikes : fallbackBikes;
+  // Use live socket bikes ONLY
+  const displayBikes = liveBikes;
 
   const [viewState, setViewState] = useState({
     latitude: 6.5244,
@@ -37,6 +27,9 @@ export default function RiderMap() {
 
   // Real user geolocation
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Fetch real docks from Postgres based on view center!
+  const { docks } = useNearbyDocks(userLocation?.lat || viewState.latitude, userLocation?.lng || viewState.longitude);
 
   // Prevent hydration mismatch
   const [mounted, setMounted] = useState(false);
@@ -120,7 +113,7 @@ export default function RiderMap() {
         ))}
 
         {/* Render Docks */}
-        {mockDocks.map(dock => (
+        {docks.map(dock => (
           <Marker key={dock.id} longitude={dock.lng} latitude={dock.lat} anchor="bottom" style={{ pointerEvents: 'auto' }}>
             <div 
               className="flex flex-col items-center group cursor-pointer relative"
@@ -130,7 +123,7 @@ export default function RiderMap() {
               }}
             >
               <div className="absolute -top-10 px-3 py-1 bg-[#111622]/90 backdrop-blur-md border border-[#00FFFF]/30 rounded-full text-xs font-bold text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Dock {dock.id.split('-')[1]}
+                {dock.name}
               </div>
               <div className="relative flex flex-col items-center">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-b from-[#00FFFF] to-[#00B3FF] flex items-center justify-center shadow-[0_0_15px_rgba(0,255,255,0.5)] z-10">
