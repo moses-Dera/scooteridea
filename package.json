@@ -20,14 +20,6 @@
     "test": "turbo run test",
     "docker:up": "docker compose -f backend/infra/docker-compose.yml up -d postgres redis emqx",
     "docker:down": "docker compose -f backend/infra/docker-compose.yml down",
-    "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v",
-    "engine": "node scripts/run-dev.js",
-    "engine:fast": "npm run docker:up && turbo run build && turbo run start --parallel",
-    "engine:dev": "node scripts/run-dev.js",
-    "simulator": "bash run-complete-simulator.sh",
-    "all": "bash scripts/run-all.sh",
-    "cleanup": "bash scripts/cleanup.sh",
-    "status": "bash scripts/status.sh",
-    "watch": "npm run all 2>&1 | tee /tmp/ebike-debug.log"
+    "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v"
   }
 }

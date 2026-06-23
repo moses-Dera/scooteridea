@@ -269,7 +269,6 @@ export class RideService {
       totalRevenue,
       activeUsers,
       avgDistance,
-      ridesData,
     ] = await Promise.all([
       prisma.ride.count({
         where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
@@ -286,10 +285,6 @@ export class RideService {
       prisma.ride.aggregate({
         where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
         _avg: { distanceKm: true },
-      }),
-      prisma.ride.findMany({
-        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
-        select: { distanceKm: true },
       }),
     ]);
 
