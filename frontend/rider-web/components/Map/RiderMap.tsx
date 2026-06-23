@@ -5,6 +5,7 @@ import Map, { Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useLiveFleet } from '@/hooks/useLiveFleet';
 import { useRouter } from 'next/navigation';
+import { LocateFixed } from 'lucide-react';
 
 import { useNearbyDocks } from '@/hooks/useNearbyDocks';
 
@@ -116,11 +117,7 @@ export default function RiderMap() {
             className="w-[29px] h-[29px] bg-[#111622] border border-white/10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors shadow-lg group"
             title="Focus my location"
           >
-            <svg className="w-4 h-4 text-slate-300 group-hover:text-[#00FFA3] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              <circle cx="12" cy="12" r="3" fill="currentColor" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v2m0 16v2m10-10h-2M4 12H2" />
-            </svg>
+            <LocateFixed className="w-4 h-4 text-slate-300 group-hover:text-[#00FFA3] transition-colors" />
           </button>
         </div>
 

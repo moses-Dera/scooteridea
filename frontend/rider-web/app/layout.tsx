@@ -11,6 +11,8 @@ import ProfilePanel from '@/components/panels/ProfilePanel'
 import WalletPanel from '@/components/panels/WalletPanel'
 import HistoryPanel from '@/components/panels/HistoryPanel'
 
+import { AlertCircle } from 'lucide-react'
+
 type PanelType = 'menu' | 'profile' | 'wallet' | 'history' | 'docks' | 'settings' | 'help' | 'safety' | 'report' | null;
 
 export default function RootLayout({
@@ -136,7 +138,7 @@ export default function RootLayout({
                       {activePanel === 'history' && <HistoryPanel onClose={closePanel} />}
                       {['docks', 'settings', 'help', 'safety', 'report'].includes(activePanel) && (
                         <div className="px-6 pb-6 text-center py-12">
-                          <div className="text-4xl mb-4">🚧</div>
+                          <div className="flex justify-center mb-4"><AlertCircle className="w-12 h-12 text-slate-500" /></div>
                           <h2 className="text-xl font-bold text-white mb-2">Coming Soon</h2>
                           <p className="text-slate-400">This feature is currently under development.</p>
                         </div>

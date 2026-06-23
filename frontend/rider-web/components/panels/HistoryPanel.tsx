@@ -2,6 +2,8 @@
 
 import { useRideHistory } from '@/hooks';
 
+import { Bike } from 'lucide-react';
+
 interface HistoryPanelProps {
   onClose: () => void;
 }
@@ -37,7 +39,7 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
         </div>
       ) : rides.length === 0 ? (
         <div className="text-center py-12 bg-white/5 border border-white/10 rounded-3xl">
-          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4 text-2xl">🚲</div>
+          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4 text-2xl"><Bike className="w-8 h-8 text-slate-300" /></div>
           <p className="text-white font-bold mb-1">No rides yet</p>
           <p className="text-slate-400 text-sm">Your ride history will appear here.</p>
         </div>

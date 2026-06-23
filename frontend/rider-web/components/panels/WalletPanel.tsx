@@ -82,7 +82,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
           <div className="flex flex-col gap-3">
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xl">🚲</div>
+                <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xl"><Bike className="w-6 h-6 text-slate-300" /></div>
                 <div>
                   <p className="font-semibold text-white">Sample Ride</p>
                   <p className="text-slate-400 text-xs mt-1">Today, 2:30 PM</p>
@@ -92,7 +92,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
             </div>
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xl">💳</div>
+                <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xl"><CreditCard className="w-6 h-6 text-slate-300" /></div>
                 <div>
                   <p className="font-semibold text-white">Top Up</p>
                   <p className="text-slate-400 text-xs mt-1">Yesterday, 10:00 AM</p>
