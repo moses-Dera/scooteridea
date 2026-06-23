@@ -60,7 +60,7 @@ export function RideHistoryComponent() {
     return (
       <div className="bg-surfaceLight border border-white/10 rounded-2xl p-12 text-center">
         <Bike className="w-12 h-12 mx-auto mb-4 text-white" />
-        <h3 className="text-xl font-bold text-white mb-2">No Rides Yet</h3>
+        <div className="text-xl font-bold text-white mb-2">No Rides Yet</div>
         <p className="text-slate-400 mb-6">Start your first ride to see history here</p>
         <a
           href="/"
@@ -129,7 +129,7 @@ function RideCard({ ride }: RideCardProps) {
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center"><Bike className="w-6 h-6 text-primary" /></div>
           <div>
-            <h3 className="font-bold text-white">{ride.bikeId}</h3>
+            <div className="font-bold text-white">{ride.bikeId}</div>
             <p className="text-sm text-slate-400">{formatDate(ride.startTime)}</p>
           </div>
         </div>

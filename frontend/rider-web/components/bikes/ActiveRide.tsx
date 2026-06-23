@@ -80,7 +80,7 @@ export function ActiveRideComponent() {
 
       {/* Trip Details */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
-        <h3 className="font-bold text-white">Trip Details</h3>
+        <div className="font-bold text-white">Trip Details</div>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="text-slate-400">Avg Speed</p>

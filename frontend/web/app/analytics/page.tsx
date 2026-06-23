@@ -61,7 +61,7 @@ export default function AnalyticsOverview() {
       {/* Header */}
       <div className="flex justify-between items-start pb-6 border-b border-neutral-800">
         <div>
-          <h1 className="text-3xl font-bold text-white">Platform Analytics</h1>
+          <div className="text-3xl font-bold text-white">Platform Analytics</div>
           <p className="text-sm text-neutral-400 mt-1">Real-time insights and performance metrics</p>
         </div>
         <div className="flex gap-2 bg-neutral-900 border border-neutral-800 rounded-lg p-1">

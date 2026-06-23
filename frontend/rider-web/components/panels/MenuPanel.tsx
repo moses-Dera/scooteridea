@@ -62,7 +62,7 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
     <div className="px-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 pt-2">
-        <h2 className="text-2xl font-bold text-white">Menu</h2>
+        <div className="text-2xl font-bold text-white">Menu</div>
         <button
           onClick={onClose}
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
@@ -90,9 +90,9 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
                   {item.icon}
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base tracking-tight group-hover:text-primary transition-colors">
+                  <div className="font-bold text-white text-base tracking-tight group-hover:text-primary transition-colors">
                     {item.title}
-                  </h3>
+                  </div>
                   <p className="text-xs text-slate-500 font-medium">{item.description}</p>
                 </div>
               </div>

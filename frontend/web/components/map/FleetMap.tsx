@@ -164,7 +164,7 @@ export function FleetMapComponent() {
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
           <div className="flex justify-between items-start mb-3">
             <div>
-              <h3 className="font-bold text-white">{selectedBike.id}</h3>
+              <div className="font-bold text-white">{selectedBike.id}</div>
               <p className="text-sm text-slate-400">
                 Lat: {selectedBike.lat.toFixed(4)}, Lng: {selectedBike.lng.toFixed(4)}
               </p>

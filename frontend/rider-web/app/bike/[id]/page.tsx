@@ -91,7 +91,7 @@ export default function BikeDetail({ params }: { params: { id: string } }) {
 
           {/* Nearest Docks */}
           <div>
-            <h3 className="font-semibold mb-3">Nearest Docks for Return</h3>
+            <div className="font-semibold mb-3">Nearest Docks for Return</div>
             <div className="flex flex-col gap-3">
               <div className="p-4 rounded-xl border border-white/10 bg-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">

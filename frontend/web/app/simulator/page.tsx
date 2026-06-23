@@ -195,7 +195,7 @@ export default function SimulatorPage() {
                     <Cpu className="w-5 h-5" />
                 </div>
                 <div>
-                    <h2 className="text-white font-bold text-base leading-tight">Digital Twin Simulator</h2>
+                    <div className="text-white font-bold text-base leading-tight">Digital Twin Simulator</div>
                     <p className="text-xs text-slate-400">Spawn, move, and hack physical hardware</p>
                 </div>
             </div>
@@ -224,9 +224,9 @@ export default function SimulatorPage() {
         
         {/* Sidebar Header */}
         <div className="p-6 border-b border-white/5 bg-surface/30 sticky top-0 backdrop-blur-md z-20">
-          <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+          <div className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
             Hardware Interface
-          </h2>
+          </div>
           <p className="text-sm text-slate-400 mt-1">Select a vehicle on the map to interact</p>
         </div>
 
@@ -243,7 +243,7 @@ export default function SimulatorPage() {
                             <Cpu className="w-4 h-4 text-slate-500" />
                             <span className="text-xs font-mono text-slate-500 uppercase tracking-widest">IoT Core Active</span>
                         </div>
-                        <h3 className="text-3xl font-bold text-white tracking-tight font-mono">{selectedBikeId}</h3>
+                        <div className="text-3xl font-bold text-white tracking-tight font-mono">{selectedBikeId}</div>
                     </div>
                     
                     {/* Simulated Physical QR Code Sticker */}
@@ -301,7 +301,7 @@ export default function SimulatorPage() {
 
             {/* Hardware Controls */}
             <div className="flex flex-col gap-5">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Hardware Overrides</h4>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">Hardware Overrides</div>
                 
                 {/* Battery Slider */}
                 <div className="bg-surface/40 p-4 rounded-xl border border-white/5">
@@ -344,7 +344,7 @@ export default function SimulatorPage() {
                     <div className="flex items-start gap-3 relative z-10">
                         <Navigation className="w-5 h-5 text-primary mt-0.5" />
                         <div>
-                            <h4 className="text-sm font-bold text-white mb-1">Auto-Navigation</h4>
+                            <div className="text-sm font-bold text-white mb-1">Auto-Navigation</div>
                             <p className="text-xs text-slate-400 mb-3 leading-relaxed">Select a destination on the map to simulate a real ride and broadcast live telemetry.</p>
                             <button className="w-full py-2 bg-primary text-background text-xs font-bold rounded-lg hover:bg-[#00e693] transition-colors shadow-[0_0_15px_rgba(0,255,163,0.3)]">
                                 Enter Navigation Mode
@@ -361,7 +361,7 @@ export default function SimulatorPage() {
             <div className="w-16 h-16 rounded-full bg-surface border border-white/10 flex items-center justify-center mb-4">
                 <ShieldAlert className="w-8 h-8 text-slate-500" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">No Target Selected</h3>
+            <div className="text-lg font-bold text-white mb-2">No Target Selected</div>
             <p className="text-sm text-slate-400 max-w-[200px]">Click any vehicle on the map to access its hardware interface.</p>
           </div>
         )}

@@ -51,10 +51,10 @@ export default function RegisterPage() {
             <div className="w-14 h-14 rounded-2xl bg-[#00FFA3]/10 flex items-center justify-center border border-[#00FFA3]/30 shadow-[0_0_20px_rgba(0,255,163,0.2)] mb-8">
                <Zap className="w-7 h-7 text-[#00FFA3] fill-[#00FFA3]" />
             </div>
-            <h1 className="text-5xl font-black tracking-tight text-white mb-6 leading-tight">
+            <div className="text-5xl font-black tracking-tight text-white mb-6 leading-tight">
               Join the <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-l from-[#00FFA3] to-emerald-400">Movement.</span>
-            </h1>
+            </div>
             <p className="text-lg text-slate-400 max-w-sm">
               Create an account and get your first ride free. Experience the fastest way to travel across your city.
             </p>
@@ -75,7 +75,7 @@ export default function RegisterPage() {
             <Zap className="w-6 h-6 text-[#00FFA3] fill-[#00FFA3]" />
           </div>
 
-          <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
+          <div className="text-3xl font-bold text-white mb-2">Create Account</div>
           <p className="text-slate-400 mb-8">Fill in your details below to get started.</p>
 
           {error && (

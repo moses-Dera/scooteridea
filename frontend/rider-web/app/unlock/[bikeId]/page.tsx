@@ -97,7 +97,7 @@ export default function UnlockModal({ params }: { params: { bikeId: string } }) 
         {/* Step 1: Confirm */}
         {step === 'confirm' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">Ready to ride?</h2>
+            <div className="text-2xl font-bold mb-2">Ready to ride?</div>
             <p className="text-slate-400 mb-6">You are about to unlock bike <strong className="text-white">{params.bikeId}</strong>. A standard fare of ₦50/min applies.</p>
             
             <div className="bg-black/30 rounded-xl p-4 mb-8 border border-white/5">
@@ -122,7 +122,7 @@ export default function UnlockModal({ params }: { params: { bikeId: string } }) 
         {/* Step 2: Method Picker */}
         {step === 'method' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <h2 className="text-2xl font-bold mb-2">How to unlock</h2>
+            <div className="text-2xl font-bold mb-2">How to unlock</div>
             <p className="text-slate-400 mb-6">Choose an unlock method for BK-892.</p>
             
             <div className="flex flex-col gap-3 mb-8">
@@ -164,7 +164,7 @@ export default function UnlockModal({ params }: { params: { bikeId: string } }) 
         {/* Step 3: Manual PIN Flow */}
         {step === 'manual-pin' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col items-center py-4">
-            <h2 className="text-2xl font-bold mb-2 text-center">Your Unlock Pass</h2>
+            <div className="text-2xl font-bold mb-2 text-center">Your Unlock Pass</div>
             <p className="text-slate-400 text-center mb-6">Punch this code into the scooter's keypad to unlock.</p>
             
             <div className="w-full bg-[#00D4FF]/10 border-2 border-[#00D4FF]/30 rounded-2xl p-6 flex flex-col items-center justify-center mb-8 relative overflow-hidden">
@@ -190,7 +190,7 @@ export default function UnlockModal({ params }: { params: { bikeId: string } }) 
               <span className="text-4xl">🔓</span>
               <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20"></div>
             </div>
-            <h2 className="text-2xl font-bold mb-2 text-center">Bike Unlocked!</h2>
+            <div className="text-2xl font-bold mb-2 text-center">Bike Unlocked!</div>
             <p className="text-slate-400 text-center mb-8">Helmet on. Ride safely.</p>
             
             <Link href="/ride/active" className="w-full h-14 bg-primary text-black font-bold text-lg rounded-xl shadow-glow-primary flex items-center justify-center transform hover:scale-[1.02] transition-transform">

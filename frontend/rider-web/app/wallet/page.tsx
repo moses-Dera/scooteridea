@@ -17,7 +17,7 @@ export default function WalletPage() {
           <Link href="/" className="w-10 h-10 rounded-full glass-button flex items-center justify-center hover:bg-white/10 transition-colors">
             ←
           </Link>
-          <h1 className="text-2xl font-bold">Wallet</h1>
+          <div className="text-2xl font-bold">Wallet</div>
         </div>
 
         {/* Balance Card */}
@@ -67,7 +67,7 @@ export default function WalletPage() {
         
         {/* Transactions List */}
         <div className="flex-1">
-          <h2 className="text-lg font-semibold mb-4">Recent Transactions</h2>
+          <div className="text-lg font-semibold mb-4">Recent Transactions</div>
           
           {loading ? (
             <div className="text-center py-8">
@@ -96,7 +96,7 @@ export default function WalletPage() {
 
         {/* Payment Methods */}
         <div className="xl:w-[35%]">
-          <h2 className="text-lg font-semibold mb-4">Payment Methods</h2>
+          <div className="text-lg font-semibold mb-4">Payment Methods</div>
           
           <div className="flex flex-col gap-3">
             <div className="p-4 rounded-2xl glass-panel flex items-center justify-between border-primary/30">

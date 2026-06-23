@@ -20,7 +20,7 @@ export default function RootLayout({
         <aside className="w-64 border-r border-white/10 glass-panel flex flex-col p-6">
           <div className="flex items-center gap-3 mb-10">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20">V</div>
-            <h1 className="text-xl font-bold tracking-tight">Scooter <span className="text-primary">Ops</span></h1>
+            <div className="text-xl font-bold tracking-tight">Scooter <span className="text-primary">Ops</span></div>
           </div>
           <nav className="flex flex-col gap-2 flex-grow">
             <Link href="/" className="px-4 py-2.5 rounded-lg bg-primary/10 text-primary font-medium flex items-center gap-3 transition-colors cursor-pointer">
@@ -60,7 +60,7 @@ export default function RootLayout({
         {/* Main Content */}
         <main className="flex-1 flex flex-col h-screen overflow-hidden">
           <header className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-surface/40 backdrop-blur-sm z-10">
-             <h2 className="text-lg font-semibold">Dashboard Overview</h2>
+             <div className="text-lg font-semibold">Dashboard Overview</div>
              <div className="flex items-center gap-4">
                 <button className="relative p-2 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors">
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full border border-background"></span>

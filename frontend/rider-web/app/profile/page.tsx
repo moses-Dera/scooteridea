@@ -23,7 +23,7 @@ export default function ProfilePage() {
             <Link href="/" className="w-10 h-10 rounded-full glass-button flex items-center justify-center hover:bg-white/10 transition-colors">
               ←
             </Link>
-            <h1 className="text-2xl font-bold">Profile</h1>
+            <div className="text-2xl font-bold">Profile</div>
           </div>
         </header>
         <main className="flex-1 px-6 pb-8 overflow-y-auto flex items-center justify-center">
@@ -44,7 +44,7 @@ export default function ProfilePage() {
             <Link href="/" className="w-10 h-10 rounded-full glass-button flex items-center justify-center hover:bg-white/10 transition-colors">
               ←
             </Link>
-            <h1 className="text-2xl font-bold">Profile</h1>
+            <div className="text-2xl font-bold">Profile</div>
           </div>
         </header>
         <main className="flex-1 px-6 pb-8 overflow-y-auto">
@@ -64,7 +64,7 @@ export default function ProfilePage() {
           <Link href="/" className="w-10 h-10 rounded-full glass-button flex items-center justify-center hover:bg-white/10 transition-colors">
             ←
           </Link>
-          <h1 className="text-2xl font-bold">Profile</h1>
+          <div className="text-2xl font-bold">Profile</div>
         </div>
       </header>
 
@@ -79,7 +79,7 @@ export default function ProfilePage() {
               <span className="text-2xl font-bold text-black">{(user?.name?.[0] || 'U') + (user?.email?.[1] || 'U')}</span>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">{user?.name || 'User'}</h2>
+              <div className="text-2xl font-bold text-white">{user?.name || 'User'}</div>
               <p className="text-slate-400">{user?.status || 'Active'}</p>
               <div className="flex gap-2 mt-2">
                 <span className="px-3 py-1 rounded-full bg-[#00FFA3]/20 text-[#00FFA3] text-xs font-semibold">
@@ -133,7 +133,7 @@ export default function ProfilePage() {
 
         {/* Statistics */}
         <div className="w-full bg-gradient-to-br from-[#111622] to-[#0A0D14] border border-white/10 rounded-2xl p-6 mb-6 shadow-xl">
-          <h3 className="text-lg font-bold text-white mb-6">Riding Statistics</h3>
+          <div className="text-lg font-bold text-white mb-6">Riding Statistics</div>
           
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
@@ -153,7 +153,7 @@ export default function ProfilePage() {
 
         {/* Actions */}
         <div className="w-full bg-gradient-to-br from-[#111622] to-[#0A0D14] border border-white/10 rounded-2xl p-6 shadow-xl">
-          <h3 className="text-lg font-bold text-white mb-4">Account Settings</h3>
+          <div className="text-lg font-bold text-white mb-4">Account Settings</div>
           
           <div className="space-y-3">
             <button className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium">

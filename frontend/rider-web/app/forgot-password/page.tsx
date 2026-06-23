@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
           <div className="w-16 h-16 rounded-2xl bg-[#00FFA3]/10 flex items-center justify-center border border-[#00FFA3]/30 shadow-[0_0_20px_rgba(0,255,163,0.2)] mb-6">
              <Zap className="w-8 h-8 text-[#00FFA3] fill-[#00FFA3]" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Reset Password</h2>
+          <div className="text-3xl font-bold text-white mb-2">Reset Password</div>
           <p className="text-slate-400 max-w-sm">
             Enter the email address associated with your account and we'll send you a recovery link.
           </p>
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 rounded-full bg-[#00FFA3]/10 flex items-center justify-center mb-4">
               <CheckCircle2 className="w-8 h-8 text-[#00FFA3]" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Check your inbox</h3>
+            <div className="text-xl font-bold text-white mb-2">Check your inbox</div>
             <p className="text-slate-400 mb-8 max-w-xs">
               We've sent password reset instructions to <strong>{email}</strong>
             </p>

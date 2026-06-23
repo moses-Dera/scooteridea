@@ -112,7 +112,7 @@ export default function DashboardOverview() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-6 border-b border-white/5">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Fleet Command</h1>
+          <div className="text-3xl font-black text-white tracking-tight">Fleet Command</div>
           <p className="text-sm text-slate-400 mt-1 font-medium">Real-time system telemetry and operational status</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -134,7 +134,7 @@ export default function DashboardOverview() {
             <Activity className="w-16 h-16 text-primary" />
           </div>
           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Active Rides</p>
-          <h2 className="text-4xl font-black text-white">{loading ? '-' : activeRides}</h2>
+          <div className="text-4xl font-black text-white">{loading ? '-' : activeRides}</div>
           <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" /> +12% from last hour
           </p>
@@ -145,7 +145,7 @@ export default function DashboardOverview() {
             <BarChart className="w-16 h-16 text-blue-500" />
           </div>
           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Available</p>
-          <h2 className="text-4xl font-black text-white">{loading ? '-' : availableBikes}</h2>
+          <div className="text-4xl font-black text-white">{loading ? '-' : availableBikes}</div>
           <p className="text-xs text-slate-500 font-medium mt-2">Ready for deployment</p>
         </div>
 
@@ -154,7 +154,7 @@ export default function DashboardOverview() {
             <BatteryWarning className="w-16 h-16 text-warning" />
           </div>
           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Low Battery</p>
-          <h2 className="text-4xl font-black text-white">{loading ? '-' : lowBatteryCount}</h2>
+          <div className="text-4xl font-black text-white">{loading ? '-' : lowBatteryCount}</div>
           <p className="text-xs text-warning font-medium mt-2 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" /> Needs attention
           </p>
@@ -165,7 +165,7 @@ export default function DashboardOverview() {
             <Users className="w-16 h-16 text-purple-500" />
           </div>
           <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Total Fleet</p>
-          <h2 className="text-4xl font-black text-white">{loading ? '-' : totalFleet}</h2>
+          <div className="text-4xl font-black text-white">{loading ? '-' : totalFleet}</div>
           <p className="text-xs text-slate-500 font-medium mt-2">Registered assets</p>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function DashboardOverview() {
           
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8 relative z-10">
             <div>
-              <h3 className="text-xl font-bold text-white">Fleet Utilisation</h3>
+              <div className="text-xl font-bold text-white">Fleet Utilisation</div>
               <p className="text-sm text-slate-400">Active vs Available bikes across network</p>
             </div>
             <select className="w-full sm:w-auto bg-surfaceLight border border-white/10 rounded-xl px-4 py-2 text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary hover:border-white/20 transition-colors">
@@ -220,7 +220,7 @@ export default function DashboardOverview() {
         <div className="bg-surface border border-white/5 rounded-2xl flex flex-col h-[460px] shadow-2xl">
           <div className="p-6 border-b border-white/5 flex justify-between items-center">
             <div>
-              <h3 className="text-xl font-bold text-white">System Alerts</h3>
+              <div className="text-xl font-bold text-white">System Alerts</div>
               <p className="text-sm text-slate-400">Live operational feed</p>
             </div>
             <div className="px-3 py-1 bg-danger/10 border border-danger/20 rounded-full text-xs font-bold text-danger flex items-center gap-1">
@@ -276,7 +276,7 @@ export default function DashboardOverview() {
         {/* Top Riders */}
         <div className="bg-surface border border-white/5 rounded-2xl flex flex-col shadow-2xl p-6">
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-white">Top Riders Today</h3>
+            <div className="text-xl font-bold text-white">Top Riders Today</div>
             <p className="text-sm text-slate-400">Highest volume users</p>
           </div>
           
@@ -312,9 +312,9 @@ export default function DashboardOverview() {
         <div className="bg-surface border border-white/5 rounded-2xl flex flex-col shadow-2xl p-6">
           <div className="mb-6 flex justify-between items-center">
             <div>
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <div className="text-xl font-bold text-white flex items-center gap-2">
                 <Wrench className="w-5 h-5 text-slate-400" /> Maintenance Required
-              </h3>
+              </div>
               <p className="text-sm text-slate-400">Bikes flagged for service</p>
             </div>
             <span className="text-xs font-bold text-danger bg-danger/10 px-3 py-1 rounded-full border border-danger/20">

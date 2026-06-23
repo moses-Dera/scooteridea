@@ -45,7 +45,7 @@ export default function RiderHome() {
                 <svg className="w-5 h-5 text-[#00FFFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
               </div>
               <div>
-                <h2 className="text-xl font-extrabold tracking-tight text-white">{selectedDock.name}</h2>
+                <div className="text-xl font-extrabold tracking-tight text-white">{selectedDock.name}</div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <div className="w-2 h-2 rounded-full bg-[#00FFFF] animate-pulse shadow-[0_0_8px_#00FFFF]"></div>
                   <span className="text-xs font-semibold text-[#00FFFF] tracking-wide uppercase">
@@ -102,7 +102,7 @@ export default function RiderHome() {
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight text-white">Scooter <span className="text-slate-400 font-medium">#{selectedBike.id.split('-')[1] || selectedBike.id}</span></h2>
+              <div className="text-xl font-extrabold tracking-tight text-white">Scooter <span className="text-slate-400 font-medium">#{selectedBike.id.split('-')[1] || selectedBike.id}</span></div>
               <div className="flex items-center gap-2 mt-0.5">
                 <div className={`w-2 h-2 rounded-full ${isLowBattery ? 'bg-red-500 shadow-[0_0_8px_#EF4444]' : 'bg-primary shadow-[0_0_8px_#00FF87]'} animate-pulse`}></div>
                 <span className={`text-xs font-semibold ${isLowBattery ? 'text-red-400' : 'text-primary'} tracking-wide uppercase`}>
@@ -189,7 +189,7 @@ export default function RiderHome() {
             
             <div className="flex justify-between items-start relative z-10">
               <div>
-                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Standard Rate</h3>
+                <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Standard Rate</div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-extrabold text-white">₦ {selectedBike.surge ? Math.round(50 * selectedBike.surge) : 50}</span>
                   <span className="text-slate-400 font-medium">/min</span>

@@ -100,7 +100,7 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
     <div className="max-w-md mx-auto space-y-6">
       {/* Bike Info Card */}
       <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-white mb-4">{bike.id}</h2>
+        <div className="text-2xl font-bold text-white mb-4">{bike.id}</div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -153,7 +153,7 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
 
       {/* Quick Tips */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-        <h3 className="font-bold text-white mb-3">Quick Tips</h3>
+        <div className="font-bold text-white mb-3">Quick Tips</div>
         <ul className="text-sm text-slate-400 space-y-2">
           <li>✓ Check bike condition before riding</li>
           <li>✓ Wear your helmet</li>

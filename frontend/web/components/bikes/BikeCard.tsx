@@ -43,7 +43,7 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-bold text-white">{bike.id}</h3>
+          <div className="font-bold text-white">{bike.id}</div>
           <p className={`text-sm font-medium ${statusColor}`}>{bike.status}</p>
         </div>
         <div className={`text-right ${batteryColor}`}>

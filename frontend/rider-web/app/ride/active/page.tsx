@@ -181,7 +181,7 @@ export default function ActiveRide() {
             {endStep === 'ending' && (
               <div className="flex flex-col items-center justify-center py-8">
                 <div className="w-16 h-16 rounded-full border-4 border-white/10 border-t-primary animate-spin mb-6"></div>
-                <h2 className="text-xl font-bold text-white mb-2">Ending Ride...</h2>
+                <div className="text-xl font-bold text-white mb-2">Ending Ride...</div>
                 <p className="text-slate-400 text-center">Securely ending your session.</p>
               </div>
             )}
@@ -191,7 +191,7 @@ export default function ActiveRide() {
                 <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary shadow-glow-primary flex items-center justify-center mb-6">
                   <CheckCircle className="w-10 h-10 text-primary" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Ride Completed!</h2>
+                <div className="text-2xl font-bold text-white mb-2">Ride Completed!</div>
                 <p className="text-slate-400 text-center">Generating your receipt...</p>
               </div>
             )}

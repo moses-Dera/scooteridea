@@ -142,7 +142,7 @@ export default function DocksPage() {
             </svg>
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-white">Docking Stations</h1>
+            <div className="text-2xl font-bold text-white">Docking Stations</div>
             <p className="text-sm text-slate-400">{filteredDocks.length} stations available</p>
           </div>
         </div>
@@ -226,9 +226,9 @@ export default function DocksPage() {
               {/* Header: Name and Status */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white group-hover:text-[#00FFA3] transition-colors">
+                  <div className="text-lg font-semibold text-white group-hover:text-[#00FFA3] transition-colors">
                     {dock.name}
-                  </h3>
+                  </div>
                   <p className="text-sm text-slate-400 mt-1">{dock.address}</p>
                 </div>
                 {getStatusBadge(dock.available)}

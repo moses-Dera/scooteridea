@@ -94,7 +94,7 @@ export function BikeFinder() {
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-all cursor-pointer hover:shadow-lg hover:shadow-blue-500/20">
               {/* Header */}
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-white text-lg">{bike.id}</h3>
+                <div className="font-bold text-white text-lg">{bike.id}</div>
                 <div className="flex items-center gap-1">
                   {getBatteryIcon(bike.battery_pct)}
                   <span className="text-sm text-slate-300">{bike.battery_pct}%</span>

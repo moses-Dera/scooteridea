@@ -71,7 +71,7 @@ export function DockGridComponent() {
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-bold text-white">{dock.name}</h3>
+                  <div className="font-bold text-white">{dock.name}</div>
                   <p className="text-xs text-slate-400">{dock.location}</p>
                 </div>
                 <div className={`${capacityColor} px-3 py-1 rounded text-white text-sm font-bold`}>
@@ -119,7 +119,7 @@ export function DockGridComponent() {
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="text-2xl font-bold text-white">{selectedDock.name}</h2>
+              <div className="text-2xl font-bold text-white">{selectedDock.name}</div>
               <p className="text-slate-400">{selectedDock.location}</p>
             </div>
             <button
@@ -156,7 +156,7 @@ export function DockGridComponent() {
 
           {/* Full slot grid */}
           <div>
-            <h3 className="font-bold text-white mb-3">All Slots</h3>
+            <div className="font-bold text-white mb-3">All Slots</div>
             <div className="grid grid-cols-10 gap-2">
               {selectedDock.slots?.map((slot) => (
                 <div

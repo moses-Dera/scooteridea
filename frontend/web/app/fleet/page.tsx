@@ -14,7 +14,7 @@ export default function FleetMapPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white">Live Fleet</h1>
+          <div className="text-3xl font-bold text-white">Live Fleet</div>
           <p className="text-slate-400">Real-time bike tracking and management</p>
         </div>
         <div className="flex items-center gap-3">

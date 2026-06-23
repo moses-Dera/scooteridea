@@ -41,7 +41,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
 }) => (
   <div className="flex items-start justify-between gap-4 mb-4">
     <div>
-      {title && <h3 className="text-lg font-bold text-white">{title}</h3>}
+      {title && <div className="text-lg font-bold text-white">{title}</div>}
       {subtitle && <p className="text-sm text-neutral-400 mt-1">{subtitle}</p>}
     </div>
     {action}

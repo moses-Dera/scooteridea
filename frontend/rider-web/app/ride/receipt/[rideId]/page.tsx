@@ -50,7 +50,7 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
           <div className="flex justify-center mb-4 text-warning">
             <AlertTriangle className="w-16 h-16" />
           </div>
-          <h2 className="text-2xl font-bold mb-2 text-white">Error</h2>
+          <div className="text-2xl font-bold mb-2 text-white">Error</div>
           <p className="text-slate-400 mb-6">{error || 'Could not load receipt'}</p>
           <Link
             href="/"
@@ -76,7 +76,7 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
             <CheckCircle className="w-12 h-12 text-primary" />
             <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20"></div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Ride Complete!</h1>
+          <div className="text-3xl font-bold text-white mb-2">Ride Complete!</div>
           <p className="text-slate-400">Thanks for riding with us</p>
         </div>
 
@@ -101,7 +101,7 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
 
           {/* Cost Breakdown */}
           <div className="mb-6 pb-6 border-b border-white/10">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Cost Breakdown</h3>
+            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Cost Breakdown</div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-slate-400">Base fare ({duration.toFixed(1)} min × ₦50)</span>
               <span className="text-white">₦ {(duration * 50).toFixed(2)}</span>

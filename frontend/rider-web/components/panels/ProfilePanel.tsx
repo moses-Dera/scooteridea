@@ -37,7 +37,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
     <div className="px-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 pt-2">
-        <h2 className="text-2xl font-bold text-white">Profile</h2>
+        <div className="text-2xl font-bold text-white">Profile</div>
         <button
           onClick={onClose}
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
@@ -54,7 +54,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
           <span className="text-xl font-bold text-black">{(user?.name?.[0] || 'U') + (user?.email?.[1] || 'U')}</span>
         </div>
         <div className="min-w-0">
-          <h3 className="text-xl font-bold text-white truncate">{user?.name || 'User'}</h3>
+          <div className="text-xl font-bold text-white truncate">{user?.name || 'User'}</div>
           <p className="text-sm text-slate-400 truncate">{user?.email || ''}</p>
           <div className="flex gap-2 mt-2">
             <span className="px-2.5 py-0.5 rounded-full bg-[#00FFA3]/20 text-[#00FFA3] text-[10px] font-bold uppercase tracking-wider">

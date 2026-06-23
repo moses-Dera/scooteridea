@@ -124,7 +124,7 @@ export function RideTableComponent() {
                         <td colSpan={7} className="px-4 py-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-3">
-                              <h4 className="font-bold text-white mb-3">Trip Details</h4>
+                              <div className="font-bold text-white mb-3">Trip Details</div>
 
                               <div className="flex items-center gap-3">
                                 <FaClockRotateLeft size={16} />
@@ -152,7 +152,7 @@ export function RideTableComponent() {
                             </div>
 
                             <div className="space-y-3">
-                              <h4 className="font-bold text-white mb-3">Timeline</h4>
+                              <div className="font-bold text-white mb-3">Timeline</div>
 
                               <div>
                                 <p className="text-xs text-slate-400">Start</p>

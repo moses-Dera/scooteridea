@@ -62,7 +62,7 @@ export function AnalyticsCharts() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Rides Over Time */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-        <h3 className="font-bold text-white mb-4">Rides Over Time (24h)</h3>
+        <div className="font-bold text-white mb-4">Rides Over Time (24h)</div>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={timeseriesData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -76,7 +76,7 @@ export function AnalyticsCharts() {
 
       {/* Revenue Over Time */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-        <h3 className="font-bold text-white mb-4">Revenue Over Time (24h)</h3>
+        <div className="font-bold text-white mb-4">Revenue Over Time (24h)</div>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={timeseriesData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -90,7 +90,7 @@ export function AnalyticsCharts() {
 
       {/* Top Routes */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-        <h3 className="font-bold text-white mb-4">Top Routes by Rides</h3>
+        <div className="font-bold text-white mb-4">Top Routes by Rides</div>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={topRidesData} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -104,7 +104,7 @@ export function AnalyticsCharts() {
 
       {/* Bike Usage Distribution */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-        <h3 className="font-bold text-white mb-4">Fleet Usage Distribution</h3>
+        <div className="font-bold text-white mb-4">Fleet Usage Distribution</div>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie data={bikeUsageData} cx="50%" cy="50%" labelLine={false} label={({ name, value }) => `${name}: ${value}%`} outerRadius={80} fill="#8884d8" dataKey="value">

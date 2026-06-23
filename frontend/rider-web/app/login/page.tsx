@@ -54,10 +54,10 @@ export default function LoginPage() {
             <div className="w-14 h-14 rounded-2xl bg-[#00FFA3]/10 flex items-center justify-center border border-[#00FFA3]/30 shadow-[0_0_20px_rgba(0,255,163,0.2)] mb-8">
                <Zap className="w-7 h-7 text-[#00FFA3] fill-[#00FFA3]" />
             </div>
-            <h1 className="text-5xl font-black tracking-tight text-white mb-6 leading-tight">
+            <div className="text-5xl font-black tracking-tight text-white mb-6 leading-tight">
               Unlock Your <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FFA3] to-emerald-400">Next Ride.</span>
-            </h1>
+            </div>
             <p className="text-lg text-slate-400 max-w-sm">
               Instant access to thousands of premium electric scooters across your city. Sign in to start moving.
             </p>

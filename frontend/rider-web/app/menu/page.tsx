@@ -69,7 +69,7 @@ export default function MenuPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-2xl font-bold text-white">Menu</h1>
+          <div className="text-2xl font-bold text-white">Menu</div>
         </div>
       </div>
 
@@ -92,9 +92,9 @@ export default function MenuPage() {
                     {item.icon}
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg tracking-tight group-hover:text-primary transition-colors">
+                    <div className="font-bold text-white text-lg tracking-tight group-hover:text-primary transition-colors">
                       {item.title}
-                    </h3>
+                    </div>
                     <p className="text-sm text-slate-400 font-medium">{item.description}</p>
                   </div>
                 </div>
