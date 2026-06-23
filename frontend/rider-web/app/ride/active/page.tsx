@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import RiderMap from '@/components/Map/RiderMap'
 import { RideTimer } from '@/components/rides/RideTimer'
 import { useRide } from '@/context/RideContext'
+import { useLiveFleet } from '@/hooks/useLiveFleet'
 import { ridesService } from '@/lib/ridesService'
 import { CheckCircle, Navigation, Pause, AlertTriangle, Link2, Smartphone, Bike, X } from 'lucide-react'
 
@@ -14,6 +15,7 @@ type EndRideStep = 'idle' | 'ending' | 'done'
 export default function ActiveRide() {
   const router = useRouter()
   const { state, setError } = useRide()
+  const { bikes } = useLiveFleet()
   const [isEndingRide, setIsEndingRide] = useState(false)
   const [tetherEnabled, setTetherEnabled] = useState(false)
   const [endStep, setEndStep] = useState<EndRideStep>('idle')
@@ -130,17 +132,19 @@ export default function ActiveRide() {
       </div>
 
       {/* 🧭 Top-Right: Nearest Dock Navigation */}
-      <div className="absolute top-24 xl:top-8 right-6 glass-panel rounded-2xl p-4 flex flex-col gap-2 z-20 w-[240px]">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-bold text-slate-400 uppercase">Nearest Dock</span>
-          <span className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-md font-bold">3 free slots</span>
+      {state.nearestDock && (
+        <div className="absolute top-24 xl:top-8 right-6 glass-panel rounded-2xl p-4 flex flex-col gap-2 z-20 w-[240px]">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs font-bold text-slate-400 uppercase">Nearest Dock</div>
+            <div className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-md font-bold">Free slots</div>
+          </div>
+          <div className="font-semibold text-white truncate text-base md:text-lg">{state.nearestDock.name}</div>
+          <div className="text-slate-400 text-sm">{state.nearestDock.distance.toFixed(1)} km away</div>
+          <button className="mt-2 w-full h-10 bg-white/10 hover:bg-white/20 transition-colors rounded-xl text-sm font-semibold flex items-center justify-center gap-2 group">
+            <Navigation className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" /> Navigate
+          </button>
         </div>
-        <h3 className="font-semibold text-white truncate">Oshodi Transit Hub</h3>
-        <p className="text-slate-400 text-sm">1.2 km away • ~4 mins</p>
-        <button className="mt-2 w-full h-10 bg-white/10 hover:bg-white/20 transition-colors rounded-xl text-sm font-semibold flex items-center justify-center gap-2 group">
-          <Navigation className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" /> Navigate
-        </button>
-      </div>
+      )}
 
       {/* 🛑 Bottom Bar: End Ride Controls */}
       <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md glass-panel rounded-3xl p-2 flex items-center justify-between z-20 shadow-2xl transition-transform duration-500 ${endStep !== 'idle' ? 'translate-y-32' : 'translate-y-0'}`}>
@@ -152,7 +156,11 @@ export default function ActiveRide() {
            </div>
            <div className="flex flex-col">
              <span className="font-bold text-sm">{state.activeRide?.bikeId || 'N/A'}</span>
-             <span className="text-xs text-primary font-medium">84% Battery</span>
+             <span className="text-xs text-primary font-medium">
+               {state.activeRide?.bikeId 
+                 ? `${bikes.find(b => b.id === state.activeRide?.bikeId)?.battery || '--'}% Battery`
+                 : '--% Battery'}
+             </span>
            </div>
         </div>
 

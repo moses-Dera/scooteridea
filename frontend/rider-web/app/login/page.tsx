@@ -80,7 +80,7 @@ export default function LoginPage() {
             <Zap className="w-6 h-6 text-[#00FFA3] fill-[#00FFA3]" />
           </div>
 
-          <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+          <div className="text-3xl font-bold text-white mb-2">Welcome Back</div>
           <p className="text-slate-400 mb-8">Enter your credentials to access your wallet and ride history.</p>
 
           {error && (

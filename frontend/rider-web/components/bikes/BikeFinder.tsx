@@ -21,22 +21,36 @@ export function BikeFinder() {
   useEffect(() => {
     const fetchBikes = async () => {
       try {
-        const token = localStorage.getItem('token') || 'demo-token';
-        const res = await fetch('/api/proxy/fleet/bikes?status=available', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        // In a real app, we'd use navigator.geolocation.getCurrentPosition
+        // For this demo, using a default city center coordinates
+        const userLat = 6.5244;
+        const userLng = 3.3792;
+        
+        const res = await fetch(`/api/proxy/fleet/nearby?lat=${userLat}&lng=${userLng}&radius=5`);
 
         if (res.ok) {
-          const data = await res.json();
-          // Simulate distance from current location
-          const bikesWithDistance = (Array.isArray(data) ? data : data.data || []).map((bike: any) => ({
-            ...bike,
-            distance_km: (Math.random() * 5 + 0.2).toFixed(2),
-          }));
-          setBikes(bikesWithDistance);
+          const json = await res.json();
+          if (json.success && json.data) {
+            // The Redis backend returns bikes sorted by nearest first!
+            // Calculate actual straight-line distance for UI display
+            const bikesWithDistance = json.data.map((bike: any) => {
+              const dx = bike.lat - userLat;
+              const dy = bike.lng - userLng;
+              const distKm = Math.sqrt(dx * dx + dy * dy) * 111; // Rough conversion to km
+              
+              return {
+                id: bike.bikeId, // Mapping from Redis format
+                lat: bike.lat,
+                lng: bike.lng,
+                battery_pct: bike.battery_pct,
+                distance_km: Math.max(0.1, distKm).toFixed(1) // Minimum 0.1km
+              };
+            });
+            setBikes(bikesWithDistance);
+          }
         }
       } catch (err) {
-        console.error('Failed to fetch bikes:', err);
+        console.error('Failed to fetch nearby bikes:', err);
       } finally {
         setLoading(false);
       }
