@@ -25,15 +25,42 @@ interface Dock {
 // Set mapbox token (use environment variable in production)
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0.xxxxx';
 
-export function FleetMapComponent() {
+export interface FleetMapProps {
+  bikes?: Bike[];
+  connected?: boolean;
+  error?: string | null;
+  selectedBikeId?: string | null;
+  onSelectBikeId?: (id: string | null) => void;
+}
+
+export function FleetMapComponent({ 
+  bikes: externalBikes, 
+  connected: externalConnected, 
+  error: externalError, 
+  selectedBikeId, 
+  onSelectBikeId 
+}: FleetMapProps = {}) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const dockMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
+  const [internalSelectedBike, setInternalSelectedBike] = useState<Bike | null>(null);
   const [docks, setDocks] = useState<Dock[]>([]);
 
-  const { bikes, connected, error } = useFleetSocket({});
+  // Only use socket if bikes aren't provided by parent
+  const socketData = useFleetSocket({});
+  const bikes = externalBikes ?? socketData.bikes;
+  const connected = externalConnected ?? socketData.connected;
+  const error = externalError ?? socketData.error;
+
+  const selectedBike = selectedBikeId !== undefined 
+    ? bikes.find(b => b.id === selectedBikeId) || null 
+    : internalSelectedBike;
+
+  const handleSelectBike = (bike: Bike | null) => {
+    if (onSelectBikeId) onSelectBikeId(bike?.id || null);
+    else setInternalSelectedBike(bike);
+  };
 
   // Initialize map
   useEffect(() => {
@@ -97,7 +124,7 @@ export function FleetMapComponent() {
           </svg>
         `;
 
-        el.onclick = () => setSelectedBike(bike);
+        el.onclick = () => handleSelectBike(bike);
 
         marker = new mapboxgl.Marker({ element: el })
           .setLngLat([bike.lng, bike.lat])
@@ -264,7 +291,7 @@ export function FleetMapComponent() {
                 Lat: {selectedBike.lat.toFixed(4)}, Lng: {selectedBike.lng.toFixed(4)}
               </p>
             </div>
-            <button onClick={() => setSelectedBike(null)} className="text-slate-400 hover:text-white">×</button>
+            <button onClick={() => handleSelectBike(null)} className="text-slate-400 hover:text-white">×</button>
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
