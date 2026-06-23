@@ -59,8 +59,8 @@ export class FleetService {
     // 3.5. Record Location Trail (Breadcrumbs)
     // We push the current location to a list and keep only the latest 100 points
     const trailKey = `bike:${bikeId}:trail`;
-    await redis.lpush(trailKey, JSON.stringify({ lat, lng, ts: Date.now() }));
-    await redis.ltrim(trailKey, 0, 99); // Keep exactly 100 points maximum
+    await redis.lPush(trailKey, JSON.stringify({ lat, lng, ts: Date.now() }));
+    await redis.lTrim(trailKey, 0, 99); // Keep exactly 100 points maximum
 
     // 4. Record GPS waypoint for active rides (distance calculation at ride-end)
     if (status === 'in_use') {
