@@ -7,9 +7,9 @@ import RiderMap from '@/components/Map/RiderMap'
 import { RideTimer } from '@/components/rides/RideTimer'
 import { useRide } from '@/context/RideContext'
 import { ridesService } from '@/lib/ridesService'
-import { Camera, CheckCircle, Navigation, Pause, AlertTriangle, Link2, Smartphone, Bike, X } from 'lucide-react'
+import { CheckCircle, Navigation, Pause, AlertTriangle, Link2, Smartphone, Bike, X } from 'lucide-react'
 
-type EndRideStep = 'idle' | 'photo-prompt' | 'uploading' | 'done'
+type EndRideStep = 'idle' | 'ending' | 'done'
 
 export default function ActiveRide() {
   const router = useRouter()
@@ -67,22 +67,14 @@ export default function ActiveRide() {
     }
   }, [state.activeRide, router])
 
-  const initiateEndRide = () => {
-    setEndStep('photo-prompt')
-  }
-
-  const handleCapturePhotoAndEnd = async () => {
+  const initiateEndRide = async () => {
     if (!state.activeRide || !navigator.geolocation) {
       setError('Unable to end ride: location not available')
-      setEndStep('idle')
       return
     }
 
-    setEndStep('uploading')
+    setEndStep('ending')
     setIsEndingRide(true)
-
-    // Simulate photo upload delay
-    await new Promise(res => setTimeout(res, 1500))
 
     try {
       navigator.geolocation.getCurrentPosition(
@@ -173,36 +165,16 @@ export default function ActiveRide() {
         </button>
       </div>
 
-      {/* End Ride Parking Modal */}
+      {/* End Ride Modal */}
       {endStep !== 'idle' && (
         <div className="absolute inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-surfaceLight border-t sm:border border-white/10 shadow-2xl sm:rounded-3xl rounded-t-3xl p-6 md:p-8 relative overflow-hidden animate-in slide-in-from-bottom duration-500">
-            
-            {endStep === 'photo-prompt' && (
-              <>
-                <button onClick={() => setEndStep('idle')} className="absolute top-6 right-6 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
-                  <X className="w-5 h-5 text-slate-400" />
-                </button>
-                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-6">
-                  <Camera className="w-8 h-8 text-primary" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2 text-white">Parked properly?</h2>
-                <p className="text-slate-400 mb-8 leading-relaxed">
-                  To end your ride, take a quick photo showing the bike is not blocking the sidewalk or street.
-                </p>
-                <button 
-                  onClick={handleCapturePhotoAndEnd}
-                  className="w-full h-14 bg-primary text-black font-bold text-lg rounded-xl shadow-glow-primary flex items-center justify-center gap-2 transform hover:scale-[1.02] transition-transform">
-                  <Camera className="w-5 h-5" /> Take Photo to End
-                </button>
-              </>
-            )}
 
-            {endStep === 'uploading' && (
+            {endStep === 'ending' && (
               <div className="flex flex-col items-center justify-center py-8">
                 <div className="w-16 h-16 rounded-full border-4 border-white/10 border-t-primary animate-spin mb-6"></div>
-                <h2 className="text-xl font-bold text-white mb-2">Analyzing Parking...</h2>
-                <p className="text-slate-400 text-center">Uploading photo and securely ending your ride.</p>
+                <h2 className="text-xl font-bold text-white mb-2">Ending Ride...</h2>
+                <p className="text-slate-400 text-center">Securely ending your session.</p>
               </div>
             )}
 

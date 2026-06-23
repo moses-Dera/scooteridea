@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
-import { BarChart, AlertTriangle, AlertCircle, Info, Wrench, ClipboardList } from 'lucide-react';
+import { BarChart, AlertTriangle, AlertCircle, Info, Wrench, ClipboardList, TrendingUp, BatteryWarning, Activity, Users } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface BikeModel {
   id: string;
@@ -43,46 +44,50 @@ export default function DashboardOverview() {
   const [maintenance, setMaintenance] = useState<MaintenanceIssue[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Mock data for the utilization chart
+  const chartData = [
+    { time: '08:00', active: 12, available: 45 },
+    { time: '10:00', active: 28, available: 30 },
+    { time: '12:00', active: 45, available: 15 },
+    { time: '14:00', active: 38, available: 22 },
+    { time: '16:00', active: 52, available: 8 },
+    { time: '18:00', active: 65, available: 5 },
+    { time: '20:00', active: 30, available: 35 },
+  ];
+
   useEffect(() => {
     // Fetch all data
     const fetchAllData = async () => {
       try {
         setLoading(true);
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         
         // Fetch fleet data
-        const fleetRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/bikes`);
-        if (fleetRes.ok) {
+        const fleetRes = await fetch(`${baseUrl}/api/proxy/fleet/bikes`).catch(() => null);
+        if (fleetRes?.ok) {
           const json = await fleetRes.json();
-          if (json.success && json.data) {
-            setBikes(json.data);
-          }
+          if (json.success && json.data) setBikes(json.data);
         }
         
         // Fetch top riders
-        const ridersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/rides/api/riders/top?limit=5`);
-        if (ridersRes.ok) {
+        const ridersRes = await fetch(`${baseUrl}/api/proxy/rides/riders/top`).catch(() => null);
+        if (ridersRes?.ok) {
           const json = await ridersRes.json();
-          if (json.success && json.data) {
-            setRiders(json.data);
-          }
+          if (json.success && json.data) setRiders(json.data);
         }
         
         // Fetch system alerts
-        const alertsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/alerts?limit=3`);
-        if (alertsRes.ok) {
+        const alertsRes = await fetch(`${baseUrl}/api/proxy/fleet/alerts`).catch(() => null);
+        if (alertsRes?.ok) {
           const json = await alertsRes.json();
-          if (json.success && json.data) {
-            setAlerts(json.data);
-          }
+          if (json.success && json.data) setAlerts(json.data);
         }
         
         // Fetch maintenance issues
-        const maintRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/maintenance?status=open`);
-        if (maintRes.ok) {
+        const maintRes = await fetch(`${baseUrl}/api/proxy/fleet/maintenance`).catch(() => null);
+        if (maintRes?.ok) {
           const json = await maintRes.json();
-          if (json.success && json.data) {
-            setMaintenance(json.data);
-          }
+          if (json.success && json.data) setMaintenance(json.data);
         }
       } catch (err) {
         console.error('Failed to fetch dashboard data', err);
@@ -92,7 +97,7 @@ export default function DashboardOverview() {
     };
 
     fetchAllData();
-    const interval = setInterval(fetchAllData, 5000);
+    const interval = setInterval(fetchAllData, 30000); // 30s polling
     return () => clearInterval(interval);
   }, []);
 
@@ -102,183 +107,248 @@ export default function DashboardOverview() {
   const totalFleet = bikes.length;
 
   return (
-    <div className="w-full p-4 sm:p-6 space-y-6 animate-in fade-in duration-500 font-sans bg-neutral-950 min-h-screen">
+    <div className="w-full p-4 sm:p-6 space-y-6 animate-in fade-in duration-500 font-sans bg-black min-h-screen text-slate-200">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-6 border-b border-white/5">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-100">Fleet Overview</h1>
-          <p className="text-sm text-slate-400 mt-1">Real-time telemetry and operational status</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">Fleet Command</h1>
+          <p className="text-sm text-slate-400 mt-1 font-medium">Real-time system telemetry and operational status</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <button className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors border border-slate-700 flex items-center justify-center gap-2">
+          <button className="w-full sm:w-auto px-4 py-2.5 bg-surfaceLight hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10 flex items-center justify-center gap-2 shadow-lg">
             <BarChart className="w-5 h-5" />
             Generate Report
           </button>
-          <div className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-xs font-semibold text-emerald-300">Live</span>
+          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 rounded-xl shadow-[0_0_15px_rgba(0,255,163,0.1)]">
+            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,255,163,0.8)]"></div>
+            <span className="text-sm font-bold text-primary">System Live</span>
           </div>
         </div>
       </div>
 
-      {/* KPI Cards - Grid with StatCard component */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Active Rides"
-          value={loading ? '-' : activeRides}
-          trend={{ value: 12, direction: 'up' }}
-          onClick={() => {}}
-        />
-        <StatCard
-          label="Available Bikes"
-          value={loading ? '-' : availableBikes}
-          unit="ready"
-        />
-        <StatCard
-          label="Low Battery"
-          value={loading ? '-' : lowBatteryCount}
-          unit="need charge"
-        />
-        <StatCard
-          label="Total Fleet"
-          value={loading ? '-' : totalFleet}
-          unit="registered"
-        />
+      {/* KPI Cards - Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-surface border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-primary/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Activity className="w-16 h-16 text-primary" />
+          </div>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Active Rides</p>
+          <h2 className="text-4xl font-black text-white">{loading ? '-' : activeRides}</h2>
+          <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" /> +12% from last hour
+          </p>
+        </div>
+
+        <div className="bg-surface border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <BarChart className="w-16 h-16 text-blue-500" />
+          </div>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Available</p>
+          <h2 className="text-4xl font-black text-white">{loading ? '-' : availableBikes}</h2>
+          <p className="text-xs text-slate-500 font-medium mt-2">Ready for deployment</p>
+        </div>
+
+        <div className="bg-surface border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-warning/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <BatteryWarning className="w-16 h-16 text-warning" />
+          </div>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Low Battery</p>
+          <h2 className="text-4xl font-black text-white">{loading ? '-' : lowBatteryCount}</h2>
+          <p className="text-xs text-warning font-medium mt-2 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" /> Needs attention
+          </p>
+        </div>
+
+        <div className="bg-surface border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Users className="w-16 h-16 text-purple-500" />
+          </div>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Total Fleet</p>
+          <h2 className="text-4xl font-black text-white">{loading ? '-' : totalFleet}</h2>
+          <p className="text-xs text-slate-500 font-medium mt-2">Registered assets</p>
+        </div>
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart Area */}
-        <div className="lg:col-span-2 bg-[#111827] border border-slate-800 rounded-xl p-5 h-[420px] flex flex-col shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-            <h3 className="text-base font-semibold text-slate-200">Fleet Utilisation Trend</h3>
-            <select className="w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-slate-300 outline-none focus:ring-2 focus:ring-blue-500">
+        <div className="lg:col-span-2 bg-surface border border-white/5 rounded-2xl p-6 h-[460px] flex flex-col shadow-2xl relative overflow-hidden">
+          {/* Subtle gradient background for the chart container */}
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
+          
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8 relative z-10">
+            <div>
+              <h3 className="text-xl font-bold text-white">Fleet Utilisation</h3>
+              <p className="text-sm text-slate-400">Active vs Available bikes across network</p>
+            </div>
+            <select className="w-full sm:w-auto bg-surfaceLight border border-white/10 rounded-xl px-4 py-2 text-sm font-semibold text-white outline-none focus:ring-2 focus:ring-primary hover:border-white/20 transition-colors">
               <option>Today</option>
               <option>Last 7 Days</option>
               <option>Last 30 Days</option>
             </select>
           </div>
-          <div className="flex-1 rounded-lg bg-slate-900/50 border border-slate-800 border-dashed flex items-center justify-center">
-            <p className="text-slate-500 text-sm text-center px-4">Utilisation metrics will render here.</p>
+          
+          <div className="flex-1 w-full h-full relative z-10">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00FFA3" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#00FFA3" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorAvailable" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="time" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
+                  itemStyle={{ color: '#E2E8F0', fontWeight: 'bold' }}
+                />
+                <Area type="monotone" dataKey="available" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorAvailable)" name="Available" />
+                <Area type="monotone" dataKey="active" stroke="#00FFA3" strokeWidth={3} fillOpacity={1} fill="url(#colorActive)" name="Active Rides" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
         {/* Live Alerts Feed */}
-        <div>
-          <Card>
-            <CardHeader
-              title="System Alerts"
-              action={
-                <Badge variant="error">
-                  <AlertTriangle className="w-4 h-4 inline mr-1" /> {alerts.length} Active
-                </Badge>
-              }
-            />
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center py-8">
-                  <LoadingSpinner size="md" />
-                </div>
-              ) : alerts.length > 0 ? (
-                <div className="space-y-3">
-                  {alerts.map((alert) => {
-                    const iconMap: Record<string, React.ReactNode> = {
-                      'error': <AlertCircle className="w-5 h-5 text-red-500" />,
-                      'warning': <AlertTriangle className="w-5 h-5 text-amber-500" />,
-                      'info': <Info className="w-5 h-5 text-blue-500" />
-                    };
-                    const colorMap: Record<string, string> = {
-                      'error': 'red',
-                      'warning': 'amber',
-                      'info': 'blue'
-                    };
-                    const color = colorMap[alert.type] || 'neutral';
-                    const borderColor = `border-${color}-500/30`;
-                    const hoverBorderColor = `hover:border-${color}-500/50`;
-                    
-                    return (
-                      <div 
-                        key={alert.id}
-                        className={`p-3 rounded-lg bg-neutral-900 border ${borderColor} ${hoverBorderColor} transition-colors cursor-pointer`}
-                      >
-                        <div className="flex gap-3">
-                          <span className="text-lg mt-0.5">{iconMap[alert.type]}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-semibold text-${color}-300`}>{alert.title}</p>
-                            <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2">{alert.message}</p>
-                            <p className="text-[10px] text-neutral-500 mt-1">
-                              {new Date(alert.created_at).toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
+        <div className="bg-surface border border-white/5 rounded-2xl flex flex-col h-[460px] shadow-2xl">
+          <div className="p-6 border-b border-white/5 flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-bold text-white">System Alerts</h3>
+              <p className="text-sm text-slate-400">Live operational feed</p>
+            </div>
+            <div className="px-3 py-1 bg-danger/10 border border-danger/20 rounded-full text-xs font-bold text-danger flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> {alerts.length} Active
+            </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <LoadingSpinner size="md" />
+              </div>
+            ) : alerts.length > 0 ? (
+              alerts.map((alert) => {
+                const iconMap: Record<string, React.ReactNode> = {
+                  'error': <AlertCircle className="w-5 h-5 text-danger" />,
+                  'warning': <AlertTriangle className="w-5 h-5 text-warning" />,
+                  'info': <Info className="w-5 h-5 text-blue-500" />
+                };
+                
+                return (
+                  <div 
+                    key={alert.id}
+                    className="p-4 rounded-xl bg-surfaceLight border border-white/5 hover:border-white/10 transition-all cursor-pointer group"
+                  >
+                    <div className="flex gap-4">
+                      <div className="mt-1 bg-white/5 p-2 rounded-lg group-hover:scale-110 transition-transform">
+                        {iconMap[alert.type]}
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-neutral-400 text-sm">No active alerts</p>
-              )}
-            </CardContent>
-          </Card>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white mb-1">{alert.title}</p>
+                        <p className="text-xs text-slate-400 leading-relaxed">{alert.message}</p>
+                        <p className="text-[10px] text-slate-500 mt-2 font-medium tracking-wider uppercase">
+                          {new Date(alert.created_at).toLocaleTimeString()} • {alert.bike_id}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                <CheckCircle className="w-12 h-12 mb-3 opacity-20" />
+                <p className="text-sm font-medium">All systems normal</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Secondary Stats Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Riders */}
-        <Card>
-          <CardHeader title="Top Riders Today" />
-          <CardContent>
+        <div className="bg-surface border border-white/5 rounded-2xl flex flex-col shadow-2xl p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-white">Top Riders Today</h3>
+            <p className="text-sm text-slate-400">Highest volume users</p>
+          </div>
+          
+          <div className="space-y-3">
             {loading ? (
               <div className="flex justify-center py-8">
                 <LoadingSpinner size="md" />
               </div>
             ) : riders.length > 0 ? (
-              <div className="space-y-3">
-                {riders.map((rider) => (
-                  <div key={rider.id} className="flex items-center justify-between p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors">
-                    <div>
-                      <p className="text-white font-medium text-sm">{rider.name}</p>
-                      <p className="text-xs text-neutral-400">{rider.rides_count} rides</p>
+              riders.map((rider, i) => (
+                <div key={rider.id} className="flex items-center justify-between p-4 rounded-xl bg-surfaceLight border border-white/5 hover:border-primary/20 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center text-lg">
+                      #{i + 1}
                     </div>
-                    <p className="text-emerald-400 font-bold text-sm">{(rider.total_distance / 1000).toFixed(1)} km</p>
+                    <div>
+                      <p className="text-white font-bold text-sm">{rider.name}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{rider.rides_count} total rides</p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <div className="text-right">
+                    <p className="text-primary font-black text-lg">{(rider.total_distance / 1000).toFixed(1)} km</p>
+                  </div>
+                </div>
+              ))
             ) : (
-              <p className="text-neutral-400 text-sm">No rider data available</p>
+              <p className="text-slate-500 text-sm text-center py-4">No rider data available</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Maintenance Issues */}
-        <Card>
-          <CardHeader title={<span className="flex items-center gap-2"><Wrench className="w-4 h-4" /> Bikes Needing Maintenance</span>} />
-          <CardContent>
+        <div className="bg-surface border border-white/5 rounded-2xl flex flex-col shadow-2xl p-6">
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-slate-400" /> Maintenance Required
+              </h3>
+              <p className="text-sm text-slate-400">Bikes flagged for service</p>
+            </div>
+            <span className="text-xs font-bold text-danger bg-danger/10 px-3 py-1 rounded-full border border-danger/20">
+              {maintenance.length} Tickets
+            </span>
+          </div>
+          
+          <div className="space-y-3">
             {loading ? (
               <div className="flex justify-center py-8">
                 <LoadingSpinner size="md" />
               </div>
             ) : maintenance.length > 0 ? (
-              <div className="space-y-3">
-                {maintenance.map((bike) => (
-                  <div key={bike.id} className="flex items-center justify-between p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border-l-2 border-red-500/50">
-                    <div>
-                      <p className="text-white font-medium text-sm">{bike.bike_id}</p>
-                      <p className="text-xs text-neutral-400">{bike.issue_type}</p>
-                    </div>
-                    <Badge variant="error">
-                      {bike.report_count} <ClipboardList className="w-4 h-4 inline ml-1" />
-                    </Badge>
+              maintenance.map((bike) => (
+                <div key={bike.id} className="flex items-center justify-between p-4 rounded-xl bg-surfaceLight border-l-4 border-l-danger border-y border-r border-white/5 hover:bg-white/5 transition-colors">
+                  <div>
+                    <p className="text-white font-bold text-sm flex items-center gap-2">
+                      {bike.bike_id}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">{bike.issue_type}</p>
                   </div>
-                ))}
-              </div>
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-1 text-danger bg-danger/10 px-2 py-1 rounded text-xs font-bold mb-1">
+                      <ClipboardList className="w-3 h-3" /> {bike.report_count} Reports
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{bike.status}</span>
+                  </div>
+                </div>
+              ))
             ) : (
-              <p className="text-neutral-400 text-sm">No maintenance issues</p>
+              <p className="text-slate-500 text-sm text-center py-4">No pending maintenance</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

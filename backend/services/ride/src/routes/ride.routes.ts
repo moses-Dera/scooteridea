@@ -11,6 +11,6 @@ rideRouter.get('/:id',          RideController.getById);
 rideRouter.post('/:id/dispute', RideController.dispute);
 
 // Analytics endpoints
-rideRouter.get('/api/riders/top', RideController.getTopRiders);
-rideRouter.get('/api/analytics', RideController.getAnalytics);
+rideRouter.get('/riders/top', RideController.getTopRiders);
+rideRouter.get('/analytics', RideController.getAnalytics);
 
