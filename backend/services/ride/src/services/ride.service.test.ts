@@ -54,7 +54,7 @@ jest.mock('ngeohash', () => ({
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { RideService } from '../src/services/ride.service';
+import { RideService } from './ride.service';
 import { prisma }       from '@ebike/db';
 import {
   getRedisClient,
