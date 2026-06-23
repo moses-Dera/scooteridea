@@ -147,6 +147,79 @@ export function FleetMapComponent() {
     });
   }, [docks]);
 
+  const [bikeTrail, setBikeTrail] = useState<{lat: number, lng: number, ts: number}[]>([]);
+
+  // Fetch trail when a bike is selected
+  useEffect(() => {
+    if (!selectedBike) {
+      setBikeTrail([]);
+      if (map.current && map.current.getSource('bike-trail')) {
+        (map.current.getSource('bike-trail') as mapboxgl.GeoJSONSource).setData({
+          type: 'FeatureCollection',
+          features: []
+        });
+      }
+      return;
+    }
+
+    const fetchTrail = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch(`${baseUrl}/api/proxy/fleet/bikes/${selectedBike.id}/trail`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            setBikeTrail(data.data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch trail:', err);
+      }
+    };
+    
+    fetchTrail();
+    const interval = setInterval(fetchTrail, 5000);
+    return () => clearInterval(interval);
+  }, [selectedBike]);
+
+  // Draw trail on map
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+
+    const geojson: any = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: bikeTrail.map(p => [p.lng, p.lat])
+      },
+      properties: {}
+    };
+
+    if (map.current.getSource('bike-trail')) {
+      (map.current.getSource('bike-trail') as mapboxgl.GeoJSONSource).setData(geojson);
+    } else {
+      map.current.addSource('bike-trail', { type: 'geojson', data: geojson });
+      map.current.addLayer({
+        id: 'bike-trail-line',
+        type: 'line',
+        source: 'bike-trail',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#0ea5e9', // Sky blue
+          'line-width': 4,
+          'line-opacity': 0.8,
+          'line-dasharray': [1, 2]
+        }
+      });
+    }
+  }, [bikeTrail]);
+
   return (
     <div className="flex flex-col h-full gap-4">
       {/* Connection status */}

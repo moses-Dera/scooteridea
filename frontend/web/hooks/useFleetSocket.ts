@@ -15,9 +15,10 @@ interface Bike {
 interface UseFleetSocketProps {
   onBikeUpdate?: (bike: Bike) => void;
   onBikesUpdate?: (bikes: Bike[]) => void;
+  zones?: string[];
 }
 
-export function useFleetSocket({ onBikeUpdate, onBikesUpdate }: UseFleetSocketProps) {
+export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetSocketProps) {
   const [bikes, setBikes] = useState<Map<string, Bike>>(new Map());
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +47,15 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate }: UseFleetSocketPr
         ws.onopen = () => {
           setConnected(true);
           setError(null);
-          ws?.send(JSON.stringify({ subscribe: ['fleet:all', 'dock:all'] }));
+          
+          const subscriptions = ['dock:all'];
+          if (zones && zones.length > 0) {
+            zones.forEach(z => subscriptions.push(`zone:${z}`));
+          } else {
+            subscriptions.push('fleet:all');
+          }
+          
+          ws?.send(JSON.stringify({ subscribe: subscriptions }));
         };
 
         ws.onmessage = (event) => {
