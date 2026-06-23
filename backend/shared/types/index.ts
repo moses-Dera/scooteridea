@@ -238,6 +238,7 @@ export interface KafkaFleetTelemetryEvent {
   lng: number;
   batteryPct: number;
   status: BikeStatus;
+  zoneIds?: string[];
   ts: number;
 }
 
@@ -281,7 +282,9 @@ export interface KafkaOpsAlertEvent {
     | 'DOCK_EMPTY'
     | 'ZONE_VIOLATION'
     | 'LOW_BATTERY'
-    | 'BIKE_OFFLINE';
+    | 'BIKE_OFFLINE'
+    | 'ZONE_TRANSITION';
+  message?: string;
   bikeId?: string;
   dockId?: string;
   lat?: number;
@@ -309,6 +312,7 @@ export interface WsBikeLocationUpdate {
   lng: number;
   battery: number;
   status: BikeStatus;
+  zoneIds?: string[];
 }
 
 export interface WsDockStatusUpdate {

@@ -5,6 +5,7 @@ import { MdDirectionsBike } from 'react-icons/md'
 import Link from 'next/link'
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "./api/auth/[...nextauth]/route"
+import HeaderActions from '@/components/HeaderActions'
 
 export const metadata: Metadata = {
   title: 'Scooter Operator Dashboard',
@@ -91,15 +92,9 @@ export default async function RootLayout({
             
             {/* Main Content */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
-              <header className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-surface/40 backdrop-blur-sm z-10">
+              <header className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-surface/40 backdrop-blur-sm z-10 sticky top-0">
                  <div className="text-lg font-semibold">Dashboard Overview</div>
-                 <div className="flex items-center gap-4">
-                    <button className="relative p-2 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors">
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full border border-background"></span>
-                      <FiBell className="w-5 h-5" />
-                    </button>
-                    {/* Logout button could go here */}
-                 </div>
+                 <HeaderActions />
               </header>
               <div className="flex-1 overflow-auto p-4 md:p-8">
                 {children}

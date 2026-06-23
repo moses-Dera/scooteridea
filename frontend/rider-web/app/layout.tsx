@@ -56,7 +56,7 @@ export default function RootLayout({
               </div>
 
               {/* Top Navbar - Premium Floating Glass Pill */}
-              <header className="absolute top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 px-6 py-3 flex items-center justify-between bg-surfaceLight/40 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+              <header className={`absolute top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 px-6 py-3 flex items-center justify-between bg-surfaceLight/40 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 ${activePanel ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
                 
                 {/* Left: Menu & Profile */}
                 <div className="flex items-center gap-2 sm:gap-6">

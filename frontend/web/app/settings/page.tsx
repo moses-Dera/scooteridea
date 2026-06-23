@@ -1,10 +1,61 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiUsers, FiDollarSign, FiMap, FiPercent, FiSave } from 'react-icons/fi';
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<'users' | 'finance' | 'geofencing' | 'pricing'>('pricing');
+
+  const [config, setConfig] = useState({
+    unlockFeeCents: 10000,
+    perMinuteCents: 2000,
+    maxSurgeMult: 2.5,
+    outOfDockFeeCents: 50000,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const res = await fetch(`${baseUrl}/api/proxy/fleet/config`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setConfig(json.data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch config', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  const handleSavePricing = async () => {
+    setSaving(true);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${baseUrl}/api/proxy/fleet/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      if (res.ok) {
+        alert('Pricing Configuration Saved Successfully!');
+      } else {
+        alert('Failed to save config.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error saving config.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20">
@@ -60,61 +111,75 @@ export default function AdminSettings() {
         {/* Pricing Engine Config */}
         {activeTab === 'pricing' && (
           <div className="space-y-6">
-            <div className="glass-panel p-6 rounded-xl border border-white/10">
-              <h2 className="text-xl font-bold text-white mb-4">Base Fares</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-400">Unlock Fee (₦)</label>
-                  <input 
-                    type="number" 
-                    defaultValue={100}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                  />
-                  <p className="text-xs text-slate-500">Charged immediately upon unlocking a bike.</p>
+            {loading ? (
+              <div className="text-slate-400">Loading Configuration...</div>
+            ) : (
+              <>
+                <div className="glass-panel p-6 rounded-xl border border-white/10">
+                  <h2 className="text-xl font-bold text-white mb-4">Base Fares</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Unlock Fee (₦)</label>
+                      <input 
+                        type="number" 
+                        value={config.unlockFeeCents / 100}
+                        onChange={(e) => setConfig({...config, unlockFeeCents: Number(e.target.value) * 100})}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                      />
+                      <p className="text-xs text-slate-500">Charged immediately upon unlocking a bike.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Per-Minute Rate (₦)</label>
+                      <input 
+                        type="number" 
+                        value={config.perMinuteCents / 100}
+                        onChange={(e) => setConfig({...config, perMinuteCents: Number(e.target.value) * 100})}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                      />
+                      <p className="text-xs text-slate-500">Charged for every minute the ride is active.</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-400">Per-Minute Rate (₦)</label>
-                  <input 
-                    type="number" 
-                    defaultValue={20}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                  />
-                  <p className="text-xs text-slate-500">Charged for every minute the ride is active.</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="glass-panel p-6 rounded-xl border border-white/10">
-              <h2 className="text-xl font-bold text-white mb-4">Surge & Penalties</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-400">Max Surge Multiplier</label>
-                  <input 
-                    type="number" 
-                    step="0.1"
-                    defaultValue={2.5}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                  />
-                  <p className="text-xs text-slate-500">Maximum fare multiplier during high-demand.</p>
+                <div className="glass-panel p-6 rounded-xl border border-white/10">
+                  <h2 className="text-xl font-bold text-white mb-4">Surge & Penalties</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Max Surge Multiplier</label>
+                      <input 
+                        type="number" 
+                        step="0.1"
+                        value={config.maxSurgeMult}
+                        onChange={(e) => setConfig({...config, maxSurgeMult: Number(e.target.value)})}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                      />
+                      <p className="text-xs text-slate-500">Maximum fare multiplier during high-demand.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-400">Out-of-Dock Penalty (₦)</label>
+                      <input 
+                        type="number" 
+                        value={config.outOfDockFeeCents / 100}
+                        onChange={(e) => setConfig({...config, outOfDockFeeCents: Number(e.target.value) * 100})}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                      />
+                      <p className="text-xs text-slate-500">Fee for ending a ride outside an approved dock.</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-400">Out-of-Dock Penalty (₦)</label>
-                  <input 
-                    type="number" 
-                    defaultValue={500}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                  />
-                  <p className="text-xs text-slate-500">Fee for ending a ride outside an approved dock.</p>
+                
+                <div className="flex justify-end pt-4">
+                  <button 
+                    onClick={handleSavePricing}
+                    disabled={saving}
+                    className="flex items-center gap-2 bg-primary text-black font-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors w-full md:w-auto justify-center disabled:opacity-50"
+                  >
+                    <FiSave />
+                    {saving ? 'Saving...' : 'Save Pricing Config'}
+                  </button>
                 </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end pt-4">
-              <button className="flex items-center gap-2 bg-primary text-black font-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors w-full md:w-auto justify-center">
-                <FiSave />
-                Save Pricing Config
-              </button>
-            </div>
+              </>
+            )}
           </div>
         )}
 

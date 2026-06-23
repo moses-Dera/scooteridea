@@ -21,12 +21,11 @@ model User {
   pushToken    String?  @map("push_token")   // Expo push token — set by client on login
   role         Role     @default(RIDER)
   walletCents  Int      @default(0) @map("wallet_cents")
-  assignedZoneId String?  @map("assigned_zone_id") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  rides        Ride[]
-  payments     Payment[]
-  assignedZone Geofence? @relation(fields: [assignedZoneId], references: [id])
+  rides         Ride[]
+  payments      Payment[]
+  assignedZones Geofence[] @relation("UserAssignedZones")
 
   @@map("users")
 }
@@ -49,6 +48,7 @@ model Bike {
 
   dock  Dock?  @relation(fields: [dockId], references: [id])
   rides Ride[]
+  zoneTransitions ZoneTransition[]
 
   @@map("bikes")
 }
@@ -94,6 +94,7 @@ model Ride {
   fareCents     Int?       @map("fare_cents")
   distanceKm    Decimal?   @map("distance_km") @db.Decimal(6, 2)
   batteryUsedPct Int?      @map("battery_used_pct") // Added for battery efficiency tracking
+  routeGeometry Json?      @map("route_geometry")   // Added to permanently save ride trails
   surgeMult     Decimal    @default(1.0) @map("surge_mult") @db.Decimal(3, 2)
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
 
@@ -148,7 +149,8 @@ model Geofence {
   // Boundary stored as raw GeoJSON polygon string; index via PostGIS raw SQL
   boundary Json
 
-  operators User[]
+  operators User[] @relation("UserAssignedZones")
+  zoneTransitions ZoneTransition[]
 
   @@map("geofences")
 }
@@ -158,6 +160,27 @@ enum ZoneType {
   slow
   no_ride
   dock
+}
+
+// ── Accountability & Logging ───────────────────────────────────────────────────
+model ZoneTransition {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bikeId    String   @map("bike_id")
+  zoneId    String   @map("zone_id") @db.Uuid
+  type      TransitionType
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  bike Bike     @relation(fields: [bikeId], references: [id])
+  zone Geofence @relation(fields: [zoneId], references: [id])
+
+  @@map("zone_transitions")
+}
+
+enum TransitionType {
+  ENTER
+  EXIT
 }
 
 // ── System Configuration ───────────────────────────────────────────────────────

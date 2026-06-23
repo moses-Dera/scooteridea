@@ -6,9 +6,7 @@ export default defineConfig({
   studio: {
     port: 5555
   },
-  migrate: {
-    datasource: {
-      url: process.env.DATABASE_URL || "postgresql://scooter:scooter123@localhost:5432/scooterdb?schema=public",
-    }
+  datasource: {
+    url: process.env.DATABASE_URL || "postgresql://ebike:secret@localhost:5440/ebike",
   }
 })

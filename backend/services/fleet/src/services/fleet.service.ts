@@ -56,6 +56,12 @@ export class FleetService {
     const redis = await getRedisClient();
     await redis.set(`bike:${bikeId}:status`, status);
 
+    // 3.5. Record Location Trail (Breadcrumbs)
+    // We push the current location to a list and keep only the latest 100 points
+    const trailKey = `bike:${bikeId}:trail`;
+    await redis.lpush(trailKey, JSON.stringify({ lat, lng, ts: Date.now() }));
+    await redis.ltrim(trailKey, 0, 99); // Keep exactly 100 points maximum
+
     // 4. Record GPS waypoint for active rides (distance calculation at ride-end)
     if (status === 'in_use') {
       const sessionRaw = await redis.get(`bike:${bikeId}:ride`);
@@ -66,7 +72,7 @@ export class FleetService {
     }
 
     // 5. Check geofences (PostGIS)
-    await FleetService.checkGeofence(bikeId, lat, lng);
+    const zoneIds = await FleetService.checkGeofence(bikeId, lat, lng);
 
     // 6. Emit to Redis event bus (fan-out: WS Hub + DB Writer)
     await kafka.fleetTelemetry({
@@ -75,6 +81,7 @@ export class FleetService {
       lng,
       batteryPct: battery_pct,
       status,
+      zoneIds,
       ts: Date.now(),
     });
 
@@ -94,13 +101,13 @@ export class FleetService {
   }
 
   /**
-   * PostGIS geofence check — enforces speed caps and no-ride zones.
+   * PostGIS geofence check — enforces speed caps, no-ride zones, and tracks zone transitions.
    */
-  static async checkGeofence(bikeId: string, lat: number, lng: number): Promise<void> {
+  static async checkGeofence(bikeId: string, lat: number, lng: number): Promise<string[]> {
     const zones = await prisma.$queryRaw<
-      { id: string; type: string; speed_cap: number | null }[]
+      { id: string; name: string; type: string; speed_cap: number | null }[]
     >`
-      SELECT id, type, speed_cap
+      SELECT id, name, type, speed_cap
       FROM geofences
       WHERE ST_Contains(
         boundary::geometry,
@@ -108,7 +115,34 @@ export class FleetService {
       )
     `;
 
+    const currentZoneIds = zones.map(z => z.id);
+    const redis = await getRedisClient();
+    const prevZonesRaw = await redis.get(`bike:${bikeId}:zones`);
+    const prevZoneIds: string[] = prevZonesRaw ? JSON.parse(prevZonesRaw) : [];
+
+    // Track Enters
     for (const zone of zones) {
+      if (!prevZoneIds.includes(zone.id)) {
+        logger.info(`Bike ${bikeId} entered zone ${zone.name}`);
+        
+        await prisma.zoneTransition.create({
+          data: {
+            bikeId,
+            zoneId: zone.id,
+            type: 'ENTER',
+            lat,
+            lng
+          }
+        });
+
+        await kafka.opsAlert({ 
+          type: 'ZONE_TRANSITION', 
+          bikeId, 
+          message: `Bike ${bikeId} entered zone: ${zone.name}`,
+          ts: Date.now() 
+        });
+      }
+
       if (zone.type === 'no_ride') {
         await bikeCommander.disable(bikeId, 'NO_RIDE_ZONE');
         await kafka.opsAlert({ type: 'ZONE_VIOLATION', bikeId, lat, lng, ts: Date.now() });
@@ -117,6 +151,35 @@ export class FleetService {
         await bikeCommander.speedLimit(bikeId, zone.speed_cap);
       }
     }
+
+    // Track Exits
+    for (const prevZoneId of prevZoneIds) {
+      if (!currentZoneIds.includes(prevZoneId)) {
+        logger.info(`Bike ${bikeId} left zone ${prevZoneId}`);
+        
+        await prisma.zoneTransition.create({
+          data: {
+            bikeId,
+            zoneId: prevZoneId,
+            type: 'EXIT',
+            lat,
+            lng
+          }
+        });
+
+        await kafka.opsAlert({ 
+          type: 'ZONE_TRANSITION', 
+          bikeId, 
+          message: `Bike ${bikeId} left zone`,
+          ts: Date.now() 
+        });
+      }
+    }
+
+    // Save current state for next tick
+    await redis.set(`bike:${bikeId}:zones`, JSON.stringify(currentZoneIds));
+    
+    return currentZoneIds;
   }
 
   /** Get all bikes from Redis (live state). */
@@ -126,13 +189,19 @@ export class FleetService {
     const bikes = await Promise.all(
       bikeKeys.map(async (key) => {
         const bikeId = key.split(':')[1];
-        const [status, location] = await Promise.all([
+        const [status, location, zonesRaw] = await Promise.all([
           redis.get(`bike:${bikeId}:status`),
           redisGetJson<{ lat: number; lng: number; battery_pct: number; speed_kmh: number }>(
             `bike:${bikeId}:location`,
           ),
+          redis.get(`bike:${bikeId}:zones`)
         ]);
-        return { bikeId, status, ...location };
+        return { 
+          bikeId, 
+          status, 
+          ...location,
+          zoneIds: zonesRaw ? JSON.parse(zonesRaw) : []
+        };
       }),
     );
     return bikes;

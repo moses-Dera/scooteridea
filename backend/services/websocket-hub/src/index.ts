@@ -106,7 +106,8 @@ function broadcastEvent(event: WsServerEvent) {
     const shouldSend =
       (event.event === 'bike_location_update' &&
         (state.subscriptions.has(`bike:${event.bikeId}`) ||
-          state.subscriptions.has('fleet:all'))) ||
+          state.subscriptions.has('fleet:all') ||
+          (event.zoneIds && event.zoneIds.some(z => state.subscriptions.has(`zone:${z}`))))) ||
       (event.event === 'dock_status_update' &&
         (state.subscriptions.has(`dock:${event.dockId}`) ||
           state.subscriptions.has('dock:all'))) ||
@@ -139,6 +140,7 @@ async function startEventsConsumer() {
           lng:      payload.lng,
           battery:  payload.batteryPct,
           status:   payload.status,
+          zoneIds:  payload.zoneIds,
         };
       } else if (payload.dockId) {
         event = {

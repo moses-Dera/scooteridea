@@ -242,3 +242,5 @@ function mapPrismaError(err: PrismaClientKnownRequestError): AppError {
       });
   }
 }
+
+export * from './auth';
