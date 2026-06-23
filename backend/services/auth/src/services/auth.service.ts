@@ -16,6 +16,7 @@ import {
   InternalError,
   ValidationError,
   retry,
+  logger,
 } from '@ebike/core';
 import { getRedisClient } from '@ebike/redis';
 import { UserRepository } from '../repositories/user.repository';
@@ -158,5 +159,64 @@ export class AuthService {
     );
 
     return { accessToken, refreshToken };
+  }
+
+  // ── Password Reset (Unified) ────────────────────────────────────────────────
+  static async forgotPassword(email: string): Promise<{ message: string, tokenForDev?: string, redirectType?: string }> {
+    const user = await UserRepository.findByEmail(email);
+    
+    if (!user) {
+      // Return generic message to prevent email enumeration.
+      return { message: 'If an account exists for that email, a reset link has been sent.' };
+    }
+
+    const resetToken = uuidv4();
+    const redis = await getRedisClient();
+    
+    // Store token in Redis, expires in 15 minutes
+    await redis.setEx(`reset:${resetToken}`, 15 * 60, user.id);
+    
+    let redirectType = 'WEB_DASHBOARD';
+    let mockEmailLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
+
+    if (user.role === 'RIDER') {
+      redirectType = 'MOBILE_APP_DEEP_LINK';
+      mockEmailLink = `scooterapp://reset-password?token=${resetToken}`;
+    }
+    
+    logger.info({ 
+      userId: user.id, 
+      role: user.role, 
+      resetToken, 
+      mockEmailLink 
+    }, '[Auth] Generated Password Reset Token (Simulating Email Send)');
+
+    // TODO: Integrate SES / SendGrid here to send real email based on role.
+    
+    return { 
+      message: 'If an account exists for that email, a reset link has been sent.',
+      tokenForDev: process.env.NODE_ENV !== 'production' ? resetToken : undefined,
+      redirectType: process.env.NODE_ENV !== 'production' ? redirectType : undefined
+    };
+  }
+
+  static async resetPassword(token: string, newPassword: string): Promise<void> {
+    const redis = await getRedisClient();
+    const userId = await redis.get(`reset:${token}`);
+
+    if (!userId) {
+      throw new UnauthorizedError('Invalid or expired reset token');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    
+    // Update user in DB
+    await UserRepository.updatePassword(userId, passwordHash);
+
+    // Delete the token so it can't be used again
+    await redis.del(`reset:${token}`);
+
+    // Invalidate all existing refresh tokens for safety
+    await redis.del(`refresh:${userId}`);
   }
 }

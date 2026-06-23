@@ -27,6 +27,15 @@ const pushTokenSchema = z.object({
   token: z.string().min(1, 'Push token is required'),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 authRouter.post(
   '/register',
@@ -46,6 +55,21 @@ authRouter.post(
   '/refresh',
   validate({ body: refreshSchema }),
   asyncHandler(AuthController.refresh),
+);
+
+// Unified password reset flow (handles both riders and ops)
+authRouter.post(
+  '/forgot-password',
+  authRateLimiter,
+  validate({ body: forgotPasswordSchema }),
+  asyncHandler(AuthController.forgotPassword),
+);
+
+authRouter.post(
+  '/reset-password',
+  authRateLimiter,
+  validate({ body: resetPasswordSchema }),
+  asyncHandler(AuthController.resetPassword),
 );
 
 authRouter.post('/logout',       jwtGuard, asyncHandler(AuthController.logout));

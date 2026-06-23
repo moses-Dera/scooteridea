@@ -70,6 +70,31 @@ export default function RiderMap() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, [mounted]);
 
+  const handleFocusLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    
+    // Explicitly request location when button is clicked
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        setViewState({
+          latitude,
+          longitude,
+          zoom: 16,
+          pitch: 45,
+        });
+      },
+      (error) => {
+        alert(`Could not get location: ${error.message}. Ensure location permissions are enabled.`);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   if (!mounted) return <div className="w-full h-full bg-surface animate-pulse" />;
 
   return (
@@ -82,8 +107,22 @@ export default function RiderMap() {
         style={{ width: '100%', height: '100%' }}
         attributionControl={false}
       >
-        <GeolocateControl position="bottom-right" style={{ marginBottom: '20px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
-        <NavigationControl position="bottom-right" showCompass={false} style={{ marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
+        <NavigationControl position="bottom-right" showCompass={false} style={{ marginBottom: '90px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
+        
+        {/* Custom Geolocate Button (Fixes the buggy native control) */}
+        <div className="absolute bottom-[20px] right-[20px] z-10 pointer-events-auto">
+          <button 
+            onClick={handleFocusLocation}
+            className="w-[29px] h-[29px] bg-[#111622] border border-white/10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors shadow-lg group"
+            title="Focus my location"
+          >
+            <svg className="w-4 h-4 text-slate-300 group-hover:text-[#00FFA3] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v2m0 16v2m10-10h-2M4 12H2" />
+            </svg>
+          </button>
+        </div>
 
         {/* Render Bikes */}
         {displayBikes.map(bike => (

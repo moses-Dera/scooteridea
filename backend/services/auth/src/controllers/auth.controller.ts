@@ -55,5 +55,14 @@ export class AuthController {
 
     res.json({ success: true, message: 'Push token registered' });
   }
-}
 
+  static async forgotPassword(req: Request, res: Response): Promise<void> {
+    const response = await AuthService.forgotPassword(req.body.email);
+    res.json({ success: true, data: response });
+  }
+
+  static async resetPassword(req: Request, res: Response): Promise<void> {
+    await AuthService.resetPassword(req.body.token, req.body.newPassword);
+    res.json({ success: true, message: 'Password has been reset successfully' });
+  }
+}

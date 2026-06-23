@@ -17,11 +17,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     
     try {
-      // In a real implementation this would hit /auth/forgot-password
-      // await api.post('/auth/forgot-password', { email });
-      
-      // Simulating API call for visual feedback
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await api.post('/auth/forgot-password', { email });
       setSuccess(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Request failed';
