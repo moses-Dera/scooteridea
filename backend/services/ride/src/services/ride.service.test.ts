@@ -32,7 +32,7 @@ jest.mock('@ebike/redis', () => ({
   redisDeleteWaypoints: jest.fn(),
 }));
 
-jest.mock('@ebike/kafka', () => ({
+jest.mock('@ebike/events', () => ({
   kafka: {
     paymentCharge: jest.fn().mockResolvedValue(undefined),
     rideEnded:     jest.fn().mockResolvedValue(undefined),
