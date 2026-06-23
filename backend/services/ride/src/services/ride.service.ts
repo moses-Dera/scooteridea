@@ -269,6 +269,9 @@ export class RideService {
       totalRevenue,
       activeUsers,
       avgDistance,
+      bikesTotal,
+      bikesActive,
+      completedRides,
     ] = await Promise.all([
       prisma.ride.count({
         where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
@@ -286,21 +289,40 @@ export class RideService {
         where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
         _avg: { distanceKm: true },
       }),
+      prisma.bike.count(),
+      prisma.bike.count({ where: { status: 'in_use' } }),
+      prisma.ride.findMany({
+        where: { createdAt: { gte: startDate }, status: 'COMPLETED', startedAt: { not: null }, endedAt: { not: null } },
+        select: { startedAt: true, endedAt: true },
+      }),
     ]);
 
     const avgDistanceKm = avgDistance._avg?.distanceKm
       ? Math.round(Number(avgDistance._avg.distanceKm) * 10) / 10
       : 0;
 
+    // Compute avg ride duration in minutes from actual startedAt/endedAt timestamps
+    const avgRideDurationMins = completedRides.length > 0
+      ? Math.round(
+          completedRides.reduce((sum, r) =>
+            sum + (r.endedAt!.getTime() - r.startedAt!.getTime()) / 60_000, 0
+          ) / completedRides.length * 10
+        ) / 10
+      : 0;
+
+    const fleetUtilization = bikesTotal > 0
+      ? Math.round((bikesActive / bikesTotal) * 100)
+      : 0;
+
     return {
       total_rides: totalRides,
       total_revenue: Math.round(((totalRevenue._sum?.fareCents) ?? 0) / 100),
       active_users: activeUsers.length,
-      fleet_utilization: 78, // Placeholder - would need fleet size
-      avg_ride_duration: 0,  // Field not in schema yet
+      fleet_utilization: fleetUtilization,
+      avg_ride_duration: avgRideDurationMins,
       avg_ride_distance: avgDistanceKm,
-      bikes_active: 156, // Placeholder - would fetch from fleet service
-      bikes_total: 200,  // Placeholder
+      bikes_active: bikesActive,
+      bikes_total: bikesTotal,
     };
   }
 }

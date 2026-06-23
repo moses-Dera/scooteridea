@@ -23,6 +23,7 @@ import { prisma } from '@ebike/db';
 
 import { fleetRouter } from './routes/fleet.routes';
 import { FleetService } from './services/fleet.service';
+import { calculateBatteryEfficiency } from './services/efficiency.cron';
 
 const app    = express();
 const PORT   = Number(process.env.PORT ?? 3002);
@@ -76,9 +77,21 @@ async function bootstrap(): Promise<void> {
   // Start MQTT ingestion (non-blocking — MQTT reconnects automatically)
   await FleetService.startMqttIngestion();
 
+  // Schedule battery efficiency cron — runs immediately then every 24h
+  calculateBatteryEfficiency().catch((err) =>
+    logger.warn({ err }, '[Fleet] Initial efficiency calculation failed'),
+  );
+  const efficiencyInterval = setInterval(() =>
+    calculateBatteryEfficiency().catch((err) =>
+      logger.warn({ err }, '[Fleet] Efficiency cron failed'),
+    ),
+    24 * 60 * 60_000, // 24 hours
+  );
+
   registerCleanup('Postgres',       () => prisma.$disconnect());
   registerCleanup('Redis',          () => disconnectRedis());
   registerCleanup('Events Producer', () => disconnectProducer());
+  registerCleanup('EfficiencyCron', () => { clearInterval(efficiencyInterval); return Promise.resolve(); });
 
   const server = http.createServer(app);
   setupGracefulShutdown(server, 10_000);
