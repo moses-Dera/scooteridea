@@ -3,13 +3,13 @@ import { FleetService } from '../services/fleet.service';
 import { bikeCommander } from '@ebike/mqtt';
 import { prisma } from '@ebike/db';
 import { getRedisClient } from '@ebike/redis';
-import { jwtGuard } from '@ebike/core';
+import { jwtGuard, requireRole } from '@ebike/core';
 export const fleetRouter = Router();
 
 // ==========================================
 // Admin: System Config (Pricing Engine)
 // ==========================================
-fleetRouter.get('/config', jwtGuard, async (req, res) => {
+fleetRouter.get('/config', jwtGuard, requireRole('ADMIN', 'OPERATOR'), async (req, res) => {
   try {
     let config = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
     if (!config) {
@@ -21,7 +21,7 @@ fleetRouter.get('/config', jwtGuard, async (req, res) => {
   }
 });
 
-fleetRouter.put('/config', jwtGuard, async (req, res) => {
+fleetRouter.put('/config', jwtGuard, requireRole('ADMIN'), async (req, res) => {
   try {
     const { unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents } = req.body;
     const config = await prisma.systemConfig.upsert({
