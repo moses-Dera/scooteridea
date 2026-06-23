@@ -5,7 +5,7 @@ import { createClient } from 'redis';
 import 'dotenv/config';
 
 import type { JwtPayload, WsServerEvent, WsSubscribeMessage } from '@ebike/types';
-import { createConsumer, TOPICS } from '@ebike/kafka';
+import { createConsumer, TOPICS } from '@ebike/events';
 import {
   logger,
   setupGracefulShutdown,
@@ -119,8 +119,8 @@ function broadcastEvent(event: WsServerEvent) {
   logger.debug({ event: event.event, recipients: sent }, '[WS Hub] Event broadcast');
 }
 
-// ── Kafka consumer → Redis pub/sub relay ─────────────────────────────────────
-async function startKafkaConsumer() {
+// ── Events consumer → Redis pub/sub relay ─────────────────────────────────────
+async function startEventsConsumer() {
   const publisher = createClient({ url: process.env.REDIS_URL });
   publisher.on('error', (err) => logger.error({ err }, '[WS Hub] Redis pub client error'));
   await publisher.connect();
@@ -163,14 +163,14 @@ async function startKafkaConsumer() {
   );
 
   registerCleanup('Redis-Pub', async () => { await publisher.quit(); });
-  logger.info('[WS Hub] Kafka → Redis relay active');
+  logger.info('[WS Hub] Events → Redis relay active');
 }
 
 // ── Bootstrap ──────────────────────────────────────────────────────────────────
 async function bootstrap() {
   try {
     await startRedisPubSub();
-    await startKafkaConsumer();
+    await startEventsConsumer();
   } catch (err) {
     logger.fatal({ err }, '[WS Hub] Fatal startup error — aborting');
     process.exit(1);

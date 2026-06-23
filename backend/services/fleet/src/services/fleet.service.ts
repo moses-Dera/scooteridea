@@ -1,12 +1,11 @@
 import { getMqttClient, subscribeToTopic, bikeCommander } from '@ebike/mqtt';
 import { getRedisClient, geoAdd, redisGetJson, redisSetJson, redisPushWaypoint } from '@ebike/redis';
-import { kafka } from '@ebike/kafka';
+import { kafka } from '@ebike/events';
 import { prisma } from '@ebike/db';
 import { logger } from '@ebike/core';
 import type {
   BikeTelemetryPayload,
   BikeStatus,
-  KafkaFleetTelemetryEvent,
 } from '@ebike/types';
 
 export class FleetService {
@@ -69,16 +68,15 @@ export class FleetService {
     // 5. Check geofences (PostGIS)
     await FleetService.checkGeofence(bikeId, lat, lng);
 
-    // 6. Emit to Kafka (fan-out: WS Hub + DB Writer)
-    const event: KafkaFleetTelemetryEvent = {
+    // 6. Emit to Redis event bus (fan-out: WS Hub + DB Writer)
+    await kafka.fleetTelemetry({
       bikeId,
       lat,
       lng,
       batteryPct: battery_pct,
       status,
       ts: Date.now(),
-    };
-    await kafka.fleetTelemetry(event);
+    });
 
     // 7. Low battery alert
     if (battery_pct <= 15) {
@@ -144,7 +142,7 @@ export class FleetService {
   static async getNearbyBikes(lat: number, lng: number, radiusKm: number = 2) {
     const redis = await getRedisClient();
     // GEORADIUS returns closest bikes first.
-    const bikes = await redis.geosearch('fleet:available', 'FROMLONLAT', lng, lat, 'BYRADIUS', radiusKm, 'km', 'ASC');
+    const bikes = await redis.geoSearch('fleet:available', { longitude: lng, latitude: lat }, { radius: radiusKm, unit: 'km' }, { SORT: 'ASC' });
     
     const availableBikes = [];
     for (const bikeId of bikes as string[]) {
@@ -160,31 +158,26 @@ export class FleetService {
     return availableBikes;
   }
 
-  /** Get recent system alerts */
+  /** Get recent system alerts (stored in Redis as a list) */
   static async getAlerts(limit: number = 10) {
     try {
-      const alerts = await prisma.alert.findMany({
-        where: { resolved: false },
-        orderBy: { created_at: 'desc' },
-        take: limit,
-      });
-      return alerts;
+      const redis = await getRedisClient();
+      const raw = await redis.lRange('ops:alerts', 0, limit - 1);
+      return raw.map((r) => JSON.parse(r));
     } catch (err) {
-      logger.warn('[Fleet] Failed to fetch alerts from DB', err);
+      logger.warn({ err }, '[Fleet] Failed to fetch alerts from Redis');
       return [];
     }
   }
 
-  /** Get maintenance issues */
-  static async getMaintenance(status: string = 'open') {
+  /** Get maintenance issues (stored in Redis) */
+  static async getMaintenance(_status: string = 'open') {
     try {
-      const maintenance = await prisma.maintenance_issue.findMany({
-        where: { status },
-        orderBy: { created_at: 'desc' },
-      });
-      return maintenance;
+      const redis = await getRedisClient();
+      const raw = await redis.lRange('ops:maintenance', 0, 49);
+      return raw.map((r) => JSON.parse(r));
     } catch (err) {
-      logger.warn('[Fleet] Failed to fetch maintenance from DB', err);
+      logger.warn({ err }, '[Fleet] Failed to fetch maintenance from Redis');
       return [];
     }
   }

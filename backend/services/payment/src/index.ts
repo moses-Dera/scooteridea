@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-//  Payment Service — Kafka consumer with DLQ + retry
+//  Payment Service — Redis consumer with DLQ + retry
 //
 //  Consumer Group: payment-consumer
 //  Topics consumed: payment.charge
@@ -30,7 +30,7 @@ import {
   withDLQ,
 } from '@ebike/core';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
-import { createConsumer, connectProducer, disconnectProducer, publish, TOPICS } from '@ebike/kafka';
+import { createConsumer, connectProducer, disconnectProducer, publish, TOPICS } from '@ebike/events';
 import type { KafkaPaymentChargeEvent } from '@ebike/types';
 
 const app    = express();
@@ -129,8 +129,8 @@ async function bootstrap(): Promise<void> {
 
   registerCleanup('Postgres',       () => prisma.$disconnect());
   registerCleanup('Redis',          () => disconnectRedis());
-  registerCleanup('Kafka Producer', () => disconnectProducer());
-  registerCleanup('Kafka Consumer', () => consumer.disconnect());
+  registerCleanup('Events Producer', () => disconnectProducer());
+  registerCleanup('Events Consumer', () => consumer.disconnect());
 
   const server = http.createServer(app);
   setupGracefulShutdown(server, 10_000);

@@ -1,7 +1,7 @@
 {
   "name": "@ebike/notification-service",
   "version": "1.0.0",
-  "description": "Push notification dispatcher — Kafka consumer for ride and payment events",
+  "description": "Push notification dispatcher — Redis consumer for ride and payment events",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -13,7 +13,7 @@
     "express": "^4.18.2",
     "dotenv": "^16.4.0",
     "@ebike/core": "*",
-    "@ebike/kafka": "*",
+    "@ebike/events": "*",
     "@ebike/types": "*",
     "@ebike/redis": "*",
     "expo-server-sdk": "^3.12.0"

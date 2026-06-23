@@ -16,7 +16,7 @@ import {
   logger,
 } from '@ebike/core';
 import { getRedisClient, redisGetJson, redisGetWaypoints, redisDeleteWaypoints } from '@ebike/redis';
-import { kafka }          from '@ebike/kafka';
+import { kafka }          from '@ebike/events';
 import { bikeCommander }  from '@ebike/mqtt';
 import Geohash           from 'ngeohash';
 
@@ -223,10 +223,10 @@ export class RideService {
       by: ['userId'],
       where: {
         createdAt: { gte: todayStart },
-        status: { in: ['COMPLETED', 'PAID'] },
+        status: { in: ['COMPLETED'] },
       },
       _count: { id: true },
-      _sum: { distance_km: true, duration_sec: true },
+      _sum: { distanceKm: true },
       orderBy: [{ _count: { id: 'desc' } }],
       take: limit,
     });
@@ -239,9 +239,8 @@ export class RideService {
           id: group.userId,
           name: user?.name || 'Unknown',
           email: user?.email,
-          rides_count: group._count.id,
-          total_distance: Math.round((group._sum.distance_km || 0) * 1000), // in meters
-          total_duration: group._sum.duration_sec || 0,
+          rides_count: group._count?.id ?? 0,
+          total_distance: Math.round(Number(group._sum?.distanceKm ?? 0) * 1000), // in meters
         };
       })
     );
@@ -269,16 +268,15 @@ export class RideService {
       totalRides,
       totalRevenue,
       activeUsers,
-      avgDuration,
       avgDistance,
       ridesData,
     ] = await Promise.all([
       prisma.ride.count({
-        where: { createdAt: { gte: startDate }, status: { in: ['COMPLETED', 'PAID'] } },
+        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
       }),
       prisma.ride.aggregate({
-        where: { createdAt: { gte: startDate }, status: 'PAID' },
-        _sum: { amount_cents: true },
+        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
+        _sum: { fareCents: true },
       }),
       prisma.ride.findMany({
         where: { createdAt: { gte: startDate } },
@@ -287,35 +285,27 @@ export class RideService {
       }),
       prisma.ride.aggregate({
         where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
-        _avg: { duration_sec: true },
-      }),
-      prisma.ride.aggregate({
-        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
-        _avg: { distance_km: true },
+        _avg: { distanceKm: true },
       }),
       prisma.ride.findMany({
-        where: { createdAt: { gte: startDate }, status: { in: ['COMPLETED', 'PAID'] } },
-        select: { duration_sec: true, distance_km: true },
+        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
+        select: { distanceKm: true },
       }),
     ]);
 
-    const avgDurationMins = avgDuration._avg.duration_sec
-      ? Math.round((avgDuration._avg.duration_sec / 60) * 10) / 10
-      : 0;
-
-    const avgDistanceKm = avgDistance._avg.distance_km
-      ? Math.round(avgDistance._avg.distance_km * 10) / 10
+    const avgDistanceKm = avgDistance._avg?.distanceKm
+      ? Math.round(Number(avgDistance._avg.distanceKm) * 10) / 10
       : 0;
 
     return {
       total_rides: totalRides,
-      total_revenue: Math.round((totalRevenue._sum.amount_cents || 0) / 100),
+      total_revenue: Math.round(((totalRevenue._sum?.fareCents) ?? 0) / 100),
       active_users: activeUsers.length,
       fleet_utilization: 78, // Placeholder - would need fleet size
-      avg_ride_duration: avgDurationMins,
+      avg_ride_duration: 0,  // Field not in schema yet
       avg_ride_distance: avgDistanceKm,
       bikes_active: 156, // Placeholder - would fetch from fleet service
-      bikes_total: 200, // Placeholder
+      bikes_total: 200,  // Placeholder
     };
   }
 }

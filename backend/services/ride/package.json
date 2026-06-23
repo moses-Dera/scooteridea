@@ -17,7 +17,7 @@
     "@ebike/core": "*",
     "@ebike/db": "*",
     "@ebike/redis": "*",
-    "@ebike/kafka": "*",
+    "@ebike/events": "*",
     "@ebike/mqtt": "*",
     "@ebike/types": "*",
     "ngeohash": "^0.6.3"

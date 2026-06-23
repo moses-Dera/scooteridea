@@ -1,7 +1,7 @@
 {
   "name": "@ebike/payment-service",
   "version": "1.0.0",
-  "description": "Kafka-driven wallet payment processor with DLQ and retry",
+  "description": "Redis-driven wallet payment processor with DLQ and retry",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -15,7 +15,7 @@
     "@prisma/client": "^7.0.0",
     "@ebike/core": "*",
     "@ebike/redis": "*",
-    "@ebike/kafka": "*",
+    "@ebike/events": "*",
     "@ebike/types": "*"
   },
   "devDependencies": {

@@ -17,7 +17,7 @@
     "@prisma/client": "^7.0.0",
     "@ebike/core": "*",
     "@ebike/redis": "*",
-    "@ebike/kafka": "*",
+    "@ebike/events": "*",
     "@ebike/mqtt": "*",
     "@ebike/types": "*"
   },

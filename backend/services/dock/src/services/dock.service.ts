@@ -1,6 +1,6 @@
 import { getMqttClient, subscribeToTopic } from '@ebike/mqtt';
 import { getRedisClient } from '@ebike/redis';
-import { kafka } from '@ebike/kafka';
+import { kafka } from '@ebike/events';
 import type { DockTelemetryPayload } from '@ebike/types';
 
 // Lazy import to avoid circular dep

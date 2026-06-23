@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  Notification Service — index.ts
 //
-//  Kafka consumer that dispatches Expo push notifications on ride + payment events.
+//  Redis consumer that dispatches Expo push notifications on ride + payment events.
 //  Push token storage: Redis key `push_token:{userId}` (set by auth-service on login).
 //  Swap sendPushNotification() for FCM by replacing the Expo call with
 //  firebase-admin's messaging.send() — the rest of the service stays the same.
@@ -25,7 +25,7 @@ import {
   notFoundHandler,
   errorHandler,
 } from '@ebike/core';
-import { createConsumer, TOPICS } from '@ebike/kafka';
+import { createConsumer, TOPICS } from '@ebike/events';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
 
 // ── App (health endpoint only) ────────────────────────────────────────────────
@@ -212,7 +212,7 @@ async function startConsumer() {
 }
 
 // ── Health Probes ─────────────────────────────────────────────────────────────
-registerProbe('kafka', async () => ({ status: 'ok' }), { critical: false });
+registerProbe('redis_events', async () => ({ status: 'ok' }), { critical: false });
 registerProbe('redis', async () => {
   const redis = await getRedisClient();
   await redis.ping();
@@ -233,13 +233,13 @@ async function bootstrap(): Promise<void> {
 
   try {
     consumer = await startConsumer();
-    logger.info('[Notification] Kafka consumer active');
+    logger.info('[Notification] Redis event consumer active');
   } catch (err) {
-    logger.fatal({ err }, '[Notification] Kafka consumer startup failed');
+    logger.fatal({ err }, '[Notification] Redis consumer startup failed');
     process.exit(1);
   }
 
-  registerCleanup('Kafka Consumer', () => consumer.disconnect());
+  registerCleanup('Events Consumer', () => consumer.disconnect());
   registerCleanup('Redis',          () => disconnectRedis());
 
   const server = http.createServer(app);

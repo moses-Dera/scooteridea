@@ -50,7 +50,7 @@ export async function calculateBatteryEfficiency() {
       await redis.set(`bike:${bike.id}:efficiency`, efficiencyKmPerPct.toFixed(3));
       
     } catch (err) {
-      logger.error(`[EfficiencyCron] Failed to process bike ${bike.id}`, err);
+      logger.error({ err, bikeId: bike.id }, '[EfficiencyCron] Failed to process bike');
     }
   }
   

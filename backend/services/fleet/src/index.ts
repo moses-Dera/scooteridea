@@ -17,7 +17,7 @@ import {
   registerCleanup,
 } from '@ebike/core';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
-import { connectProducer, disconnectProducer } from '@ebike/kafka';
+import { connectProducer, disconnectProducer } from '@ebike/events';
 import { getMqttClient } from '@ebike/mqtt';
 import { prisma } from '@ebike/db';
 
@@ -67,7 +67,7 @@ async function bootstrap(): Promise<void> {
     await getRedisClient();
     logger.info('[Fleet] Redis connected');
     await connectProducer();
-    logger.info('[Fleet] Kafka producer connected');
+    logger.info('[Fleet] Redis event producer connected');
   } catch (err) {
     logger.fatal({ err }, '[Fleet] Dependency connection failed — aborting startup');
     process.exit(1);
@@ -78,7 +78,7 @@ async function bootstrap(): Promise<void> {
 
   registerCleanup('Postgres',       () => prisma.$disconnect());
   registerCleanup('Redis',          () => disconnectRedis());
-  registerCleanup('Kafka Producer', () => disconnectProducer());
+  registerCleanup('Events Producer', () => disconnectProducer());
 
   const server = http.createServer(app);
   setupGracefulShutdown(server, 10_000);
