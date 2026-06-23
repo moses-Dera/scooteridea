@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BarChart, Settings, Shield, AlertTriangle } from 'lucide-react';
+import { BarChart, Settings, Shield, AlertTriangle, Wallet, MapPin, HelpCircle } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 interface MenuPanelProps {
@@ -14,7 +14,7 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
     {
       title: 'Wallet',
       description: 'Balance & Payment Methods',
-      icon: '💳',
+      icon: <Wallet className="w-5 h-5" />,
       panelType: 'wallet',
     },
     {
@@ -26,7 +26,7 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
     {
       title: 'Docking Stations',
       description: 'Find nearby docks',
-      icon: '🚲',
+      icon: <MapPin className="w-5 h-5" />,
       panelType: 'docks',
     },
     {
@@ -38,7 +38,7 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
     {
       title: 'Help & Support',
       description: 'FAQ & Customer Support',
-      icon: '❓',
+      icon: <HelpCircle className="w-5 h-5" />,
       panelType: 'help',
     },
     {

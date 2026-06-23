@@ -2,6 +2,7 @@
 
 import { useWallet } from '@/hooks';
 import { useState } from 'react';
+import { Bike, CreditCard } from 'lucide-react';
 
 interface WalletPanelProps {
   onClose: () => void;
