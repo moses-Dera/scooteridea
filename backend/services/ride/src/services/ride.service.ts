@@ -85,12 +85,21 @@ export class RideService {
       { maxAttempts: 3, label: 'mqtt:unlock' },
     );
 
+    const redis = await getRedisClient();
+    
+    // Capture starting battery percentage
+    let batteryStartPct = null;
+    const locationRaw = await redis.get(`bike:${ride.bikeId}:location`);
+    if (locationRaw) {
+      const loc = JSON.parse(locationRaw);
+      batteryStartPct = loc.battery_pct ?? null;
+    }
+
     await prisma.ride.update({
       where: { id: rideId },
-      data:  { status: 'ACTIVE', startedAt: new Date() },
+      data:  { status: 'ACTIVE', startedAt: new Date(), batteryStartPct },
     });
 
-    const redis = await getRedisClient();
     // session:userId — tracks that user has an active ride (prevents double-booking)
     await redis.set(
       `session:${userId}`,
@@ -123,9 +132,11 @@ export class RideService {
 
     // ── Surge: read geohash:surge:* from Redis using bike's last-known position ─
     let surgeMult = 1.0;
+    let endBatteryPct = null;
     try {
-      const location = await redisGetJson<{ lat: number; lng: number }>(`bike:${ride.bikeId}:location`);
+      const location = await redisGetJson<{ lat: number; lng: number, battery_pct?: number }>(`bike:${ride.bikeId}:location`);
       if (location) {
+        endBatteryPct = location.battery_pct ?? null;
         const geohash = Geohash.encode(location.lat, location.lng, 5);
         const redis   = await getRedisClient();
         const raw     = await redis.get(`geohash:surge:${geohash}`);
@@ -133,6 +144,11 @@ export class RideService {
       }
     } catch (err) {
       logger.warn({ err, rideId }, '[Ride] Surge lookup failed — defaulting to 1.0x');
+    }
+
+    let batteryUsedPct = null;
+    if (ride.batteryStartPct != null && endBatteryPct != null) {
+      batteryUsedPct = Math.max(0, ride.batteryStartPct - endBatteryPct);
     }
 
     const fareCents = Math.max(
@@ -150,12 +166,14 @@ export class RideService {
     await prisma.ride.update({
       where: { id: rideId },
       data:  {
-        status:     'COMPLETED',
-        endedAt:    new Date(),
+        status:         'COMPLETED',
+        endedAt:        new Date(),
         fareCents,
         distanceKm,
         surgeMult,
-        endDockId:  dockId,
+        endDockId:      dockId,
+        batteryUsedPct,
+        routeGeometry:  waypoints as any,
       },
     });
 

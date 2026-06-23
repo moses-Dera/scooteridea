@@ -92,9 +92,10 @@ model Ride {
   startedAt     DateTime?  @map("started_at") @db.Timestamptz
   endedAt       DateTime?  @map("ended_at") @db.Timestamptz
   fareCents     Int?       @map("fare_cents")
-  distanceKm    Decimal?   @map("distance_km") @db.Decimal(6, 2)
-  batteryUsedPct Int?      @map("battery_used_pct") // Added for battery efficiency tracking
-  routeGeometry Json?      @map("route_geometry")   // Added to permanently save ride trails
+  distanceKm      Decimal?   @map("distance_km") @db.Decimal(6, 2)
+  batteryStartPct Int?       @map("battery_start_pct")
+  batteryUsedPct  Int?       @map("battery_used_pct") // Added for battery efficiency tracking
+  routeGeometry   Json?      @map("route_geometry")   // Added to permanently save ride trails
   surgeMult     Decimal    @default(1.0) @map("surge_mult") @db.Decimal(3, 2)
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
 
