@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BarChart, Settings, Shield, AlertTriangle } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 interface MenuPanelProps {
@@ -18,7 +19,7 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
     {
       title: 'Ride History',
       description: 'View past trips & analytics',
-      icon: '📊',
+      icon: <BarChart className="w-5 h-5" />,
       href: '/ride/history',
     },
     {
@@ -30,7 +31,7 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
     {
       title: 'Settings',
       description: 'Preferences & Security',
-      icon: '⚙️',
+      icon: <Settings className="w-5 h-5" />,
       href: '/settings',
     },
     {
@@ -42,13 +43,13 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
     {
       title: 'Safety',
       description: 'Safety features & tips',
-      icon: '🛡️',
+      icon: <Shield className="w-5 h-5" />,
       href: '/safety',
     },
     {
       title: 'Report a Problem',
       description: 'Report bug or issue',
-      icon: '⚠️',
+      icon: <AlertTriangle className="w-5 h-5" />,
       href: '/report',
     },
   ];

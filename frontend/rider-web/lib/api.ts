@@ -206,7 +206,7 @@ export const bikeApi = {
   list: () => api.get('/fleet/bikes'),
 
   nearest: (latitude: number, longitude: number, limit = 5) =>
-    api.get(`/fleet/bikes/nearest?lat=${latitude}&lng=${longitude}&limit=${limit}`),
+    api.get(`/fleet/nearby?lat=${latitude}&lng=${longitude}&limit=${limit}`),
 
   getById: (id: string) => api.get(`/fleet/bikes/${id}`),
 };

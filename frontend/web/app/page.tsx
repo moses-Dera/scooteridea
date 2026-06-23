@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
+import { BarChart, AlertTriangle, AlertCircle, Info, Wrench, ClipboardList } from 'lucide-react';
 
 interface BikeModel {
   id: string;
@@ -49,7 +50,7 @@ export default function DashboardOverview() {
         setLoading(true);
         
         // Fetch fleet data
-        const fleetRes = await fetch('http://localhost:3002/bikes');
+        const fleetRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/bikes`);
         if (fleetRes.ok) {
           const json = await fleetRes.json();
           if (json.success && json.data) {
@@ -57,8 +58,8 @@ export default function DashboardOverview() {
           }
         }
         
-        // Fetch top riders - get from ride history/stats
-        const ridersRes = await fetch('http://localhost:3001/api/riders/top?limit=5');
+        // Fetch top riders
+        const ridersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/rides/api/riders/top?limit=5`);
         if (ridersRes.ok) {
           const json = await ridersRes.json();
           if (json.success && json.data) {
@@ -67,7 +68,7 @@ export default function DashboardOverview() {
         }
         
         // Fetch system alerts
-        const alertsRes = await fetch('http://localhost:3002/alerts?limit=3');
+        const alertsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/alerts?limit=3`);
         if (alertsRes.ok) {
           const json = await alertsRes.json();
           if (json.success && json.data) {
@@ -76,7 +77,7 @@ export default function DashboardOverview() {
         }
         
         // Fetch maintenance issues
-        const maintRes = await fetch('http://localhost:3002/maintenance?status=open');
+        const maintRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/maintenance?status=open`);
         if (maintRes.ok) {
           const json = await maintRes.json();
           if (json.success && json.data) {
@@ -111,7 +112,7 @@ export default function DashboardOverview() {
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors border border-slate-700 flex items-center justify-center gap-2">
-            <span className="text-lg">📊</span>
+            <BarChart className="w-5 h-5" />
             Generate Report
           </button>
           <div className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
@@ -170,7 +171,7 @@ export default function DashboardOverview() {
               title="System Alerts"
               action={
                 <Badge variant="error">
-                  ⚠️ {alerts.length} Active
+                  <AlertTriangle className="w-4 h-4 inline mr-1" /> {alerts.length} Active
                 </Badge>
               }
             />
@@ -182,10 +183,10 @@ export default function DashboardOverview() {
               ) : alerts.length > 0 ? (
                 <div className="space-y-3">
                   {alerts.map((alert) => {
-                    const iconMap: Record<string, string> = {
-                      'error': '🚨',
-                      'warning': '⚠️',
-                      'info': 'ℹ️'
+                    const iconMap: Record<string, React.ReactNode> = {
+                      'error': <AlertCircle className="w-5 h-5 text-red-500" />,
+                      'warning': <AlertTriangle className="w-5 h-5 text-amber-500" />,
+                      'info': <Info className="w-5 h-5 text-blue-500" />
                     };
                     const colorMap: Record<string, string> = {
                       'error': 'red',
@@ -253,7 +254,7 @@ export default function DashboardOverview() {
 
         {/* Maintenance Issues */}
         <Card>
-          <CardHeader title="🔧 Bikes Needing Maintenance" />
+          <CardHeader title={<span className="flex items-center gap-2"><Wrench className="w-4 h-4" /> Bikes Needing Maintenance</span>} />
           <CardContent>
             {loading ? (
               <div className="flex justify-center py-8">
@@ -268,7 +269,7 @@ export default function DashboardOverview() {
                       <p className="text-xs text-neutral-400">{bike.issue_type}</p>
                     </div>
                     <Badge variant="error">
-                      {bike.report_count} 📋
+                      {bike.report_count} <ClipboardList className="w-4 h-4 inline ml-1" />
                     </Badge>
                   </div>
                 ))}

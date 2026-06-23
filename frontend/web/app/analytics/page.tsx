@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
+import { TrendingUp, BarChart, Star, Wrench, ClipboardList } from 'lucide-react';
 
 interface Analytics {
   total_rides: number;
@@ -17,18 +18,33 @@ interface Analytics {
 export default function AnalyticsOverview() {
   const [timeRange, setTimeRange] = useState('today');
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [riders, setRiders] = useState<any[]>([]);
+  const [maintenance, setMaintenance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3001/api/analytics?timeRange=${timeRange}`);
+        const [res, ridersRes, maintRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/rides/api/analytics?timeRange=${timeRange}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/rides/api/riders/top?limit=5`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/maintenance?status=open`)
+        ]);
+
         if (res.ok) {
           const json = await res.json();
-          if (json.success && json.data) {
-            setAnalytics(json.data);
-          }
+          if (json.success && json.data) setAnalytics(json.data);
+        }
+        
+        if (ridersRes.ok) {
+          const json = await ridersRes.json();
+          if (json.success && json.data) setRiders(json.data);
+        }
+        
+        if (maintRes.ok) {
+          const json = await maintRes.json();
+          if (json.success && json.data) setMaintenance(json.data);
         }
       } catch (err) {
         console.error('Failed to fetch analytics', err);
@@ -117,7 +133,10 @@ export default function AnalyticsOverview() {
           <CardHeader title="Revenue Trend" />
           <CardContent>
             <div className="h-64 rounded-lg bg-neutral-900 border border-dashed border-neutral-700 flex items-center justify-center">
-              <p className="text-neutral-500">📈 Revenue chart will render here</p>
+              <div className="flex flex-col items-center gap-2 text-neutral-500">
+                <TrendingUp className="w-6 h-6" />
+                <p>Revenue chart will render here</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -126,7 +145,10 @@ export default function AnalyticsOverview() {
           <CardHeader title="User Growth" />
           <CardContent>
             <div className="h-64 rounded-lg bg-neutral-900 border border-dashed border-neutral-700 flex items-center justify-center">
-              <p className="text-neutral-500">📊 Growth chart will render here</p>
+              <div className="flex flex-col items-center gap-2 text-neutral-500">
+                <BarChart className="w-6 h-6" />
+                <p>Growth chart will render here</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -136,50 +158,46 @@ export default function AnalyticsOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Riders */}
         <Card>
-          <CardHeader title="⭐ Top Riders Today" />
+          <CardHeader title={<span className="flex items-center gap-2"><Star className="w-4 h-4 text-yellow-500" /> Top Riders Today</span>} />
           <CardContent>
             <div className="space-y-3">
-              {[
-                { name: 'Chioma A.', rides: 12, distance: '48.2 km' },
-                { name: 'Tunde O.', rides: 10, distance: '42.1 km' },
-                { name: 'Zainab M.', rides: 9, distance: '38.5 km' },
-                { name: 'Seun I.', rides: 8, distance: '35.3 km' },
-                { name: 'Ada E.', rides: 7, distance: '31.8 km' },
-              ].map((rider, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors">
-                  <div>
-                    <p className="text-white font-medium text-sm">{rider.name}</p>
-                    <p className="text-xs text-neutral-400">{rider.rides} rides</p>
+              {riders.length > 0 ? (
+                riders.map((rider) => (
+                  <div key={rider.id} className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors">
+                    <div>
+                      <p className="text-white font-medium text-sm">{rider.name}</p>
+                      <p className="text-xs text-neutral-400">{rider.rides_count} rides</p>
+                    </div>
+                    <p className="text-emerald-400 font-bold text-sm">{(rider.total_distance / 1000).toFixed(1)} km</p>
                   </div>
-                  <p className="text-emerald-400 font-bold text-sm">{rider.distance}</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-neutral-500 text-sm py-4 text-center">No rider data available</p>
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* Maintenance Needed */}
         <Card>
-          <CardHeader title="🔧 Bikes Needing Maintenance" />
+          <CardHeader title={<span className="flex items-center gap-2"><Wrench className="w-4 h-4" /> Bikes Needing Maintenance</span>} />
           <CardContent>
             <div className="space-y-3">
-              {[
-                { id: 'BIKE-042', issue: 'Brake issue', reports: 3 },
-                { id: 'BIKE-089', issue: 'Flat tire', reports: 2 },
-                { id: 'BIKE-156', issue: 'Chain noise', reports: 2 },
-                { id: 'BIKE-234', issue: 'Battery low', reports: 1 },
-                { id: 'BIKE-301', issue: 'Lock jamming', reports: 1 },
-              ].map((bike, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border-l-2 border-red-500/50">
-                  <div>
-                    <p className="text-white font-medium text-sm">{bike.id}</p>
-                    <p className="text-xs text-neutral-400">{bike.issue}</p>
+              {maintenance.length > 0 ? (
+                maintenance.map((bike) => (
+                  <div key={bike.id} className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border-l-2 border-red-500/50">
+                    <div>
+                      <p className="text-white font-medium text-sm">{bike.bike_id}</p>
+                      <p className="text-xs text-neutral-400">{bike.issue_type}</p>
+                    </div>
+                    <Badge variant="error">
+                      {bike.report_count} <ClipboardList className="w-4 h-4 inline ml-1" />
+                    </Badge>
                   </div>
-                  <Badge variant="error">
-                    {bike.reports} 📋
-                  </Badge>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-neutral-500 text-sm py-4 text-center">No maintenance issues</p>
+              )}
             </div>
           </CardContent>
         </Card>

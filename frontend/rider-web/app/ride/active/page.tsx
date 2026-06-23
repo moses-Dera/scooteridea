@@ -23,7 +23,7 @@ export default function ActiveRide() {
           async (position) => {
             try {
               // Push our phone's physical location directly to the backend as the Bike's Telemetry
-              await fetch('http://localhost:3002/simulator/telemetry', {
+              await fetch('/api/proxy/fleet/simulator/telemetry', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

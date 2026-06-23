@@ -141,7 +141,7 @@ export default function SimulatorPage() {
 
   const updateBikeTelemetry = async (id: string, lat: number, lng: number, batt: number, lockStatus: string) => {
     try {
-      await fetch('http://localhost:3002/simulator/telemetry', {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/simulator/telemetry`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

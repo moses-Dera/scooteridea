@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Clock, Route, Wallet, Zap, Map as MapIcon, Bike, LifeBuoy } from 'lucide-react';
 
 export function ActiveRideComponent() {
   const [rideTime, setRideTime] = useState(0);
@@ -42,26 +43,26 @@ export function ActiveRideComponent() {
       {/* Main Stats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-gradient-to-br from-blue-900 to-blue-800 border border-blue-700 rounded-lg p-6 text-center">
-          <div className="text-2xl mb-2">🕐</div>
+          <Clock className="w-8 h-8 mx-auto mb-2 text-blue-300" />
           <p className="text-slate-300 text-sm">Time</p>
           <p className="text-3xl font-bold text-white">{formatTime(rideTime)}</p>
         </div>
 
         <div className="bg-gradient-to-br from-purple-900 to-purple-800 border border-purple-700 rounded-lg p-6 text-center">
-          <div className="text-2xl mb-2">📏</div>
+          <Route className="w-8 h-8 mx-auto mb-2 text-purple-300" />
           <p className="text-slate-300 text-sm">Distance</p>
           <p className="text-3xl font-bold text-white">{distance.toFixed(2)}</p>
           <p className="text-xs text-slate-300">km</p>
         </div>
 
         <div className="bg-gradient-to-br from-green-900 to-green-800 border border-green-700 rounded-lg p-6 text-center">
-          <div className="text-2xl mb-2">💰</div>
+          <Wallet className="w-8 h-8 mx-auto mb-2 text-green-300" />
           <p className="text-slate-300 text-sm">Est. Fare</p>
           <p className="text-3xl font-bold text-white">₦{estimatedFare.toFixed(0)}</p>
         </div>
 
         <div className="bg-gradient-to-br from-amber-900 to-amber-800 border border-amber-700 rounded-lg p-6 text-center">
-          <div className="text-2xl mb-2">⚡</div>
+          <Zap className="w-8 h-8 mx-auto mb-2 text-amber-300" />
           <p className="text-slate-300 text-sm">Speed</p>
           <p className="text-3xl font-bold text-white">{speed}</p>
           <p className="text-xs text-slate-300">km/h</p>
@@ -71,7 +72,7 @@ export function ActiveRideComponent() {
       {/* Live Map Placeholder */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 h-64 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-400 text-sm mb-2">🗺️ Live Map</p>
+          <p className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-2"><MapIcon className="w-4 h-4" /> Live Map</p>
           <p className="text-slate-500 text-xs">Your ride is being tracked in real-time</p>
           <p className="text-slate-600 text-xs mt-2">Map integration coming soon</p>
         </div>
@@ -102,9 +103,7 @@ export function ActiveRideComponent() {
 
       {/* Safety Message */}
       <div className="bg-blue-900 border border-blue-700 rounded-lg p-4">
-        <p className="text-blue-200 text-sm">
-          🚴 Stay safe! Keep right, signal turns, and watch for pedestrians.
-        </p>
+          <span className="flex items-center gap-2"><Bike className="w-4 h-4 inline" /> Stay safe! Keep right, signal turns, and watch for pedestrians.</span>
       </div>
 
       {/* End Ride Button */}
@@ -118,8 +117,8 @@ export function ActiveRideComponent() {
       </button>
 
       {/* Emergency Contact */}
-      <button className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-bold">
-        🆘 Emergency / Support
+      <button className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+        <LifeBuoy className="w-4 h-4" /> Emergency / Support
       </button>
     </div>
   );

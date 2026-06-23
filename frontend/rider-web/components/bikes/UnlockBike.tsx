@@ -24,7 +24,7 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
     const fetchBike = async () => {
       try {
         const token = localStorage.getItem('token') || 'demo-token';
-        const res = await fetch(`http://localhost:3002/fleet/bikes/${bikeId}`, {
+        const res = await fetch(`/api/proxy/fleet/bikes/${bikeId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 
@@ -56,7 +56,7 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
     setError(null);
     try {
       const token = localStorage.getItem('token') || 'demo-token';
-      const res = await fetch(`http://localhost:3002/fleet/bikes/${bikeId}/command`, {
+      const res = await fetch(`/api/proxy/fleet/bikes/${bikeId}/command`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

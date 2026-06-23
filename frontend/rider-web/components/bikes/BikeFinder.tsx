@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Battery, BatteryMedium, BatteryLow, BatteryWarning } from 'lucide-react';
 import Link from 'next/link';
 import { FaLocationDot } from 'react-icons/fa6';
 
@@ -21,7 +22,7 @@ export function BikeFinder() {
     const fetchBikes = async () => {
       try {
         const token = localStorage.getItem('token') || 'demo-token';
-        const res = await fetch('http://localhost:3002/fleet/bikes?status=available', {
+        const res = await fetch('/api/proxy/fleet/bikes?status=available', {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 
@@ -47,10 +48,10 @@ export function BikeFinder() {
   }, []);
 
   const getBatteryIcon = (pct: number) => {
-    if (pct >= 75) return <span className="w-5 h-5 text-green-400 text-lg">🔋</span>;
-    if (pct >= 50) return <span className="w-5 h-5 text-green-400 text-lg">🔋</span>;
-    if (pct >= 25) return <span className="w-5 h-5 text-yellow-400 text-lg">🔋</span>;
-    return <span className="w-5 h-5 text-red-400 text-lg">⚠️</span>;
+    if (pct >= 75) return <Battery className="w-5 h-5 text-green-400" />;
+    if (pct >= 50) return <BatteryMedium className="w-5 h-5 text-green-400" />;
+    if (pct >= 25) return <BatteryLow className="w-5 h-5 text-yellow-400" />;
+    return <BatteryWarning className="w-5 h-5 text-red-400" />;
   };
 
   const filteredBikes = bikes.filter((bike) =>

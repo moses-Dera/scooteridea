@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ridesService } from '@/lib/ridesService'
 import { Ride, PaginatedResponse } from '@/lib/types'
+import { Bike, Star } from 'lucide-react'
 
 export function RideHistoryComponent() {
   const [rides, setRides] = useState<Ride[]>([])
@@ -58,7 +59,7 @@ export function RideHistoryComponent() {
   if (rides.length === 0) {
     return (
       <div className="bg-surfaceLight border border-white/10 rounded-2xl p-12 text-center">
-        <div className="text-5xl mb-4">🚲</div>
+        <Bike className="w-12 h-12 mx-auto mb-4 text-white" />
         <h3 className="text-xl font-bold text-white mb-2">No Rides Yet</h3>
         <p className="text-slate-400 mb-6">Start your first ride to see history here</p>
         <a
@@ -126,7 +127,7 @@ function RideCard({ ride }: RideCardProps) {
     <div className="bg-surfaceLight border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-lg">🚲</div>
+          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center"><Bike className="w-6 h-6 text-primary" /></div>
           <div>
             <h3 className="font-bold text-white">{ride.bikeId}</h3>
             <p className="text-sm text-slate-400">{formatDate(ride.startTime)}</p>
@@ -161,7 +162,11 @@ function RideCard({ ride }: RideCardProps) {
       {ride.rating && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-slate-400">Rating:</span>
-          <span className="text-lg">{'⭐'.repeat(ride.rating)}</span>
+          <div className="flex text-yellow-500">
+            {Array.from({ length: ride.rating }).map((_, i) => (
+              <Star key={i} className="w-4 h-4 fill-current" />
+            ))}
+          </div>
         </div>
       )}
 
