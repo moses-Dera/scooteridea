@@ -91,6 +91,7 @@ model Ride {
   endedAt       DateTime?  @map("ended_at") @db.Timestamptz
   fareCents     Int?       @map("fare_cents")
   distanceKm    Decimal?   @map("distance_km") @db.Decimal(6, 2)
+  batteryUsedPct Int?      @map("battery_used_pct") // Added for battery efficiency tracking
   surgeMult     Decimal    @default(1.0) @map("surge_mult") @db.Decimal(3, 2)
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
 

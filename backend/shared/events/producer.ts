@@ -1,4 +1,4 @@
-import { Kafka, Producer, Partitioners } from 'kafkajs';
+import Redis from 'ioredis';
 import type {
   KafkaFleetTelemetryEvent,
   KafkaDockStatusEvent,
@@ -22,29 +22,19 @@ export const TOPICS = {
   FLEET_COMMAND:    'fleet.command',
 } as const;
 
-// ── Kafka instance (singleton) ────────────────────────────────────────────────
-let producer: Producer | null = null;
-
-function getKafka() {
-  return new Kafka({
-    clientId: process.env.KAFKA_CLIENT_ID ?? 'ebike-service',
-    brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(','),
-  });
-}
+// ── Redis instance (singleton) ────────────────────────────────────────────────
+let redisClient: Redis | null = null;
 
 export async function connectProducer(): Promise<void> {
-  if (producer) return;
-  producer = getKafka().producer({
-    createPartitioner: Partitioners.LegacyPartitioner,
-  });
-  await producer.connect();
-  console.log('[Kafka Producer] Connected');
+  if (redisClient) return;
+  redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+  console.log('[Redis Publisher] Connected');
 }
 
 export async function disconnectProducer(): Promise<void> {
-  if (producer) {
-    await producer.disconnect();
-    producer = null;
+  if (redisClient) {
+    await redisClient.quit();
+    redisClient = null;
   }
 }
 
@@ -54,11 +44,8 @@ export async function publish<T extends object>(
   payload: T,
   key?: string,
 ): Promise<void> {
-  if (!producer) throw new Error('Kafka producer not connected');
-  await producer.send({
-    topic,
-    messages: [{ key, value: JSON.stringify({ ...payload, ts: Date.now() }) }],
-  });
+  if (!redisClient) throw new Error('Redis publisher not connected');
+  await redisClient.publish(topic, JSON.stringify({ ...payload, ts: Date.now() }));
 }
 
 // ── Typed publishers ──────────────────────────────────────────────────────────

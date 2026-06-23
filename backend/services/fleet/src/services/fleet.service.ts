@@ -140,6 +140,26 @@ export class FleetService {
     return bikes;
   }
 
+  /** Find nearby bikes using Redis Geospatial (Replacing the matching-service) */
+  static async getNearbyBikes(lat: number, lng: number, radiusKm: number = 2) {
+    const redis = await getRedisClient();
+    // GEORADIUS returns closest bikes first.
+    const bikes = await redis.geosearch('fleet:available', 'FROMLONLAT', lng, lat, 'BYRADIUS', radiusKm, 'km', 'ASC');
+    
+    const availableBikes = [];
+    for (const bikeId of bikes as string[]) {
+      const status = await redis.get(`bike:${bikeId}:status`);
+      if (status === 'available') {
+        const location = await redisGetJson<{ lat: number; lng: number; battery_pct: number; speed_kmh: number }>(`bike:${bikeId}:location`);
+        // Only show bikes to riders if battery > 15%
+        if (location && location.battery_pct > 15) {
+           availableBikes.push({ bikeId, ...location });
+        }
+      }
+    }
+    return availableBikes;
+  }
+
   /** Get recent system alerts */
   static async getAlerts(limit: number = 10) {
     try {

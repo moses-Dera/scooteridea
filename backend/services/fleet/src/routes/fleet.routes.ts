@@ -14,6 +14,25 @@ fleetRouter.get('/bikes', async (_req, res) => {
   }
 });
 
+// GET /fleet/nearby — Find matching bikes for the rider (Replacing matching-service)
+fleetRouter.get('/nearby', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const radius = Number(req.query.radius) || 2; // Default 2km radius
+
+    if (isNaN(lat) || isNaN(lng)) {
+      res.status(400).json({ success: false, error: 'Missing lat/lng parameters' });
+      return;
+    }
+
+    const bikes = await FleetService.getNearbyBikes(lat, lng, radius);
+    res.json({ success: true, data: bikes });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to find nearby bikes' });
+  }
+});
+
 // GET /fleet/alerts — system alerts
 fleetRouter.get('/alerts', async (req, res) => {
   try {
