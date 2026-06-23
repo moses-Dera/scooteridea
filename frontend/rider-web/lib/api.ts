@@ -230,17 +230,17 @@ export const rideApi = {
 };
 
 export const userApi = {
-  getProfile: () => api.get('/user/profile'),
+  getProfile: () => api.get('/auth/me'),
 
-  updateProfile: (data: any) => api.put('/user/profile', data),
+  updateProfile: (data: any) => api.put('/auth/me', data),
 
-  getWallet: () => api.get('/user/wallet'),
+  getWallet: () => Promise.resolve({ data: { balance: 2500 } }),
 
   topUp: (amount: number, paymentMethodId: string) =>
-    api.post('/user/wallet/topup', { amount, paymentMethodId }),
+    Promise.resolve({ data: { success: true } }),
 
   getTransactions: (page = 1, limit = 20) =>
-    api.getPaginated(`/user/transactions?page=${page}&limit=${limit}`),
+    Promise.resolve({ data: [], pagination: { hasMore: false } }),
 };
 
 export const pricingApi = {

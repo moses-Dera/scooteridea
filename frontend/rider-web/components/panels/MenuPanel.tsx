@@ -6,51 +6,52 @@ import { signOut } from 'next-auth/react';
 
 interface MenuPanelProps {
   onClose: () => void;
+  onOpenPanel: (panel: any) => void;
 }
 
-export default function MenuPanel({ onClose }: MenuPanelProps) {
+export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
   const menuItems = [
     {
       title: 'Wallet',
       description: 'Balance & Payment Methods',
       icon: '💳',
-      href: '/wallet',
+      panelType: 'wallet',
     },
     {
       title: 'Ride History',
       description: 'View past trips & analytics',
       icon: <BarChart className="w-5 h-5" />,
-      href: '/ride/history',
+      panelType: 'history',
     },
     {
       title: 'Docking Stations',
       description: 'Find nearby docks',
       icon: '🚲',
-      href: '/docks',
+      panelType: 'docks',
     },
     {
       title: 'Settings',
       description: 'Preferences & Security',
       icon: <Settings className="w-5 h-5" />,
-      href: '/settings',
+      panelType: 'settings',
     },
     {
       title: 'Help & Support',
       description: 'FAQ & Customer Support',
       icon: '❓',
-      href: '/help',
+      panelType: 'help',
     },
     {
       title: 'Safety',
       description: 'Safety features & tips',
       icon: <Shield className="w-5 h-5" />,
-      href: '/safety',
+      panelType: 'safety',
     },
     {
       title: 'Report a Problem',
       description: 'Report bug or issue',
       icon: <AlertTriangle className="w-5 h-5" />,
-      href: '/report',
+      panelType: 'report',
     },
   ];
 
@@ -65,7 +66,7 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
         <div className="text-2xl font-bold text-white">Menu</div>
         <button
           onClick={onClose}
-          className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+          className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
         >
           <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -76,11 +77,10 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
       {/* Menu Items */}
       <div className="space-y-3">
         {menuItems.map((item, i) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onClose}
-            className="group block relative overflow-hidden rounded-2xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all duration-300 active:scale-[0.98]"
+          <button
+            key={item.panelType}
+            onClick={() => onOpenPanel(item.panelType)}
+            className="w-full text-left group block relative overflow-hidden rounded-2xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all duration-300 active:scale-[0.98] cursor-pointer"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
@@ -98,7 +98,7 @@ export default function MenuPanel({ onClose }: MenuPanelProps) {
               </div>
               <svg className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
             </div>
-          </Link>
+          </button>
         ))}
       </div>
 

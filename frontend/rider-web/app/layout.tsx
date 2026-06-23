@@ -8,8 +8,10 @@ import { useState, useCallback } from 'react'
 import RiderMap from '@/components/Map/RiderMap'
 import MenuPanel from '@/components/panels/MenuPanel'
 import ProfilePanel from '@/components/panels/ProfilePanel'
+import WalletPanel from '@/components/panels/WalletPanel'
+import HistoryPanel from '@/components/panels/HistoryPanel'
 
-type PanelType = 'menu' | 'profile' | null;
+type PanelType = 'menu' | 'profile' | 'wallet' | 'history' | 'docks' | 'settings' | 'help' | 'safety' | 'report' | null;
 
 export default function RootLayout({
   children,
@@ -25,6 +27,10 @@ export default function RootLayout({
 
   const closePanel = useCallback(() => {
     setActivePanel(null);
+  }, []);
+
+  const openPanel = useCallback((panel: PanelType) => {
+    setActivePanel(panel);
   }, []);
 
   // Pages that need their own full layout (login, unlock flow, active ride, etc.)
@@ -100,17 +106,17 @@ export default function RootLayout({
                      <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                      <span className="font-bold text-sm text-primary hidden sm:block">Map</span>
                    </button>
-                   <button onClick={() => {}} className="group flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition-all cursor-pointer active:scale-95">
+                   <button onClick={() => togglePanel('wallet')} className="group flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition-all cursor-pointer active:scale-95">
                      <svg className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                    </button>
-                   <button onClick={() => {}} className="group flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition-all cursor-pointer active:scale-95">
+                   <button onClick={() => togglePanel('history')} className="group flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition-all cursor-pointer active:scale-95">
                      <svg className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                    </button>
-                </div>
+                 </div>
               </header>
 
               {/* Overlay Panels - slide up from bottom over the map */}
-              {activePanel === 'menu' && (
+              {activePanel && (
                 <div className="absolute inset-0 z-40 flex flex-col justify-end pointer-events-none">
                   {/* Backdrop */}
                   <div 
@@ -118,33 +124,23 @@ export default function RootLayout({
                     onClick={closePanel}
                   />
                   {/* Panel */}
-                  <div className="relative pointer-events-auto max-h-[75vh] bg-[#0A0D14]/95 backdrop-blur-2xl border-t border-white/10 rounded-t-[32px] shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-500 ease-out overflow-hidden">
+                  <div className="relative pointer-events-auto max-h-[85vh] bg-[#0A0D14]/95 backdrop-blur-2xl border-t border-white/10 rounded-t-[32px] shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-500 ease-out overflow-hidden flex flex-col">
                     {/* Drag handle */}
-                    <div className="flex justify-center pt-3 pb-2">
+                    <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
                       <div className="w-10 h-1 rounded-full bg-white/20"></div>
                     </div>
-                    <div className="overflow-y-auto max-h-[calc(75vh-20px)] scrollbar-hide pb-8">
-                      <MenuPanel onClose={closePanel} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activePanel === 'profile' && (
-                <div className="absolute inset-0 z-40 flex flex-col justify-end pointer-events-none">
-                  {/* Backdrop */}
-                  <div 
-                    className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto animate-in fade-in duration-300"
-                    onClick={closePanel}
-                  />
-                  {/* Panel */}
-                  <div className="relative pointer-events-auto max-h-[80vh] bg-[#0A0D14]/95 backdrop-blur-2xl border-t border-white/10 rounded-t-[32px] shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-500 ease-out overflow-hidden">
-                    {/* Drag handle */}
-                    <div className="flex justify-center pt-3 pb-2">
-                      <div className="w-10 h-1 rounded-full bg-white/20"></div>
-                    </div>
-                    <div className="overflow-y-auto max-h-[calc(80vh-20px)] scrollbar-hide pb-8">
-                      <ProfilePanel onClose={closePanel} />
+                    <div className="overflow-y-auto flex-1 scrollbar-hide pb-8">
+                      {activePanel === 'menu' && <MenuPanel onClose={closePanel} onOpenPanel={openPanel} />}
+                      {activePanel === 'profile' && <ProfilePanel onClose={closePanel} />}
+                      {activePanel === 'wallet' && <WalletPanel onClose={closePanel} />}
+                      {activePanel === 'history' && <HistoryPanel onClose={closePanel} />}
+                      {['docks', 'settings', 'help', 'safety', 'report'].includes(activePanel) && (
+                        <div className="px-6 pb-6 text-center py-12">
+                          <div className="text-4xl mb-4">🚧</div>
+                          <h2 className="text-xl font-bold text-white mb-2">Coming Soon</h2>
+                          <p className="text-slate-400">This feature is currently under development.</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
