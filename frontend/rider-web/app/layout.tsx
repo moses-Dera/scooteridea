@@ -4,16 +4,17 @@ import { AuthProvider } from '@/providers/AuthProvider'
 import { RideProvider } from '@/context/RideContext'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import RiderMap from '@/components/Map/RiderMap'
 import MenuPanel from '@/components/panels/MenuPanel'
 import ProfilePanel from '@/components/panels/ProfilePanel'
 import WalletPanel from '@/components/panels/WalletPanel'
 import HistoryPanel from '@/components/panels/HistoryPanel'
+import LoginPanel from '@/components/panels/LoginPanel'
 
 import { AlertCircle } from 'lucide-react'
 
-type PanelType = 'menu' | 'profile' | 'wallet' | 'history' | 'docks' | 'settings' | 'help' | 'safety' | 'report' | null;
+type PanelType = 'menu' | 'profile' | 'wallet' | 'history' | 'docks' | 'settings' | 'help' | 'safety' | 'report' | 'login' | null;
 
 export default function RootLayout({
   children,
@@ -33,6 +34,13 @@ export default function RootLayout({
 
   const openPanel = useCallback((panel: PanelType) => {
     setActivePanel(panel);
+  }, []);
+
+  // Listen for auth-required events to show login panel instead of redirecting
+  useEffect(() => {
+    const handleAuthRequired = () => setActivePanel('login');
+    window.addEventListener('auth-required', handleAuthRequired);
+    return () => window.removeEventListener('auth-required', handleAuthRequired);
   }, []);
 
   // Pages that need their own full layout (login, unlock flow, active ride, etc.)
@@ -136,7 +144,8 @@ export default function RootLayout({
                       {activePanel === 'profile' && <ProfilePanel onClose={closePanel} />}
                       {activePanel === 'wallet' && <WalletPanel onClose={closePanel} />}
                       {activePanel === 'history' && <HistoryPanel onClose={closePanel} />}
-                      {['docks', 'settings', 'help', 'safety', 'report'].includes(activePanel) && (
+                      {activePanel === 'login' && <LoginPanel onClose={closePanel} />}
+                      {['docks', 'settings', 'help', 'safety', 'report'].includes(activePanel || '') && (
                         <div className="px-6 pb-6 text-center py-12">
                           <div className="flex justify-center mb-4"><AlertCircle className="w-12 h-12 text-slate-500" /></div>
                           <h2 className="text-xl font-bold text-white mb-2">Coming Soon</h2>

@@ -47,6 +47,7 @@ const PORT = Number(process.env.PORT ?? 3001);
 process.env.SERVICE_NAME = 'auth-service';
 
 // ── Security ──────────────────────────────────────────────────────────────────
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({
   origin:      process.env.CORS_ORIGINS?.split(',') ?? '*',

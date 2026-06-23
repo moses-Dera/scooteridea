@@ -30,6 +30,7 @@ const PORT   = Number(process.env.PORT ?? 3002);
 process.env.SERVICE_NAME = 'fleet-service';
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors());
 app.use(requestId);

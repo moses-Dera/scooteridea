@@ -52,9 +52,11 @@ function createApiClient(): AxiosInstance {
       // If 401, redirect to login (session expired)
       if (error.response?.status === 401) {
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // Instead of a full page redirect, emit an event to open the login panel overlay
+          window.dispatchEvent(new CustomEvent('auth-required'));
         }
-        return Promise.reject(handleApiError(error));
+        // Return a never-resolving promise to prevent UI from rendering the error while authenticating
+        return new Promise(() => {});
       }
 
       return Promise.reject(handleApiError(error));

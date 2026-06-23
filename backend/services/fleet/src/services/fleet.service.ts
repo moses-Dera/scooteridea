@@ -110,7 +110,7 @@ export class FleetService {
       SELECT id, name, type, speed_cap
       FROM geofences
       WHERE ST_Contains(
-        boundary::geometry,
+        ST_SetSRID(ST_GeomFromGeoJSON(boundary::text), 4326),
         ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)
       )
     `;
