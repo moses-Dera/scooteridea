@@ -180,7 +180,7 @@ export default function ActiveRide() {
              <span className="font-bold text-sm">{state.activeRide?.bikeId || 'N/A'}</span>
              <span className="text-xs text-primary font-medium">
                {state.activeRide?.bikeId 
-                 ? `${bikes.find(b => b.id === state.activeRide?.bikeId)?.battery || '--'}% Battery`
+                 ? `${bikes.find(b => b.id === state.activeRide?.bikeId)?.batteryPct || '--'}% Battery`
                  : '--% Battery'}
              </span>
            </div>
