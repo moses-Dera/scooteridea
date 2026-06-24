@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ridesService } from '@/lib/ridesService'
+import { pricingApi } from '@/lib/api'
 import { useRide } from '@/context/RideContext'
 import { Smartphone, Scan, KeyRound, Unlock, X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
@@ -22,12 +23,32 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
   const { state, setActiveRide, setLoading, setError } = useRide()
   const [isStarting, setIsStarting] = useState(false)
   const [unlockPin, setUnlockPin] = useState<string>('')
+  const [pricing, setPricing] = useState<{ perMinute: number, baseFare: number, surgeMult: number } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'Unlock Bike' } }));
     }
   }, [status]);
+
+  // Fetch dynamic pricing data for the area
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const res = await pricingApi.estimate(6.4541, 3.3792); // Lagos approx
+        if (res.success && res.data) {
+          setPricing({
+            perMinute: res.data.perMinute,
+            baseFare: res.data.baseFare,
+            surgeMult: res.data.surgeMult
+          })
+        }
+      } catch (err) {
+        console.error('Failed to fetch pricing config', err);
+      }
+    };
+    fetchPricing();
+  }, []);
 
   if (status === 'loading' || status === 'unauthenticated') {
     return null; // Return nothing while auth checks/redirects occur
@@ -120,17 +141,34 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
         {/* Step 1: Confirm */}
         {step === 'confirm' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="text-2xl font-bold mb-2">Ready to ride?</div>
-            <p className="text-slate-400 mb-6">You are about to unlock bike <strong className="text-white">{bikeId}</strong>. A standard fare of ₦50/min applies.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Confirm Unlock</h2>
+            <p className="text-slate-400 mb-6">
+              You are about to unlock bike <strong className="text-white">{bikeId}</strong>. 
+              {pricing ? (
+                pricing.perMinute === 0 
+                  ? <span> Rides are currently <strong className="text-primary">Free</strong> during the beta test.</span>
+                  : <span> A standard fare of <strong className="text-white">₦{pricing.perMinute}/min</strong> applies.</span>
+              ) : (
+                <span> Checking pricing...</span>
+              )}
+            </p>
             
             <div className="bg-black/30 rounded-xl p-4 mb-8 border border-white/5">
-              <div className="flex justify-between mb-2 text-sm">
-                <span className="text-slate-400">Current Balance</span>
-                <span className="font-semibold text-primary">₦ 2,400.00</span>
+              <div className="flex justify-between mb-2">
+                <div className="text-slate-400 text-sm font-medium mb-1">Unlock Fee</div>
+                <div className="flex items-center gap-2">
+                  {pricing ? (
+                     <span className="font-semibold text-white">₦ {pricing.baseFare.toFixed(2)}</span>
+                  ) : <span className="w-8 h-4 bg-white/10 animate-pulse rounded"></span>}
+                </div>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">Surge Pricing</span>
-                <span className="font-semibold text-warning">1.2x (Active)</span>
+                {pricing ? (
+                  <span className={`font-semibold ${pricing.surgeMult > 1 ? 'text-warning' : 'text-primary'}`}>
+                    {pricing.surgeMult}x {pricing.surgeMult > 1 ? '(Active)' : '(None)'}
+                  </span>
+                ) : <span className="w-8 h-4 bg-white/10 animate-pulse rounded"></span>}
               </div>
             </div>
 

@@ -10,6 +10,7 @@ import { useLiveFleet } from '@/hooks/useLiveFleet'
 import { useNearbyDocks } from '@/hooks/useNearbyDocks'
 import { ridesService } from '@/lib/ridesService'
 import { CheckCircle, Navigation, Pause, AlertTriangle, Link2, Smartphone, Bike, X } from 'lucide-react'
+import { DestinationSearch } from '@/components/Map/DestinationSearch'
 
 type EndRideStep = 'idle' | 'ending' | 'done'
 
@@ -133,8 +134,13 @@ export default function ActiveRide() {
       </div>
 
       {/* ⏱️ Top-Left: Active Ride Timer & Cost */}
-      <div className="absolute top-24 xl:top-8 left-6 glass-panel rounded-2xl p-4 flex flex-col gap-1 z-20 min-w-[200px]">
+      <div className="absolute top-24 xl:top-8 left-6 glass-panel rounded-2xl p-4 flex flex-col gap-1 z-20 min-w-[200px] hidden md:flex">
         <RideTimer surgeMultiplier={state.activeRide?.surgeMultiplier || 1} />
+      </div>
+
+      {/* 🔍 Top-Center: Destination Search */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 w-[90%] md:w-auto">
+        <DestinationSearch />
       </div>
 
       {/* 🧭 Top-Right: Nearest Dock Navigation */}
@@ -181,12 +187,18 @@ export default function ActiveRide() {
         </div>
 
         {/* End Ride Button */}
-        <button 
-          onClick={initiateEndRide}
-          disabled={isEndingRide}
-          className="h-14 px-6 bg-danger text-white font-bold rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.4)] flex items-center justify-center transform hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
-          End Ride
-        </button>
+        {nearestDock && nearestDock.distanceKm <= 0.03 ? (
+          <button 
+            onClick={initiateEndRide}
+            disabled={isEndingRide}
+            className="h-14 px-6 bg-danger text-white font-bold rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.4)] flex items-center justify-center transform hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
+            End Ride
+          </button>
+        ) : (
+          <div className="h-14 px-4 bg-surface text-slate-400 border border-white/5 font-bold rounded-2xl flex items-center justify-center text-xs text-center leading-tight">
+            Park at a Dock<br/>to End Ride
+          </div>
+        )}
       </div>
 
       {/* End Ride Modal */}

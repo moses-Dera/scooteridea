@@ -251,9 +251,15 @@ export const userApi = {
 };
 
 export const pricingApi = {
-  estimate: (startLat: number, startLng: number, endLat: number, endLng: number) =>
-    api.get(
-      `/pricing/estimate?startLat=${startLat}&startLng=${startLng}&endLat=${endLat}&endLng=${endLng}`
+  estimate: (lat: number, lng: number, distKm: number = 1, durMin: number = 5) =>
+    api.get<{
+      baseFare: number;
+      perMinute: number;
+      perKm: number;
+      surgeMult: number;
+      estimatedFareCents: number;
+    }>(
+      `/pricing/estimate?lat=${lat}&lng=${lng}&distKm=${distKm}&durMin=${durMin}`
     ),
 
   getSurge: (latitude: number, longitude: number) =>
