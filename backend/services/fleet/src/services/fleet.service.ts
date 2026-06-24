@@ -242,13 +242,13 @@ export class FleetService {
         location_lng as lng,
         ST_Distance(
           ST_SetSRID(ST_MakePoint(location_lng, location_lat), 4326)::geography,
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+          ST_SetSRID(ST_MakePoint(${lng}::float8, ${lat}::float8), 4326)::geography
         ) / 1000.0 AS distance
       FROM docks
       WHERE ST_DWithin(
         ST_SetSRID(ST_MakePoint(location_lng, location_lat), 4326)::geography,
-        ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
-        ${radiusKm * 1000}
+        ST_SetSRID(ST_MakePoint(${lng}::float8, ${lat}::float8), 4326)::geography,
+        ${radiusKm * 1000}::float8
       )
       ORDER BY distance ASC
     `;

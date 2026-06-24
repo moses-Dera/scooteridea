@@ -14,7 +14,8 @@
     "typescript": "^5.4.0"
   },
   "scripts": {
-    "dev": "turbo run dev --parallel",
+    "dev": "node run-dev.js",
+    "dev:turbo": "turbo run dev --parallel",
     "build": "turbo run build",
     "start:prod": "turbo run start --parallel",
     "test": "turbo run test",

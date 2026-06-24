@@ -12,13 +12,19 @@ export default function RiderHome() {
   const dockId = searchParams.get('dock');
   const action = searchParams.get('action');
   
-  const { bikes: liveBikes } = useLiveFleet();
-  const { docks } = useNearbyDocks(6.5244, 3.3792); // Base city coords
+  // Extract the exact coordinates of the clicked item from the URL
+  const selectedLat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : undefined;
+  const selectedLng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')!) : undefined;
+  
+  // Fetch a tight radius around the clicked item to get its full details dynamically
+  const { bikes: liveBikes } = useLiveFleet(selectedLat, selectedLng, 2);
+  const { docks } = useNearbyDocks(selectedLat, selectedLng);
   
   const displayBikes = liveBikes;
   
   const selectedBike = bikeId ? displayBikes.find(b => b.id === bikeId) : null;
   const selectedDock = dockId ? docks.find(d => d.id === dockId) : null;
+  const shouldNavigate = searchParams.get('navigate') === 'true';
 
   // Don't show anything if neither bike nor dock is selected
   if (!selectedBike && !selectedDock) return <></>;
@@ -29,7 +35,7 @@ export default function RiderHome() {
         <UnlockModal bikeId={bikeId} onClose={() => router.push(`/?bike=${bikeId}`)} />
       )}
 
-      {selectedDock && (
+      {selectedDock && !shouldNavigate && (
         <div className="absolute top-28 right-6 left-6 md:left-auto md:w-[420px] bg-surfaceLight/60 backdrop-blur-3xl border border-white/10 rounded-[36px] p-6 shadow-[0_30px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)] z-30 pointer-events-auto flex flex-col animate-in slide-in-from-right-8 duration-700 ease-out max-h-[calc(100vh-140px)] overflow-hidden">
           {/* 🅿️ Premium Dock Details Overlay */}
           
@@ -59,7 +65,7 @@ export default function RiderHome() {
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
-                <span className="text-[#00FFFF] font-extrabold text-3xl mb-1">{selectedDock.freeSlots}</span>
+                <span className="text-[#00FFFF] font-extrabold text-3xl mb-1">{selectedDock.availableSlots}</span>
                 <span className="text-slate-400 text-xs uppercase font-bold tracking-wider">Free Slots</span>
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
@@ -70,10 +76,13 @@ export default function RiderHome() {
 
             {/* Navigation Action Button */}
             <div className="mt-2">
-              <button className="relative w-full h-14 bg-white/10 text-white font-extrabold text-lg rounded-2xl overflow-hidden group hover:bg-white/20 active:scale-[0.98] transition-all">
+              <button 
+                onClick={() => router.push(`/?dock=${selectedDock.id}&lat=${selectedDock.lat}&lng=${selectedDock.lng}&navigate=true`)}
+                className="relative w-full h-14 bg-white/10 text-white font-extrabold text-lg rounded-2xl overflow-hidden group hover:bg-white/20 active:scale-[0.98] transition-all"
+              >
                 <div className="relative z-10 flex items-center justify-center gap-3 w-full h-full">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                  <span>Navigate to Dock</span>
+                  <span>Start Navigation</span>
                 </div>
               </button>
             </div>
@@ -81,9 +90,9 @@ export default function RiderHome() {
         </div>
       )}
 
-      {selectedBike && !selectedDock && (
+      {selectedBike && !selectedDock && !shouldNavigate && (
         (() => {
-          const battery = selectedBike?.battery || selectedBike?.batteryLevel || 100;
+          const battery = selectedBike?.batteryPct || 100;
           const isLowBattery = battery < 20;
           const rangeKm = Math.floor(battery * 0.4);
           
@@ -186,7 +195,7 @@ export default function RiderHome() {
               <div>
                 <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Standard Rate</div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-white">₦ {selectedBike.surge ? Math.round(50 * selectedBike.surge) : 50}</span>
+                  <span className="text-3xl font-extrabold text-white">₦ {(selectedBike as any).surge ? Math.round(50 * (selectedBike as any).surge) : 50}</span>
                   <span className="text-slate-400 font-medium">/min</span>
                 </div>
                 <div className="mt-2 text-sm text-slate-300 flex items-center gap-2">
@@ -195,7 +204,7 @@ export default function RiderHome() {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
-                {selectedBike.surge && selectedBike.surge > 1 ? (
+                {(selectedBike as any).surge && (selectedBike as any).surge > 1 ? (
                   <div className="px-3 py-1 rounded-full bg-warning/20 border border-warning/30 text-warning text-xs font-semibold shadow-inner flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-warning"></span> High Demand
                   </div>
@@ -226,6 +235,13 @@ export default function RiderHome() {
               <span className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Scan QR</span>
               <span className="w-1 h-1 rounded-full bg-slate-600"></span>
               <span className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> Enter PIN</span>
+              <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span 
+                onClick={() => router.push(`/?bike=${selectedBike!.id}&lat=${selectedBike.lat}&lng=${selectedBike.lng}&navigate=true`)}
+                className="flex items-center gap-1 hover:text-[#00FFA3] text-primary transition-colors cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg> Navigate
+              </span>
             </div>
           </div>
 

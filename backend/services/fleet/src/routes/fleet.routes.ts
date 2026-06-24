@@ -116,6 +116,7 @@ fleetRouter.get('/docks/nearby', async (req, res) => {
     const docks = await FleetService.getNearbyDocks(lat, lng, radius);
     res.json({ success: true, data: docks });
   } catch (err) {
+    console.error('[Fleet] Error in /docks/nearby:', err);
     res.status(500).json({ success: false, error: 'Failed to find nearby docks' });
   }
 });

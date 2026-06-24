@@ -1,19 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Map, { Marker, NavigationControl, GeolocateControl } from 'react-map-gl';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer, MapRef } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useLiveFleet } from '@/hooks/useLiveFleet';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LocateFixed } from 'lucide-react';
 
 import { useNearbyDocks } from '@/hooks/useNearbyDocks';
+import { useNavigationEngine, NavigationProfile } from '@/hooks/useNavigationEngine';
 
 // Using a public demo token if env is missing, but env should be configured for production
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
 
 export default function RiderMap() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const shouldNavigate = searchParams.get('navigate') === 'true';
+  const destLat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : null;
+  const destLng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')!) : null;
+  
+  const destination = destLat && destLng ? { lat: destLat, lng: destLng } : null;
+
+  const mapRef = useRef<MapRef>(null);
 
   const [viewState, setViewState] = useState({
     latitude: 6.4541,
@@ -22,11 +31,92 @@ export default function RiderMap() {
     pitch: 45,
   });
 
+  const [navProfile, setNavProfile] = useState<NavigationProfile>('cycling');
+
   // Real user geolocation
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  const searchLat = userLocation?.lat || viewState.latitude;
-  const searchLng = userLocation?.lng || viewState.longitude;
+  // Use the Smart Navigation Engine
+  const { 
+    isActive: isNavigating, 
+    routeGeoJSON, 
+    steps, 
+    currentStepIndex, 
+    distanceText, 
+    etaText 
+  } = useNavigationEngine(
+    shouldNavigate ? userLocation : null,
+    shouldNavigate ? destination : null,
+    navProfile
+  );
+
+  // Utility to calculate heading/bearing from Point A to Point B
+  const getBearing = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const dLon = (lng2 - lng1) * Math.PI / 180;
+    const l1 = lat1 * Math.PI / 180;
+    const l2 = lat2 * Math.PI / 180;
+    const y = Math.sin(dLon) * Math.cos(l2);
+    const x = Math.cos(l1) * Math.sin(l2) - Math.sin(l1) * Math.cos(l2) * Math.cos(dLon);
+    const bearing = Math.atan2(y, x) * 180 / Math.PI;
+    return (bearing + 360) % 360;
+  };
+
+  // Navigation Lifecycle: Drone-like Continuous Camera Tracking
+  const geoControlRef = useRef<mapboxgl.GeolocateControl>(null);
+
+  useEffect(() => {
+    if (isNavigating) {
+      // Programmatically trigger the native geolocation tracking
+      geoControlRef.current?.trigger();
+    }
+
+    if (isNavigating && userLocation && destination && mapRef.current) {
+      const targetBearing = getBearing(userLocation.lat, userLocation.lng, destination.lat, destination.lng);
+      
+      // We use easeTo instead of flyTo for continuous smooth gliding
+      mapRef.current.easeTo({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 18.5,
+        pitch: 65,
+        bearing: targetBearing,
+        duration: 1000, // 1 second glide per tick to smooth out GPS jumps
+        easing: (t) => t * (2 - t) // Smooth cubic easing
+      });
+    }
+  }, [isNavigating, userLocation, destination?.lat, destination?.lng]);
+
+  const handleFocusLocation = () => {
+    if (!userLocation) return;
+    
+    if (isNavigating) {
+      mapRef.current?.easeTo({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 18.5,
+        pitch: 65,
+        duration: 1000
+      });
+    } else {
+      mapRef.current?.flyTo({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 15,
+        pitch: 45,
+        duration: 1000
+      });
+    }
+  };
+
+  // Debounce the viewport center to avoid spamming the backend during map dragging (prevents 429 Rate Limits)
+  const [debouncedCenter, setDebouncedCenter] = useState({ lat: viewState.latitude, lng: viewState.longitude });
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedCenter({ lat: viewState.latitude, lng: viewState.longitude });
+    }, 300); // 300ms debounce
+    return () => clearTimeout(handler);
+  }, [viewState.latitude, viewState.longitude]);
+
+  const searchLat = debouncedCenter.lat;
+  const searchLng = debouncedCenter.lng;
 
   const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng, 10);
   
@@ -34,7 +124,7 @@ export default function RiderMap() {
   const displayBikes = liveBikes;
 
   // Fetch real docks from Postgres based on view center!
-  const { docks } = useNearbyDocks(userLocation?.lat || viewState.latitude, userLocation?.lng || viewState.longitude);
+  const { docks } = useNearbyDocks(searchLat, searchLng);
 
   // Prevent hydration mismatch
   const [mounted, setMounted] = useState(false);
@@ -75,47 +165,183 @@ export default function RiderMap() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, [mounted]);
 
-  const handleFocusLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
+
+
+  // Convert bikes to GeoJSON
+  const bikesGeoJSON = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: displayBikes.map(bike => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [bike.lng, bike.lat] },
+      properties: { id: bike.id }
+    }))
+  }), [displayBikes]);
+
+  // Convert docks to GeoJSON
+  const docksGeoJSON = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: docks.map(dock => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [dock.lng, dock.lat] },
+      properties: { id: dock.id, name: dock.name }
+    }))
+  }), [docks]);
+
+  // Handle WebGL Layer Clicks
+  const onMapClick = useCallback((e: any) => {
+    const feature = e.features && e.features[0];
+    if (!feature) return;
+
+    if (feature.layer.id === 'bikes-symbol-layer') {
+      const bikeId = feature.properties.id;
+      const [lng, lat] = feature.geometry.coordinates;
+      router.push(`/?bike=${bikeId}&lat=${lat}&lng=${lng}`);
+    } else if (feature.layer.id === 'docks-symbol-layer') {
+      const dockId = feature.properties.id;
+      const [lng, lat] = feature.geometry.coordinates;
+      router.push(`/?dock=${dockId}&lat=${lat}&lng=${lng}`);
     }
+  }, [router]);
+
+  // Load custom SVG icons into the WebGL renderer on map load
+  const onMapLoad = useCallback((e: any) => {
+    const map = e.target;
     
-    // Explicitly request location when button is clicked
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        setViewState({
-          latitude,
-          longitude,
-          zoom: 16,
-          pitch: 45,
-        });
-      },
-      (error) => {
-        alert(`Could not get location: ${error.message}. Ensure location permissions are enabled.`);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
+    // Bike WebGL Icon (Glowing green with dark core)
+    const bikeImg = new Image(48, 48);
+    bikeImg.onload = () => { if (!map.hasImage('bike-icon')) map.addImage('bike-icon', bikeImg); };
+    bikeImg.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+      <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="18" fill="#00FFA3" fill-opacity="0.25"/>
+        <circle cx="24" cy="24" r="10" fill="#00FFA3" stroke="#0A0D14" stroke-width="3"/>
+        <path d="M19 24l3 3 7-7" fill="none" stroke="#0A0D14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `)}`;
+
+    // Dock WebGL Icon (Glowing blue with 'P')
+    const dockImg = new Image(48, 48);
+    dockImg.onload = () => { if (!map.hasImage('dock-icon')) map.addImage('dock-icon', dockImg); };
+    dockImg.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+      <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="6" width="36" height="36" rx="10" fill="#00B3FF" fill-opacity="0.25"/>
+        <rect x="12" y="12" width="24" height="24" rx="6" fill="#00B3FF" stroke="#0A0D14" stroke-width="3"/>
+        <text x="24" y="28" font-family="sans-serif" font-weight="900" font-size="14" fill="#0A0D14" text-anchor="middle">P</text>
+      </svg>
+    `)}`;
+  }, []);
 
   if (!mounted) return <div className="w-full h-full bg-surface animate-pulse" />;
 
   return (
     <div className="w-full h-full relative">
       <Map
+        ref={mapRef}
         {...viewState}
         onMove={(evt: any) => setViewState(evt.viewState)}
+        onClick={onMapClick}
+        onLoad={onMapLoad}
+        interactiveLayerIds={['bikes-symbol-layer', 'docks-symbol-layer']}
         mapStyle="mapbox://styles/mapbox/dark-v11"
         mapboxAccessToken={MAPBOX_TOKEN}
         style={{ width: '100%', height: '100%' }}
         attributionControl={false}
       >
-        <NavigationControl position="bottom-right" showCompass={false} style={{ marginBottom: '90px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
+        {/* Navigation Overlays (Compact) */}
+        {isNavigating && steps.length > 0 && (
+          <>
+            {/* Top Left: Next Turn Instruction */}
+            <div className="absolute top-24 left-4 z-20 max-w-[320px]">
+              <div className="bg-[#111622]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-in slide-in-from-left duration-500">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
+                  {(() => {
+                    const modifier = steps[currentStepIndex]?.maneuver?.modifier || '';
+                    if (modifier.includes('left')) {
+                      return (
+                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                      );
+                    } else if (modifier.includes('right')) {
+                      return (
+                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      );
+                    } else if (modifier.includes('uturn')) {
+                      return (
+                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                      );
+                    } else {
+                      // Straight / Default
+                      return (
+                        <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                        </svg>
+                      );
+                    }
+                  })()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-bold text-sm leading-tight truncate">
+                    {steps[currentStepIndex]?.maneuver?.instruction || "Proceed to destination"}
+                  </div>
+                  <div className="text-primary font-extrabold text-xs mt-0.5 tracking-wide">
+                    {steps[currentStepIndex]?.distance ? `${Math.round(steps[currentStepIndex].distance)}m` : 'Arriving'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Left: Trip Stats & Exit & Profile Selector */}
+            <div className="absolute bottom-6 left-4 z-20">
+              <div className="bg-[#111622]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom duration-500 flex flex-col gap-3 min-w-[200px]">
+                
+                {/* Profile Selector Toggle */}
+                <div className="flex bg-[#0A0D14] rounded-lg p-1 border border-white/5">
+                  {(['walking', 'cycling', 'driving-traffic'] as NavigationProfile[]).map((profile) => (
+                    <button
+                      key={profile}
+                      onClick={() => setNavProfile(profile)}
+                      className={`flex-1 py-1.5 text-xs font-bold capitalize rounded-md transition-all ${
+                        navProfile === profile 
+                        ? 'bg-primary text-[#0A0D14] shadow-md' 
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {profile.split('-')[0]}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-between gap-6">
+                  <div>
+                    <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Arrival</div>
+                    <div className="text-xl font-extrabold text-white">{etaText}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Distance</div>
+                    <div className="text-lg font-bold text-slate-300">{distanceText}</div>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => router.push('/')}
+                  className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-xs rounded-xl transition-colors border border-red-500/20 active:scale-[0.98]"
+                >
+                  Exit Navigation
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        <NavigationControl position="bottom-right" showCompass={false} style={{ marginBottom: '60px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
         
-        {/* Custom Geolocate Button (Fixes the buggy native control) */}
-        <div className="absolute bottom-[20px] right-[20px] z-10 pointer-events-auto">
+        {/* Custom Controls Container */}
+        <div className="absolute bottom-[20px] right-[20px] z-10 pointer-events-auto flex flex-col gap-2">
+          {/* Custom Geolocate Button */}
           <button 
             onClick={handleFocusLocation}
             className="w-[29px] h-[29px] bg-[#111622] border border-white/10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors shadow-lg group"
@@ -125,68 +351,109 @@ export default function RiderMap() {
           </button>
         </div>
 
-        {/* Render Bikes */}
-        {displayBikes.map(bike => (
-          <Marker key={bike.id} longitude={bike.lng} latitude={bike.lat} anchor="bottom" style={{ pointerEvents: 'auto' }}>
-            <div 
-              className="flex flex-col items-center group cursor-pointer transform hover:scale-110 transition-transform relative"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/?bike=${bike.id}`);
-              }}
-            >
-              {/* Tooltip */}
-              <div className="absolute -top-10 px-3 py-1 bg-[#111622]/90 backdrop-blur-md border border-white/10 rounded-full text-xs font-bold text-white mb-2 shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                {bike.id}
-              </div>
-              {/* Glowing Pin */}
-              <div className="relative flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-b from-[#00FFA3] to-[#00CC82] flex items-center justify-center shadow-[0_0_20px_rgba(0,255,163,0.6)] z-10">
-                  <svg className="w-5 h-5 text-[#0A0D14]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><circle cx="5" cy="18" r="3" /><circle cx="19" cy="18" r="3" /><path d="M12 17.5V14l-3-3 4-3 2 3h2" /></svg>
-                </div>
-                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#00CC82] -mt-1 z-0"></div>
-                {/* Glow on the floor */}
-                <div className="w-6 h-2 bg-[#00FFA3]/40 blur-[4px] rounded-full mt-1"></div>
-              </div>
-            </div>
-          </Marker>
-        ))}
+        {/* Immersive 3D Buildings Layer (Appears when pitched and zoomed) */}
+        <Layer 
+          id="3d-buildings"
+          source="composite"
+          source-layer="building"
+          filter={['==', 'extrude', 'true']}
+          type="fill-extrusion"
+          minzoom={15}
+          paint={{
+            'fill-extrusion-color': '#0A0D14', // Match the dark theme
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.8 // Slightly translucent for cyberpunk feel
+          }}
+        />
 
-        {/* Render Docks */}
-        {docks.map(dock => (
-          <Marker key={dock.id} longitude={dock.lng} latitude={dock.lat} anchor="bottom" style={{ pointerEvents: 'auto' }}>
-            <div 
-              className="flex flex-col items-center group cursor-pointer relative"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/?dock=${dock.id}`);
+        {/* Render Navigation Route (With Casing for Highway Look) */}
+        {routeGeoJSON && (
+          <Source id="route-source" type="geojson" data={routeGeoJSON}>
+            {/* Dark casing/border underneath */}
+            <Layer 
+              id="route-layer-casing" 
+              type="line" 
+              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+              paint={{
+                'line-color': '#05445E', // Dark blue border
+                'line-width': 12,
+                'line-opacity': 0.8
               }}
-            >
-              <div className="absolute -top-10 px-3 py-1 bg-[#111622]/90 backdrop-blur-md border border-[#00FFFF]/30 rounded-full text-xs font-bold text-white shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {dock.name}
-              </div>
-              <div className="relative flex flex-col items-center">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-b from-[#00FFFF] to-[#00B3FF] flex items-center justify-center shadow-[0_0_15px_rgba(0,255,255,0.5)] z-10">
-                  <span className="text-[#0A0D14] font-bold text-sm">P</span>
-                </div>
-                <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-[#00B3FF] -mt-0.5 z-0"></div>
-                <div className="w-5 h-2 bg-[#00FFFF]/30 blur-[3px] rounded-full mt-1"></div>
-              </div>
-            </div>
-          </Marker>
-        ))}
-
-        {/* Real User Location (from browser geolocation) */}
-        {userLocation && (
-          <Marker longitude={userLocation.lng} latitude={userLocation.lat} anchor="center" style={{ pointerEvents: 'none' }}>
-            <div className="relative flex items-center justify-center">
-              <div className="w-16 h-16 bg-[#00B3FF]/20 rounded-full animate-ping absolute"></div>
-              <div className="w-6 h-6 bg-white rounded-full shadow-[0_0_20px_rgba(0,179,255,0.8)] border-4 border-[#0A0D14] flex items-center justify-center relative z-10">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#00B3FF]"></div>
-              </div>
-            </div>
-          </Marker>
+            />
+            {/* Bright inner path */}
+            <Layer 
+              id="route-layer-inner" 
+              type="line" 
+              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+              paint={{
+                'line-color': '#00B3FF', // Neon blue core
+                'line-width': 6,
+                'line-opacity': 1.0
+              }}
+            />
+          </Source>
         )}
+        
+        {/* 100% Native WebGL Bikes */}
+        {bikesGeoJSON && (
+          <Source id="bikes-source" type="geojson" data={bikesGeoJSON as any}>
+            <Layer 
+              id="bikes-symbol-layer" 
+              type="symbol" 
+              layout={{
+                'icon-image': 'bike-icon',
+                'icon-size': 1,
+                'icon-allow-overlap': true,
+                'text-field': ['get', 'id'],
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-size': 10,
+                'text-offset': [0, -1.8],
+                'text-anchor': 'bottom'
+              }}
+              paint={{
+                'text-color': '#ffffff',
+                'text-halo-color': '#111622',
+                'text-halo-width': 2
+              }}
+            />
+          </Source>
+        )}
+
+        {/* 100% Native WebGL Docks */}
+        {docksGeoJSON && (
+          <Source id="docks-source" type="geojson" data={docksGeoJSON as any}>
+            <Layer 
+              id="docks-symbol-layer" 
+              type="symbol" 
+              layout={{
+                'icon-image': 'dock-icon',
+                'icon-size': 1,
+                'icon-allow-overlap': true,
+                'text-field': ['get', 'name'],
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-size': 11,
+                'text-offset': [0, -1.8],
+                'text-anchor': 'bottom'
+              }}
+              paint={{
+                'text-color': '#00FFFF',
+                'text-halo-color': '#111622',
+                'text-halo-width': 2
+              }}
+            />
+          </Source>
+        )}
+
+        {/* High-Performance Native Navigation Puck (Gyro-compass chevron) */}
+        <GeolocateControl
+          ref={geoControlRef}
+          position="bottom-right"
+          trackUserLocation={true}
+          showUserHeading={true}
+          showAccuracyCircle={false}
+          style={{ marginBottom: '100px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+        />
       </Map>
     </div>
   );

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import Map, { GeolocateControl, Source, Layer, MapRef } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
+import { useNavigationEngine, NavigationProfile } from '@/hooks/useNavigationEngine';
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0.xxxxx';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
 
 interface Bike {
   id: string;
@@ -41,10 +42,8 @@ export function FleetMapComponent({
   onSelectBikeId,
   historicalRoute
 }: FleetMapProps = {}) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const dockMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const mapRef = useRef<MapRef>(null);
+  
   const [internalSelectedBike, setInternalSelectedBike] = useState<Bike | null>(null);
   const [docks, setDocks] = useState<Dock[]>([]);
 
@@ -63,142 +62,45 @@ export function FleetMapComponent({
     else setInternalSelectedBike(bike);
   };
 
-  // Initialize map
+  const [viewState, setViewState] = useState({
+    latitude: 6.4541,
+    longitude: 3.3792,
+    zoom: 12,
+    pitch: 0,
+  });
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Fetch docks
   useEffect(() => {
-    if (!mapContainer.current) return;
-
-    try {
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/light-v11',
-        center: [0, 0], // Start at 0,0 temporarily
-        zoom: 2,
-      });
-
-      map.current.addControl(new mapboxgl.NavigationControl());
-
-      // Fetch docks
-      const fetchDocks = async () => {
-        try {
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-          const token = localStorage.getItem('token') || '';
-          const res = await fetch(`${baseUrl}/api/proxy/fleet/docks`, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
-          });
-          if (res.ok) {
-            const data = await res.json();
-            const fetchedDocks = data.success && data.data ? data.data : Array.isArray(data) ? data : [];
-            setDocks(fetchedDocks);
-            
-            // Auto-center map on operator's primary dock
-            if (fetchedDocks.length > 0 && map.current) {
-              map.current.flyTo({
-                center: [fetchedDocks[0].lng, fetchedDocks[0].lat],
-                zoom: 14,
-                duration: 2000
-              });
-            } else if (map.current) {
-              // If NO docks, use the operator's real-world browser location
-              if ('geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                  (position) => {
-                    map.current?.flyTo({
-                      center: [position.coords.longitude, position.coords.latitude],
-                      zoom: 14,
-                      duration: 2000
-                    });
-                  },
-                  (error) => console.warn('Geolocation blocked/failed:', error),
-                  { enableHighAccuracy: true }
-                );
-              }
-            }
+    const fetchDocks = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch(`${baseUrl}/api/proxy/fleet/docks`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const fetchedDocks = data.success && data.data ? data.data : Array.isArray(data) ? data : [];
+          setDocks(fetchedDocks);
+          
+          if (fetchedDocks.length > 0) {
+            setViewState(prev => ({
+              ...prev,
+              latitude: fetchedDocks[0].lat,
+              longitude: fetchedDocks[0].lng,
+              zoom: 14
+            }));
           }
-        } catch (err) {
-          console.error('Failed to fetch docks:', err);
         }
-      };
-
-      fetchDocks();
-    } catch (err) {
-      console.error('Failed to initialize map:', err);
-    }
-
-    return () => {
-      map.current?.remove();
+      } catch (err) {
+        console.error('Failed to fetch docks:', err);
+      }
     };
+    fetchDocks();
   }, []);
-
-  // Update bike markers
-  useEffect(() => {
-    if (!map.current) return;
-
-    bikes.forEach((bike) => {
-      let marker = markersRef.current.get(bike.id);
-
-      if (!marker) {
-        // Create new marker
-        const el = document.createElement('div');
-        el.className = 'w-8 h-8 cursor-pointer';
-        
-        const color = bike.status === 'in_use' ? '#ef4444' : bike.battery_pct < 20 ? '#f97316' : '#22c55e';
-        el.innerHTML = `
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="16" cy="16" r="14" fill="${color}" stroke="white" stroke-width="2"/>
-            <path d="M16 8L19 14H13L16 8Z" fill="white"/>
-          </svg>
-        `;
-
-        el.onclick = () => handleSelectBike(bike);
-
-        marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([bike.lng, bike.lat])
-          .addTo(map.current!);
-
-        markersRef.current.set(bike.id, marker);
-      } else {
-        // Update existing marker position
-        marker.setLngLat([bike.lng, bike.lat]);
-      }
-    });
-  }, [bikes]);
-
-  // Update dock markers
-  useEffect(() => {
-    if (!map.current) return;
-
-    docks.forEach((dock) => {
-      let marker = dockMarkersRef.current.get(dock.id);
-
-      if (!marker) {
-        const el = document.createElement('div');
-        el.className = 'w-8 h-8 cursor-pointer';
-        
-        const available_pct = (dock.available_slots / dock.total_slots) * 100;
-        const color = available_pct > 50 ? '#3b82f6' : available_pct > 20 ? '#eab308' : '#ef4444';
-        
-        el.innerHTML = `
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="6" y="8" width="20" height="16" rx="2" fill="${color}" stroke="white" stroke-width="2"/>
-            <text x="16" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold">${dock.available_slots}</text>
-          </svg>
-        `;
-
-        marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([dock.lng, dock.lat])
-          .setPopup(new mapboxgl.Popup().setHTML(`
-            <div class="text-sm">
-              <p class="font-bold">${dock.name}</p>
-              <p>${dock.available_slots}/${dock.total_slots} slots available</p>
-            </div>
-          `))
-          .addTo(map.current!);
-
-        dockMarkersRef.current.set(dock.id, marker);
-      }
-    });
-  }, [docks]);
 
   const [bikeTrail, setBikeTrail] = useState<{lat: number, lng: number, ts: number}[]>([]);
 
@@ -206,30 +108,8 @@ export function FleetMapComponent({
   useEffect(() => {
     if (!selectedBike) {
       setBikeTrail([]);
-      if (map.current && map.current.getSource('bike-trail')) {
-        (map.current.getSource('bike-trail') as mapboxgl.GeoJSONSource).setData({
-          type: 'FeatureCollection',
-          features: []
-        });
-      }
-      // Return to global view
-      if (map.current) {
-        if (docks.length > 0) {
-          map.current.flyTo({
-            center: [docks[0].lng, docks[0].lat],
-            zoom: 13,
-            duration: 1500,
-            essential: true
-          });
-        } else {
-          const currentCenter = map.current.getCenter();
-          map.current.flyTo({
-            center: currentCenter,
-            zoom: 12,
-            duration: 1500,
-            essential: true
-          });
-        }
+      if (docks.length > 0 && mapRef.current) {
+        mapRef.current.flyTo({ center: [docks[0].lng, docks[0].lat], zoom: 13, duration: 1500 });
       }
       return;
     }
@@ -255,94 +135,119 @@ export function FleetMapComponent({
     fetchTrail();
     const interval = setInterval(fetchTrail, 5000);
 
-    // Focus camera on the bike
-    if (map.current) {
-      map.current.flyTo({
-        center: [selectedBike.lng, selectedBike.lat],
-        zoom: 16,
-        duration: 1500, // 1.5 second smooth flight
-        essential: true
-      });
+    if (mapRef.current) {
+      mapRef.current.flyTo({ center: [selectedBike.lng, selectedBike.lat], zoom: 16, duration: 1500 });
     }
 
     return () => clearInterval(interval);
-  }, [selectedBike, docks]);
+  }, [selectedBike, docks.length]);
 
-  // Focus camera on historical route when it changes
+  // Historical Route focus
   useEffect(() => {
-    if (!map.current) return;
-    if (historicalRoute && historicalRoute.length > 0) {
-      map.current.flyTo({
+    if (historicalRoute && historicalRoute.length > 0 && mapRef.current) {
+      mapRef.current.flyTo({
         center: [historicalRoute[0].lng, historicalRoute[0].lat],
         zoom: 14,
-        duration: 1500,
-        essential: true
+        duration: 1500
       });
-    } else if (!selectedBikeId) {
-      // Return to global view if both are cleared
-      if (docks.length > 0 && map.current) {
-        map.current.flyTo({
-          center: [docks[0].lng, docks[0].lat],
-          zoom: 14,
-          duration: 1500,
-          essential: true
-        });
-      } else if (map.current) {
-        // Fall back to zooming out slightly from current center
-        const currentCenter = map.current.getCenter();
-        map.current.flyTo({
-          center: currentCenter,
-          zoom: 12,
-          duration: 1500,
-          essential: true
-        });
-      }
     }
-  }, [historicalRoute, selectedBikeId, docks]);
+  }, [historicalRoute]);
 
-  // Draw trail on map
-  useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+  // Convert Bikes to GeoJSON
+  const bikesGeoJSON = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: bikes.map(bike => {
+      const color = bike.status === 'in_use' ? '#ef4444' : bike.battery_pct < 20 ? '#f97316' : '#22c55e';
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [bike.lng, bike.lat] },
+        properties: { id: bike.id, color, battery: bike.battery_pct, status: bike.status }
+      };
+    })
+  }), [bikes]);
 
-    const routeToDraw = historicalRoute && historicalRoute.length > 0 
-      ? historicalRoute 
-      : bikeTrail;
+  // Convert Docks to GeoJSON
+  const docksGeoJSON = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: docks.map(dock => {
+      const available_pct = (dock.available_slots / dock.total_slots) * 100;
+      const color = available_pct > 50 ? '#3b82f6' : available_pct > 20 ? '#eab308' : '#ef4444';
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [dock.lng, dock.lat] },
+        properties: { id: dock.id, name: dock.name, slots: dock.available_slots.toString(), color }
+      };
+    })
+  }), [docks]);
 
-    const geojson: any = {
+  const routeToDraw = historicalRoute && historicalRoute.length > 0 ? historicalRoute : bikeTrail;
+  const trailGeoJSON = useMemo(() => {
+    if (routeToDraw.length === 0) return null;
+    return {
       type: 'Feature',
       geometry: {
         type: 'LineString',
         coordinates: routeToDraw.map(p => [p.lng, p.lat])
-      },
-      properties: {}
+      }
     };
+  }, [routeToDraw]);
 
-    if (map.current.getSource('bike-trail')) {
-      (map.current.getSource('bike-trail') as mapboxgl.GeoJSONSource).setData(geojson);
-    } else {
-      map.current.addSource('bike-trail', { type: 'geojson', data: geojson });
-      map.current.addLayer({
-        id: 'bike-trail-line',
-        type: 'line',
-        source: 'bike-trail',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': '#0ea5e9', // Sky blue
-          'line-width': 4,
-          'line-opacity': 0.8,
-          'line-dasharray': [1, 2]
-        }
+  const onMapClick = useCallback((e: mapboxgl.MapLayerMouseEvent) => {
+    const feature = e.features && e.features[0];
+    if (!feature) return;
+
+    if (feature.layer?.id === 'bikes-circle-layer' || feature.layer?.id === 'bikes-core-layer') {
+      const bikeId = feature.properties?.id;
+      const bike = bikes.find(b => b.id === bikeId);
+      if (bike) handleSelectBike(bike);
+    }
+  }, [bikes, handleSelectBike]);
+
+  // User Location & Navigation for Stakeholder Van
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const geoControlRef = useRef<mapboxgl.GeolocateControl>(null);
+  const [navProfile, setNavProfile] = useState<NavigationProfile>('driving-traffic');
+
+  const { isActive: isNavigating, routeGeoJSON, steps, currentStepIndex, distanceText, etaText } = useNavigationEngine(
+    userLocation,
+    selectedBike ? { lat: selectedBike.lat, lng: selectedBike.lng } : null,
+    navProfile
+  );
+
+  useEffect(() => {
+    if (isNavigating && geoControlRef.current) geoControlRef.current.trigger();
+    if (isNavigating && userLocation && selectedBike && mapRef.current) {
+      mapRef.current.easeTo({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 17,
+        pitch: 60,
+        duration: 1000
       });
     }
-  }, [bikeTrail]);
+  }, [isNavigating, userLocation, selectedBike?.lat, selectedBike?.lng]);
+
+  const startNavigation = () => {
+    if (!navigator.geolocation) return;
+    
+    // Fallback if they click navigate without a real device GPS
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => console.warn(err),
+      { enableHighAccuracy: true }
+    );
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {}, { enableHighAccuracy: true }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  };
+
+  if (!mounted) return <div className="flex-1 bg-slate-900 animate-pulse rounded-lg border border-slate-700" />;
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col h-full gap-4 relative">
       {/* Connection status */}
-      <div className="flex items-center gap-2 px-4">
+      <div className="flex items-center gap-2 px-4 shrink-0">
         <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
         <span className="text-sm text-slate-400">
           {connected ? 'Live updates' : 'Disconnected'}
@@ -351,19 +256,181 @@ export function FleetMapComponent({
       </div>
 
       {/* Map container */}
-      <div ref={mapContainer} className="flex-1 rounded-lg overflow-hidden border border-slate-700" />
+      <div className="flex-1 relative rounded-lg overflow-hidden border border-slate-700">
+        <Map
+          ref={mapRef}
+          {...viewState}
+          onMove={(evt: any) => setViewState(evt.viewState)}
+          onClick={onMapClick}
+          interactiveLayerIds={['bikes-circle-layer', 'bikes-core-layer']}
+          mapStyle="mapbox://styles/mapbox/dark-v11"
+          mapboxAccessToken={MAPBOX_TOKEN}
+          style={{ width: '100%', height: '100%' }}
+        >
+          {/* Navigation HUD */}
+          {isNavigating && steps.length > 0 && (
+             <div className="absolute top-4 left-4 z-20 max-w-[320px]">
+               <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-2xl flex items-center gap-3">
+                 <div className="flex-1 min-w-0">
+                   <div className="text-white font-bold text-sm leading-tight truncate">
+                     {steps[currentStepIndex]?.maneuver?.instruction || "Proceed"}
+                   </div>
+                   <div className="text-blue-400 font-extrabold text-xs mt-0.5 tracking-wide">
+                     {steps[currentStepIndex]?.distance ? `${Math.round(steps[currentStepIndex].distance)}m` : 'Arriving'}
+                   </div>
+                 </div>
+               </div>
+             </div>
+          )}
 
-      {/* Selected bike details */}
+          {/* Docks */}
+          {docksGeoJSON && (
+            <Source id="docks-source" type="geojson" data={docksGeoJSON as any}>
+              <Layer 
+                id="docks-rect-layer" 
+                type="circle" 
+                paint={{
+                  'circle-radius': 14,
+                  'circle-color': ['get', 'color'],
+                  'circle-stroke-width': 2,
+                  'circle-stroke-color': '#ffffff'
+                }}
+              />
+              <Layer 
+                id="docks-text-layer" 
+                type="symbol" 
+                layout={{
+                  'text-field': ['get', 'slots'],
+                  'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                  'text-size': 12,
+                }}
+                paint={{ 'text-color': '#ffffff' }}
+              />
+              <Layer 
+                id="docks-name-layer" 
+                type="symbol" 
+                layout={{
+                  'text-field': ['get', 'name'],
+                  'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                  'text-size': 10,
+                  'text-offset': [0, 2],
+                }}
+                paint={{ 'text-color': '#ffffff' }}
+              />
+            </Source>
+          )}
+
+          {/* Bikes */}
+          {bikesGeoJSON && (
+            <Source id="bikes-source" type="geojson" data={bikesGeoJSON as any}>
+              <Layer 
+                id="bikes-circle-layer" 
+                type="circle" 
+                paint={{
+                  'circle-radius': 16,
+                  'circle-color': ['get', 'color'],
+                  'circle-opacity': 0.3,
+                  'circle-blur': 0.5
+                }}
+              />
+              <Layer 
+                id="bikes-core-layer" 
+                type="circle" 
+                paint={{
+                  'circle-radius': 6,
+                  'circle-color': ['get', 'color'],
+                  'circle-stroke-width': 2,
+                  'circle-stroke-color': '#ffffff'
+                }}
+              />
+            </Source>
+          )}
+
+          {/* Bike Trail */}
+          {trailGeoJSON && (
+            <Source id="bike-trail-source" type="geojson" data={trailGeoJSON as any}>
+              <Layer 
+                id="bike-trail-line" 
+                type="line" 
+                layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+                paint={{ 'line-color': '#0ea5e9', 'line-width': 4, 'line-opacity': 0.8, 'line-dasharray': [1, 2] }}
+              />
+            </Source>
+          )}
+
+          {/* Navigation Route */}
+          {routeGeoJSON && (
+            <Source id="route-source" type="geojson" data={routeGeoJSON}>
+              <Layer 
+                id="route-layer" 
+                type="line" 
+                layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+                paint={{ 'line-color': '#3b82f6', 'line-width': 6, 'line-opacity': 0.8 }}
+              />
+            </Source>
+          )}
+
+          {/* 3D Buildings */}
+          <Layer 
+            id="3d-buildings"
+            source="composite"
+            source-layer="building"
+            filter={['==', 'extrude', 'true']}
+            type="fill-extrusion"
+            minzoom={15}
+            paint={{
+              'fill-extrusion-color': '#1e293b',
+              'fill-extrusion-height': ['get', 'height'],
+              'fill-extrusion-base': ['get', 'min_height'],
+              'fill-extrusion-opacity': 0.6
+            }}
+          />
+
+          <GeolocateControl
+            ref={geoControlRef}
+            position="bottom-right"
+            trackUserLocation={true}
+            showUserHeading={true}
+            showAccuracyCircle={false}
+          />
+        </Map>
+      </div>
+
+      {/* Selected bike details overlay */}
       {selectedBike && (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 shrink-0">
           <div className="flex justify-between items-start mb-3">
             <div>
-              <div className="font-bold text-white">{selectedBike.id}</div>
+              <div className="font-bold text-white flex items-center gap-2">
+                {selectedBike.id}
+                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                  selectedBike.battery_pct < 20 ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'
+                }`}>
+                  {selectedBike.battery_pct}% Battery
+                </span>
+              </div>
               <p className="text-sm text-slate-400">
                 Lat: {selectedBike.lat.toFixed(4)}, Lng: {selectedBike.lng.toFixed(4)}
               </p>
             </div>
-            <button onClick={() => handleSelectBike(null)} className="text-slate-400 hover:text-white">×</button>
+            <div className="flex gap-2">
+              {!isNavigating ? (
+                <button 
+                  onClick={startNavigation}
+                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Navigate Van
+                </button>
+              ) : (
+                <div className="text-blue-400 font-bold text-sm bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20">
+                  ETA: {etaText} | {distanceText}
+                </div>
+              )}
+              <button onClick={() => {
+                 handleSelectBike(null);
+                 setUserLocation(null); // Stops navigation
+              }} className="text-slate-400 hover:text-white bg-slate-700 w-8 rounded-lg flex items-center justify-center">×</button>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
@@ -372,14 +439,14 @@ export function FleetMapComponent({
             </div>
             <div>
               <p className="text-slate-400">Status</p>
-              <p className="text-white capitalize">{selectedBike.status}</p>
+              <p className="text-white capitalize">{selectedBike.status.replace('_', ' ')}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Legend */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 text-xs text-slate-400">
+      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 text-xs text-slate-400 shrink-0">
         <p className="font-bold text-white mb-2">Legend</p>
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center gap-2">
@@ -388,7 +455,7 @@ export function FleetMapComponent({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span>In Use</span>
+            <span>In Use / Broken</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-orange-500"></div>
