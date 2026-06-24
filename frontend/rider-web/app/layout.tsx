@@ -174,9 +174,7 @@ export default function RootLayout({
 
               {/* Page-specific overlays (bike details, etc.) */}
               <div className="absolute inset-0 z-30 pointer-events-none">
-                <div className="pointer-events-auto h-full w-full">
-                  {children}
-                </div>
+                {children}
               </div>
             </>
           )}

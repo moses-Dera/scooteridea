@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
-import { Mail, Lock, ArrowRight, Chrome, Zap } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Zap, X } from 'lucide-react';
 
 interface LoginOverlayProps {
   feature?: string | null;
@@ -50,6 +50,14 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
 
       <div className="w-full max-w-5xl flex rounded-3xl overflow-hidden glass-panel border border-white/5 shadow-2xl relative z-10">
         
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors z-50 group border border-white/10"
+        >
+          <X className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+        </button>
+
         {/* Left Side: Branding / Hero (Hidden on smaller screens) */}
         <div className="hidden lg:flex flex-col justify-between flex-1 p-12 bg-gradient-to-br from-[#111827]/80 to-[#0A0F1E]/90 border-r border-white/5 relative overflow-hidden">
           {/* Subtle grid overlay */}

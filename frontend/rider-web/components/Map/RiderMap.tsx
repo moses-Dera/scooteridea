@@ -16,9 +16,9 @@ export default function RiderMap() {
   const router = useRouter();
 
   const [viewState, setViewState] = useState({
-    latitude: 6.5244,
+    latitude: 6.4541,
     longitude: 3.3792,
-    zoom: 14.5,
+    zoom: 13.5, // slightly zoomed out to see more bikes
     pitch: 45,
   });
 
@@ -28,7 +28,7 @@ export default function RiderMap() {
   const searchLat = userLocation?.lat || viewState.latitude;
   const searchLng = userLocation?.lng || viewState.longitude;
 
-  const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng);
+  const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng, 10);
   
   // Use live socket bikes ONLY
   const displayBikes = liveBikes;

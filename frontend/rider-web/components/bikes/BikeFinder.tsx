@@ -17,33 +17,52 @@ export function BikeFinder() {
   const [bikes, setBikes] = useState<AvailableBike[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
 
+  // 1. Get real user location once
   useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (err) => {
+          console.warn('Geolocation denied, using fallback.');
+          // Fallback to simulator center if denied
+          setUserCoords({ lat: 6.4541, lng: 3.3792 });
+        }
+      );
+    } else {
+      setUserCoords({ lat: 6.4541, lng: 3.3792 });
+    }
+  }, []);
+
+  // 2. Fetch bikes based on real location
+  useEffect(() => {
+    if (!userCoords) return;
+
     const fetchBikes = async () => {
       try {
-        // In a real app, we'd use navigator.geolocation.getCurrentPosition
-        // For this demo, using a default city center coordinates
-        const userLat = 6.5244;
-        const userLng = 3.3792;
-        
-        const res = await fetch(`/api/proxy/fleet/nearby?lat=${userLat}&lng=${userLng}&radius=5`);
+        const { lat, lng } = userCoords;
+        const res = await fetch(`/api/proxy/fleet/nearby?lat=${lat}&lng=${lng}&radius=10`);
 
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
-            // The Redis backend returns bikes sorted by nearest first!
-            // Calculate actual straight-line distance for UI display
             const bikesWithDistance = json.data.map((bike: any) => {
-              const dx = bike.lat - userLat;
-              const dy = bike.lng - userLng;
-              const distKm = Math.sqrt(dx * dx + dy * dy) * 111; // Rough conversion to km
+              const dx = bike.lat - lat;
+              const dy = bike.lng - lng;
+              const distKm = Math.sqrt(dx * dx + dy * dy) * 111;
               
               return {
-                id: bike.bikeId, // Mapping from Redis format
+                id: bike.bikeId,
                 lat: bike.lat,
                 lng: bike.lng,
                 battery_pct: bike.battery_pct,
-                distance_km: Math.max(0.1, distKm).toFixed(1) // Minimum 0.1km
+                distance_km: Math.max(0.1, distKm).toFixed(1)
               };
             });
             setBikes(bikesWithDistance);
@@ -58,8 +77,7 @@ export function BikeFinder() {
 
     fetchBikes();
     const interval = setInterval(fetchBikes, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [userCoords]);
 
   const getBatteryIcon = (pct: number) => {
     if (pct >= 75) return <Battery className="w-5 h-5 text-green-400" />;
@@ -90,7 +108,7 @@ export function BikeFinder() {
       {/* Bikes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredBikes.map((bike) => (
-          <Link key={bike.id} href={`/unlock/${bike.id}`}>
+          <Link key={bike.id} href={`/?bike=${bike.id}`}>
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-all cursor-pointer hover:shadow-lg hover:shadow-blue-500/20">
               {/* Header */}
               <div className="flex justify-between items-start mb-3">

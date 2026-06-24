@@ -22,11 +22,11 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
           const json = await res.json();
           if (json.success && json.data) {
             setBikes(json.data.map((b: any) => ({
-              id: b.id,
-              lat: b.location.lat,
-              lng: b.location.lng,
-              batteryPct: b.batteryPct,
-              status: b.status
+              id: b.bikeId,
+              lat: b.lat,
+              lng: b.lng,
+              batteryPct: b.battery_pct,
+              status: b.status || 'available' // Nearby only returns available bikes anyway
             })));
             setIsConnected(true);
           }

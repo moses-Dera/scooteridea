@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ridesService } from '@/lib/ridesService'
 import { useRide } from '@/context/RideContext'
 import { Smartphone, Scan, KeyRound, Unlock, X } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { useEffect } from 'react'
 
 type UnlockStep = 'confirm' | 'method' | 'manual-pin' | 'done'
 
@@ -14,11 +16,22 @@ interface UnlockModalProps {
 }
 
 export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
+  const { status } = useSession()
   const [step, setStep] = useState<UnlockStep>('confirm')
   const router = useRouter()
   const { state, setActiveRide, setLoading, setError } = useRide()
   const [isStarting, setIsStarting] = useState(false)
   const [unlockPin, setUnlockPin] = useState<string>('')
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'Unlock Bike' } }));
+    }
+  }, [status]);
+
+  if (status === 'loading' || status === 'unauthenticated') {
+    return null; // Return nothing while auth checks/redirects occur
+  }
 
   const handleStartRide = async () => {
     try {
