@@ -10,8 +10,8 @@ COPY backend/shared/events/package.json        ./backend/shared/events/
 COPY backend/shared/db/package.json            ./backend/shared/db/
 COPY backend/services/payment/package.json     ./backend/services/payment/
 
+RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
-
 COPY backend/shared ./backend/shared
 COPY backend/services/payment ./backend/services/payment
 
@@ -30,7 +30,7 @@ WORKDIR /app
 COPY --from=builder /app/backend/services/payment/dist ./dist
 COPY --from=builder /app/backend/services/payment/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
-
+COPY --from=builder /app/backend/shared ./backend/shared
 ENV NODE_ENV=production
 EXPOSE 3006
 CMD ["node", "dist/index.js"]

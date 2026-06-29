@@ -12,8 +12,8 @@ COPY backend/shared/mqtt/package.json        ./backend/shared/mqtt/
 COPY backend/shared/db/package.json          ./backend/shared/db/
 COPY backend/services/auth/package.json      ./backend/services/auth/
 
+RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
-
 # Copy source
 COPY backend/shared ./backend/shared
 COPY backend/services/auth ./backend/services/auth
@@ -35,6 +35,7 @@ WORKDIR /app
 COPY --from=builder /app/backend/services/auth/dist ./dist
 COPY --from=builder /app/backend/services/auth/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/backend/shared ./backend/shared
 
 ENV NODE_ENV=production
 EXPOSE 3001

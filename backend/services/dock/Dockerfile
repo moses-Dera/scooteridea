@@ -11,8 +11,8 @@ COPY backend/shared/mqtt/package.json        ./backend/shared/mqtt/
 COPY backend/shared/db/package.json          ./backend/shared/db/
 COPY backend/services/dock/package.json      ./backend/services/dock/
 
+RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
-
 COPY backend/shared ./backend/shared
 COPY backend/services/dock ./backend/services/dock
 
@@ -32,7 +32,7 @@ WORKDIR /app
 COPY --from=builder /app/backend/services/dock/dist ./dist
 COPY --from=builder /app/backend/services/dock/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
-
+COPY --from=builder /app/backend/shared ./backend/shared
 ENV NODE_ENV=production
 EXPOSE 3009
 CMD ["node", "dist/index.js"]

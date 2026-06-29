@@ -339,17 +339,7 @@ export default function RiderMap() {
 
         <NavigationControl position="bottom-right" showCompass={false} style={{ marginBottom: '60px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
         
-        {/* Custom Controls Container */}
-        <div className="absolute bottom-[20px] right-[20px] z-10 pointer-events-auto flex flex-col gap-2">
-          {/* Custom Geolocate Button */}
-          <button 
-            onClick={handleFocusLocation}
-            className="w-[29px] h-[29px] bg-[#111622] border border-white/10 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors shadow-lg group"
-            title="Focus my location"
-          >
-            <LocateFixed className="w-4 h-4 text-slate-300 group-hover:text-[#00FFA3] transition-colors" />
-          </button>
-        </div>
+        {/* Custom Controls Container removed to prevent duplicate buttons */}
 
         {/* Immersive 3D Buildings Layer (Appears when pitched and zoomed) */}
         <Layer 

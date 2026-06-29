@@ -9,8 +9,8 @@ COPY backend/shared/events/package.json             ./backend/shared/events/
 COPY backend/shared/redis/package.json              ./backend/shared/redis/
 COPY backend/services/notification/package.json     ./backend/services/notification/
 
+RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
-
 COPY backend/shared ./backend/shared
 COPY backend/services/notification ./backend/services/notification
 
@@ -27,7 +27,7 @@ WORKDIR /app
 COPY --from=builder /app/backend/services/notification/dist ./dist
 COPY --from=builder /app/backend/services/notification/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
-
+COPY --from=builder /app/backend/shared ./backend/shared
 ENV NODE_ENV=production
 EXPOSE 3007
 CMD ["node", "dist/index.js"]

@@ -177,6 +177,19 @@ services:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
 
+  hardware-simulator:
+    build:
+      context: ../../
+      dockerfile: simulator/Dockerfile
+    environment:
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME:   ${MQTT_USERNAME}
+      MQTT_PASSWORD:   ${MQTT_PASSWORD}
+      API_URL:         http://nginx:80
+    depends_on:
+      mosquitto: { condition: service_healthy }
+      nginx:     { condition: service_started }
+
 volumes:
   postgres_data:
   redis_data:

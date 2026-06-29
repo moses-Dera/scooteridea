@@ -4,8 +4,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "prisma generate && tsc",
-    "db:generate": "prisma generate",
+    "build": "DATABASE_URL=postgresql://dummy:dummy@localhost/dummy prisma generate && tsc",
+    "db:generate": "DATABASE_URL=postgresql://dummy:dummy@localhost/dummy prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"

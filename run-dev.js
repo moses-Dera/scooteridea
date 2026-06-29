@@ -13,15 +13,16 @@ portsToClear.forEach(port => {
   }
 });
 
-console.log('\n🚀 Starting Docker containers (Redis, Postgres, MQTT)...');
+console.log('\n🚀 Starting Docker containers...');
 try {
-  execSync('docker compose -f backend/infra/docker-compose.yml up -d postgres redis emqx nginx', { stdio: 'inherit' });
+  execSync('docker compose -f backend/infra/docker-compose.yml up -d', { stdio: 'inherit' });
 } catch (err) {
   console.error('❌ Failed to start Docker containers. Make sure Docker is running.');
   process.exit(1);
 }
 
 console.log('✅ Docker containers are up! Starting Turborepo...');
+
 
 // Start the Turborepo dev server
 const turbo = spawn('npm', ['run', 'dev:turbo'], { 
@@ -33,7 +34,6 @@ const turbo = spawn('npm', ['run', 'dev:turbo'], {
 const shutdown = () => {
   console.log('\n🛑 Shutting down...');
   
-  // Kill turbo if it's still running
   if (turbo.pid) {
     turbo.kill('SIGINT');
   }

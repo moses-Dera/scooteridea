@@ -180,7 +180,24 @@ export default function RegisterOverlay({ onClose }: RegisterOverlayProps) {
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-400 mt-8">
+          <div className="flex items-center gap-4 my-8 opacity-60">
+            <div className="h-px bg-gradient-to-r from-transparent to-white/20 flex-1"></div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Or Continue With</span>
+            <div className="h-px bg-gradient-to-l from-transparent to-white/20 flex-1"></div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={() => {
+              import('next-auth/react').then(({ signIn }) => signIn('google', { callbackUrl: '/' }))
+            }}
+            className="w-full h-14 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-3 border border-white/10 hover:border-white/20 transition-all"
+          >
+            <Chrome className="w-5 h-5" />
+            Google Account
+          </button>
+
+          <p className="text-center text-sm text-slate-400 mt-10">
             Already have an account?{' '}
             <Link href="/login" className="text-[#00FFA3] font-bold hover:underline underline-offset-4 decoration-2">
               Sign in
