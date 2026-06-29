@@ -21,6 +21,19 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
+            // DEMO MODE AUTOMATION:
+            // If the map is empty, ask the backend to dynamically spawn a fleet around the user!
+            if (json.data.length === 0 && !window.sessionStorage.getItem(`demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`)) {
+              window.sessionStorage.setItem(`demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`, 'true');
+              console.log('🌍 Activating Dynamic Demo Mode: Requesting Fleet Spawn...');
+              fetch('/api/proxy/fleet/demo/spawn', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat, lng, count: 12, radius: radius * 0.8 })
+              });
+              // The backend will start streaming telemetry in ~1 second, the next poll will pick them up!
+            }
+
             setBikes(json.data.map((b: any) => ({
               id: b.bikeId,
               lat: b.lat,

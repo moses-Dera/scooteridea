@@ -116,6 +116,10 @@ function startBikeFleet() {
     }
 
     console.log(chalk.green(`\n✓ ${NUM_BIKES} bikes ready\n`));
+    
+    // Subscribe to dynamic demo spawns!
+    client.subscribe('system/demo/spawn');
+    console.log(chalk.magenta('✓ Listening for Dynamic Demo Spawns (system/demo/spawn)'));
 
     // Start telemetry loop
     setInterval(() => {
@@ -131,8 +135,32 @@ function startBikeFleet() {
     }, TELEMETRY_INTERVAL);
   });
 
-  // Handle incoming commands
   client.on('message', (topic, message) => {
+    // Handle Global Demo Spawning
+    if (topic === 'system/demo/spawn') {
+      try {
+        const { lat, lng, count = 10, radius = 2 } = JSON.parse(message.toString());
+        console.log(chalk.magenta.bold(`\n🌍 DEMO MODE ACTIVATED: Spawning ${count} bikes at (${lat.toFixed(4)}, ${lng.toFixed(4)})`));
+        
+        const startingId = bikes.length + 1;
+        for (let i = 0; i < count; i++) {
+          const bikeId = `BK-${String(startingId + i).padStart(5, '0')}`;
+          const pos = randomPointInRadius(lat, lng, radius);
+          const bike = new BikeSimulator(bikeId, pos.lat, pos.lng);
+          bikes.push(bike);
+
+          client.subscribe(`bikes/${bikeId}/commands`, (err) => {
+            if (!err) {
+              console.log(chalk.gray(`  ✓ Demo ${bikeId} spawned at (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`));
+            }
+          });
+        }
+      } catch (err) {
+        console.error(chalk.red('❌ Failed to parse demo spawn command:'), err.message);
+      }
+      return;
+    }
+
     const parts = topic.split('/');
     const bikeId = parts[1];
     const command = message.toString();

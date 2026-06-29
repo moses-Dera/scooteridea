@@ -228,6 +228,11 @@ export default function RiderMap() {
         <text x="24" y="28" font-family="sans-serif" font-weight="900" font-size="14" fill="#0A0D14" text-anchor="middle">P</text>
       </svg>
     `)}`;
+
+    // Automatically trigger the GPS puck so the blue dot appears instantly!
+    setTimeout(() => {
+      geoControlRef.current?.trigger();
+    }, 1000);
   }, []);
 
   if (!mounted) return <div className="w-full h-full bg-surface animate-pulse" />;

@@ -218,4 +218,28 @@ fleetRouter.post('/simulator/telemetry', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to inject telemetry' });
   }
+// POST /fleet/demo/spawn — Dynamically spawn bikes anywhere in the world!
+fleetRouter.post('/demo/spawn', async (req, res) => {
+  try {
+    const { lat, lng, count, radius } = req.body;
+    
+    if (lat === undefined || lng === undefined) {
+      res.status(400).json({ success: false, error: 'Missing lat/lng' });
+      return;
+    }
+
+    const { getMqttClient } = require('@ebike/mqtt');
+    const mqtt = getMqttClient();
+    
+    mqtt.publish('system/demo/spawn', JSON.stringify({
+      lat,
+      lng,
+      count: count || 10,
+      radius: radius || 2
+    }));
+
+    res.json({ success: true, message: `Demo spawn triggered at ${lat}, ${lng}` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to trigger demo spawn' });
+  }
 });
