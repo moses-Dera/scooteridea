@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { CreditCard, Plus, History, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface WalletPanelProps {
   onClose: () => void;
@@ -26,7 +27,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="px-6 py-12 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -52,7 +53,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
         <p className="text-primary font-medium text-sm mb-1 relative z-10">Available Balance</p>
         
         {loading ? (
-           <h1 className="text-4xl font-black text-slate-500 relative z-10 tracking-tight">Loading...</h1>
+           <div className="flex justify-center relative z-10 py-2"><LoadingSpinner size="md" /></div>
         ) : (
            <h1 className="text-4xl font-black text-white relative z-10 tracking-tight">
              ₦ {balance?.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}

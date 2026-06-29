@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { MapPin, Navigation, Info } from 'lucide-react';
 import { useNearbyDocks } from '@/hooks/useNearbyDocks';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface DocksPanelProps {
   onClose: () => void;
@@ -37,7 +38,7 @@ export default function DocksPanel({ onClose }: DocksPanelProps) {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-slate-400 animate-pulse font-medium">Scanning area for docks...</div>
+        <div className="flex justify-center py-8"><LoadingSpinner text="Scanning area for docks..." /></div>
       ) : docks.length === 0 ? (
         <div className="text-center py-8 text-slate-500 font-medium">No docking stations found nearby.</div>
       ) : (

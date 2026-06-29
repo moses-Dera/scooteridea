@@ -2,6 +2,7 @@
 
 import { signOut, useSession } from 'next-auth/react';
 import { useEffect } from 'react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface MenuPanelProps {
   onClose: () => void;
@@ -20,7 +21,7 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="px-6 py-12 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

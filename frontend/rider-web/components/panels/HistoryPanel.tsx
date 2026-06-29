@@ -4,6 +4,7 @@ import { useRideHistory } from '@/hooks';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { Bike, Calendar, MapPin, Clock } from 'lucide-react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface HistoryPanelProps {
   onClose: () => void;
@@ -22,7 +23,7 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="px-6 py-12 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -49,7 +50,7 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
       )}
 
       {loading ? (
-        <div className="text-center py-8 text-slate-400 animate-pulse font-medium">Loading history...</div>
+        <div className="text-center py-8 flex justify-center"><LoadingSpinner text="Loading history..." /></div>
       ) : rides.length === 0 ? (
         <div className="text-center py-8 text-slate-500 font-medium">No past trips found.</div>
       ) : (
