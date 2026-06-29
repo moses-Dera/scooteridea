@@ -676,3 +676,32 @@ Week 10    payment/        — Stripe/Paystack integration, wallet
 Week 11    notification/   — Push, SMS
 Week 12    ml/             — PPO matching inference, anomaly detection
 ```
+
+### 8. MQTT Broker Transition (Mosquitto -> EMQX)
+Currently, for the MVP and Beta Test, the `docker-compose.yml` is configured to use **Eclipse Mosquitto**. Mosquitto is an ultra-lightweight C-based MQTT broker that consumes ~3MB of RAM, making it perfect for running the entire stack on a $6/mo (1GB RAM) DigitalOcean Droplet.
+
+When scaling beyond 10,000+ scooters or requiring multi-server clustering, you must revert to **EMQX**.
+
+**To revert to EMQX:**
+1. Open `backend/infra/docker-compose.yml`.
+2. Replace the `mosquitto` block with:
+```yaml
+  emqx:
+    image: emqx/emqx:5.6.0
+    ports:
+      - '1883:1883'   # MQTT
+      - '8083:8083'   # WebSocket MQTT
+      - '18083:18083' # Dashboard
+    environment:
+      EMQX_NAME:           emqx
+      EMQX_HOST:           127.0.0.1
+    volumes:
+      - emqx_data:/opt/emqx/data
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ping"]
+      interval: 5s
+      retries: 5
+```
+3. In `docker-compose.yml`, update `MQTT_BROKER_URL` for `fleet-service`, `ride-service`, and `dock-service` from `mqtt://mosquitto:1883` back to `mqtt://emqx:1883`.
+4. Run `docker-compose up -d --build`. 
+*Note: Ensure your cloud server has at least 2GB RAM ($12/mo plan) before switching back to EMQX.*

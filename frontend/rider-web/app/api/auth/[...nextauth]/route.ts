@@ -39,13 +39,13 @@ const handler = NextAuth({
           
           const data = await response.json()
           
-          if (data.accessToken) {
+          if (data.success && data.data?.accessToken) {
             return {
               id: credentials.email,
               email: credentials.email,
               name: credentials.email.split('@')[0],
-              accessToken: data.accessToken,
-              refreshToken: data.refreshToken,
+              accessToken: data.data.accessToken,
+              refreshToken: data.data.refreshToken,
             }
           }
           return null
@@ -90,7 +90,7 @@ const handler = NextAuth({
         try {
           // Exchange Google token for backend JWT via BFF
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/google`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/oauth/google`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -100,8 +100,10 @@ const handler = NextAuth({
           
           if (response.ok) {
             const data = await response.json()
-            token.accessToken = data.accessToken
-            token.refreshToken = data.refreshToken
+            if (data.success && data.data) {
+               token.accessToken = data.data.accessToken
+               token.refreshToken = data.data.refreshToken
+            }
           }
         } catch (err) {
           console.error('Google token exchange error:', err)

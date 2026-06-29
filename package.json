@@ -19,7 +19,7 @@
     "build": "turbo run build",
     "start:prod": "turbo run start --parallel",
     "test": "turbo run test",
-    "docker:up": "docker compose -f backend/infra/docker-compose.yml up -d postgres redis emqx",
+    "docker:up": "docker compose -f backend/infra/docker-compose.yml up -d postgres redis mosquitto",
     "docker:down": "docker compose -f backend/infra/docker-compose.yml down",
     "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v"
   }

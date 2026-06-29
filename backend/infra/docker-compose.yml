@@ -31,20 +31,18 @@ services:
 
 
 
-  emqx:
-    image: emqx/emqx:5.6.0
+  mosquitto:
+    image: eclipse-mosquitto:2
     ports:
-      - '1883:1883'   # MQTT
-      - '8083:8083'   # WebSocket MQTT
-      - '18083:18083' # Dashboard
-    environment:
-      EMQX_NAME:           emqx
-      EMQX_HOST:           127.0.0.1
+      - '1883:1883'
+      - '8083:8083'
     volumes:
-      - emqx_data:/opt/emqx/data
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
     healthcheck:
-      test: ["CMD", "/opt/emqx/bin/emqx", "ping"]
-      interval: 5s
+      test: ["CMD-SHELL", "timeout -t 5 mosquitto_sub -t '$$SYS/#' -C 1 | grep -v Error || exit 1"]
+      interval: 10s
       retries: 5
 
   # ── API Gateway ──────────────────────────────────────────────────────────────
@@ -87,7 +85,7 @@ services:
       PORT:             3002
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
       REDIS_URL:        redis://redis:6379
-      MQTT_BROKER_URL:  mqtt://emqx:1883
+      MQTT_BROKER_URL:  mqtt://mosquitto:1883
       MQTT_USERNAME:    ${MQTT_USERNAME}
       MQTT_PASSWORD:    ${MQTT_PASSWORD}
     depends_on:
@@ -104,7 +102,7 @@ services:
       PORT:             3003
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
       REDIS_URL:        redis://redis:6379
-      MQTT_BROKER_URL:  mqtt://emqx:1883
+      MQTT_BROKER_URL:  mqtt://mosquitto:1883
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -174,7 +172,7 @@ services:
       PORT:             3009
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
       REDIS_URL:        redis://redis:6379
-      MQTT_BROKER_URL:  mqtt://emqx:1883
+      MQTT_BROKER_URL:  mqtt://mosquitto:1883
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -182,4 +180,5 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  emqx_data:
+  mosquitto_data:
+  mosquitto_log:
