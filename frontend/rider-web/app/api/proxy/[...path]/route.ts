@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth/next"
 import { NextRequest, NextResponse } from "next/server"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 /**
  * BFF Proxy for dynamic routes
@@ -9,7 +10,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
+  console.log('[Proxy GET] Session:', session)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
   const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`
@@ -38,7 +40,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
   const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`
@@ -69,7 +71,7 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
   const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`
@@ -100,7 +102,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
   const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`

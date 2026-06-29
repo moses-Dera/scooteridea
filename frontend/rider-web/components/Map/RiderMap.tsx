@@ -105,18 +105,11 @@ export default function RiderMap() {
     }
   };
 
-  // Debounce the viewport center to avoid spamming the backend during map dragging (prevents 429 Rate Limits)
-  const [debouncedCenter, setDebouncedCenter] = useState({ lat: viewState.latitude, lng: viewState.longitude });
-  
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedCenter({ lat: viewState.latitude, lng: viewState.longitude });
-    }, 300); // 300ms debounce
-    return () => clearTimeout(handler);
-  }, [viewState.latitude, viewState.longitude]);
-
-  const searchLat = debouncedCenter.lat;
-  const searchLng = debouncedCenter.lng;
+  // Search center tracks where we fetch bikes/docks from.
+  // Starts null so we don't spam Lagos requests before we know the user's location.
+  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const searchLat = searchCenter?.lat ?? 6.4541;
+  const searchLng = searchCenter?.lng ?? 3.3792;
 
   const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng, 10);
   
@@ -130,40 +123,7 @@ export default function RiderMap() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Get real browser geolocation
-  useEffect(() => {
-    if (!mounted || !navigator.geolocation) return;
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        // Center map on user's real location
-        setViewState((prev) => ({
-          ...prev,
-          latitude,
-          longitude,
-        }));
-      },
-      (error) => {
-        console.warn('Geolocation denied or unavailable:', error.message);
-        // Keep Lagos fallback for map center, no user dot shown
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-
-    // Watch position for live updates
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-      },
-      () => {},
-      { enableHighAccuracy: true }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [mounted]);
+  // GeolocateControl is auto-triggered in onMapLoad — no duplicate trigger here
 
 
 
@@ -229,10 +189,10 @@ export default function RiderMap() {
       </svg>
     `)}`;
 
-    // Automatically trigger the GPS puck so the blue dot appears instantly!
+    // Automatically trigger the GPS puck once the map is fully loaded
     setTimeout(() => {
       geoControlRef.current?.trigger();
-    }, 1000);
+    }, 500);
   }, []);
 
   if (!mounted) return <div className="w-full h-full bg-surface animate-pulse" />;
@@ -241,8 +201,20 @@ export default function RiderMap() {
     <div className="w-full h-full relative">
       <Map
         ref={mapRef}
-        {...viewState}
-        onMove={(evt: any) => setViewState(evt.viewState)}
+        initialViewState={{
+          latitude: 6.4541,
+          longitude: 3.3792,
+          zoom: 15,
+          pitch: 45,
+          bearing: 0
+        }}
+        onMoveEnd={(evt: any) => {
+          // Debounce: only update search center after the camera settles
+          if ((window as any).__searchDebounce) clearTimeout((window as any).__searchDebounce);
+          (window as any).__searchDebounce = setTimeout(() => {
+            setSearchCenter({ lat: evt.viewState.latitude, lng: evt.viewState.longitude });
+          }, 500);
+        }}
         onClick={onMapClick}
         onLoad={onMapLoad}
         interactiveLayerIds={['bikes-symbol-layer', 'docks-symbol-layer']}
@@ -447,6 +419,16 @@ export default function RiderMap() {
           trackUserLocation={true}
           showUserHeading={true}
           showAccuracyCircle={false}
+          onGeolocate={(e: any) => {
+            if (e && e.coords) {
+              const loc = { lat: e.coords.latitude, lng: e.coords.longitude };
+              setUserLocation(loc);
+              setSearchCenter(loc);
+              // Camera movement is handled by GeolocateControl's built-in tracking
+            }
+          }}
+          positionOptions={{ enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }}
+          fitBoundsOptions={{ maxZoom: 15, pitch: 45 }}
           style={{ marginBottom: '100px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
         />
       </Map>

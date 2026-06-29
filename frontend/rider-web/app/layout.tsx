@@ -10,6 +10,7 @@ import MenuPanel from '@/components/panels/MenuPanel'
 import ProfilePanel from '@/components/panels/ProfilePanel'
 import WalletPanel from '@/components/panels/WalletPanel'
 import HistoryPanel from '@/components/panels/HistoryPanel'
+import DocksPanel from '@/components/panels/DocksPanel'
 import LoginOverlay from '@/components/panels/LoginOverlay'
 
 import { AlertCircle } from 'lucide-react'
@@ -47,8 +48,16 @@ export default function RootLayout({
       setAuthFeature(e.detail?.feature || null);
       setActivePanel('login');
     };
+    const handleOpenPanel = (e: CustomEvent<PanelType>) => {
+      setActivePanel(e.detail);
+    };
     window.addEventListener('auth-required', handleAuthRequired as EventListener);
-    return () => window.removeEventListener('auth-required', handleAuthRequired as EventListener);
+    window.addEventListener('open-panel', handleOpenPanel as EventListener);
+    
+    return () => {
+      window.removeEventListener('auth-required', handleAuthRequired as EventListener);
+      window.removeEventListener('open-panel', handleOpenPanel as EventListener);
+    };
   }, []);
 
   // Pages that need their own full layout (unlock flow, active ride, etc.)
@@ -153,7 +162,8 @@ export default function RootLayout({
                       {activePanel === 'profile' && <ProfilePanel onClose={closePanel} />}
                       {activePanel === 'wallet' && <WalletPanel onClose={closePanel} />}
                       {activePanel === 'history' && <HistoryPanel onClose={closePanel} />}
-                      {['docks', 'settings', 'help', 'safety', 'report'].includes(activePanel || '') && (
+                      {activePanel === 'docks' && <DocksPanel onClose={closePanel} />}
+                      {['settings', 'help', 'safety', 'report'].includes(activePanel || '') && (
                         <div className="px-6 pb-6 text-center py-12">
                           <div className="flex justify-center mb-4"><AlertCircle className="w-12 h-12 text-slate-500" /></div>
                           <h2 className="text-xl font-bold text-white mb-2">Coming Soon</h2>

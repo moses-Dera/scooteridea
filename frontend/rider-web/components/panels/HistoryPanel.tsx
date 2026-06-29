@@ -3,7 +3,7 @@
 import { useRideHistory } from '@/hooks';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
-import { Bike, Clock, Navigation } from 'lucide-react';
+import { Bike, Calendar, MapPin, Clock } from 'lucide-react';
 
 interface HistoryPanelProps {
   onClose: () => void;
@@ -22,16 +22,16 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="px-6 py-12 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00FFA3]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="px-6 pb-6">
+    <div className="px-6 pb-6 text-white space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 pt-2">
-        <div className="text-2xl font-bold text-white">Ride History</div>
+        <div className="text-2xl font-bold">Ride History</div>
         <button
           onClick={onClose}
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
@@ -49,36 +49,53 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
       )}
 
       {loading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00FFA3] mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading history...</p>
-        </div>
+        <div className="text-center py-8 text-slate-400 animate-pulse font-medium">Loading history...</div>
       ) : rides.length === 0 ? (
-        <div className="text-center py-12 bg-white/5 border border-white/10 rounded-3xl">
-          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4 text-2xl"><Bike className="w-8 h-8 text-slate-300" /></div>
-          <p className="text-white font-bold mb-1">No rides yet</p>
-          <p className="text-slate-400 text-sm">Your ride history will appear here.</p>
-        </div>
+        <div className="text-center py-8 text-slate-500 font-medium">No past trips found.</div>
       ) : (
         <div className="flex flex-col gap-4">
-          {rides.map((ride: any) => (
-            <div key={ride.id} className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col gap-3">
-              <div className="flex justify-between items-start">
+          {rides.map((trip: any) => (
+            <div key={trip.id} className="glass-panel p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-colors group cursor-pointer relative overflow-hidden">
+              {/* Top row */}
+              <div className="flex justify-between items-start mb-4">
                 <div>
-                  <p className="font-bold text-white">Bike {ride.bikeId.substring(0, 8)}</p>
-                  <p className="text-slate-400 text-xs mt-0.5">{new Date(ride.createdAt).toLocaleString()}</p>
+                  <div className="text-xs font-bold text-slate-500 mb-1">{trip.id?.substring(0, 8).toUpperCase() || 'TRIP'}</div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
+                    <Calendar className="w-4 h-4 text-primary" /> {new Date(trip.startTime || trip.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-white">₦ {ride.cost || '0.00'}</p>
-                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full mt-1 inline-block ${
-                    ride.status === 'completed' ? 'bg-[#00FFA3]/20 text-[#00FFA3]' : 'bg-orange-500/20 text-orange-400'
-                  }`}>
-                    {ride.status}
-                  </span>
+                <div className="text-lg font-black text-white">₦ {(trip.costCents ? trip.costCents / 100 : trip.cost || 0).toFixed(2)}</div>
+              </div>
+
+              {/* Route timeline */}
+              <div className="relative pl-6 space-y-4 border-l-2 border-white/10 ml-2 mb-4">
+                <div className="relative">
+                  <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-[#0A0D14] border-2 border-primary"></div>
+                  <div className="text-sm font-semibold text-white">Start Dock</div>
+                </div>
+                <div className="relative">
+                  <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-[#0A0D14] border-2 border-white/20 group-hover:border-primary/50 transition-colors"></div>
+                  <div className="text-sm font-semibold text-slate-400">End Dock</div>
+                </div>
+              </div>
+
+              {/* Bottom stats */}
+              <div className="flex items-center gap-6 pt-4 border-t border-white/5 text-sm text-slate-400 font-medium">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> 
+                  {trip.endTime ? Math.max(1, Math.round((new Date(trip.endTime).getTime() - new Date(trip.startTime || trip.createdAt).getTime()) / 60000)) : 0} min
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" /> 
+                  {trip.distanceKm ? trip.distanceKm.toFixed(1) : '0.0'} km
                 </div>
               </div>
             </div>
           ))}
+          
+          {hasMore && (
+             <button onClick={nextPage} className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold transition-colors">Load More</button>
+          )}
         </div>
       )}
     </div>

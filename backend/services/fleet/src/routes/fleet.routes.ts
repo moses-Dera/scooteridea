@@ -218,6 +218,8 @@ fleetRouter.post('/simulator/telemetry', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to inject telemetry' });
   }
+});
+
 // POST /fleet/demo/spawn — Dynamically spawn bikes anywhere in the world!
 fleetRouter.post('/demo/spawn', async (req, res) => {
   try {

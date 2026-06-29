@@ -2,11 +2,17 @@ import NextAuth, { type NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-const handler = NextAuth({
+// IPv4-only networking is enforced at the process level via NODE_OPTIONS
+// in package.json (--no-network-family-autoselection + --dns-result-order=ipv4first)
+
+export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: { prompt: "select_account" }
+      }
     }),
     CredentialsProvider({
       name: 'Email and Password',
@@ -65,7 +71,7 @@ const handler = NextAuth({
   },
   cookies: {
     sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-session-token`,
       options: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -85,8 +91,15 @@ const handler = NextAuth({
   },
   callbacks: {
     async jwt({ token, account, user }) {
+      const fs = require('fs')
+      if (account) {
+        console.log('[NextAuth] JWT callback triggered with account:', account)
+        try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] account: ' + JSON.stringify(account) + '\n') } catch(e){}
+      }
       // Google OAuth
       if (account?.provider === 'google' && account?.id_token) {
+        console.log('[NextAuth] Exchanging Google token...')
+        try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] Exchanging...\n') } catch(e){}
         try {
           // Exchange Google token for backend JWT via BFF
           const response = await fetch(
@@ -98,15 +111,28 @@ const handler = NextAuth({
             }
           )
           
+          console.log('[NextAuth] Google backend response status:', response.status)
+          try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] status: ' + response.status + '\n') } catch(e){}
           if (response.ok) {
             const data = await response.json()
+            console.log('[NextAuth] Google backend success:', data.success)
+            try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] data: ' + JSON.stringify(data) + '\n') } catch(e){}
             if (data.success && data.data) {
                token.accessToken = data.data.accessToken
                token.refreshToken = data.data.refreshToken
+               console.log('[NextAuth] Tokens successfully attached to jwt token')
+               try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] Success\n') } catch(e){}
+            } else {
+               console.error('[NextAuth] Google backend returned ok but missing success/data', data)
             }
+          } else {
+            const text = await response.text()
+            console.error('[NextAuth] Google backend returned non-ok status:', response.status, text)
+            try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] error text: ' + text + '\n') } catch(e){}
           }
         } catch (err) {
           console.error('Google token exchange error:', err)
+          try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] catch error: ' + (err as any).message + '\n') } catch(e){}
         }
         token.id = user?.id || account.sub
       }
@@ -122,14 +148,15 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       // Store token in session for API requests
-      (session as any).accessToken = (token as any).accessToken
-      (session as any).refreshToken = (token as any).refreshToken
+      ;(session as any).accessToken = (token as any).accessToken;
+      ;(session as any).refreshToken = (token as any).refreshToken;
       if (session.user) {
-        (session.user as any).id = (token.id as string)
+        ;(session.user as any).id = (token.id as string);
       }
-      return session
+      return session;
     },
   }
-})
+}
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }

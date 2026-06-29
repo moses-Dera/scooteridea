@@ -41,7 +41,7 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     healthcheck:
-      test: ["CMD-SHELL", "timeout -t 5 mosquitto_sub -t '$$SYS/#' -C 1 | grep -v Error || exit 1"]
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/#' -C 1 -W 3 || exit 1"]
       interval: 10s
       retries: 5
 
@@ -88,6 +88,7 @@ services:
       MQTT_BROKER_URL:  mqtt://mosquitto:1883
       MQTT_USERNAME:    ${MQTT_USERNAME}
       MQTT_PASSWORD:    ${MQTT_PASSWORD}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -103,6 +104,7 @@ services:
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
       REDIS_URL:        redis://redis:6379
       MQTT_BROKER_URL:  mqtt://mosquitto:1883
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -118,6 +120,7 @@ services:
     environment:
       PORT:       3005
       REDIS_URL:  redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       redis: { condition: service_healthy }
 
@@ -133,6 +136,7 @@ services:
       REDIS_URL:             redis://redis:6379
       STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY}
       PAYSTACK_SECRET_KEY:   ${PAYSTACK_SECRET_KEY}
+      JWT_ACCESS_SECRET:     ${JWT_ACCESS_SECRET}
     depends_on:
       postgres: { condition: service_healthy }
 
@@ -146,6 +150,7 @@ services:
       PORT:               3007
       REDIS_URL:          redis://redis:6379
       EXPO_ACCESS_TOKEN:  ${EXPO_ACCESS_TOKEN}
+      JWT_ACCESS_SECRET:  ${JWT_ACCESS_SECRET}
     depends_on:
       redis: { condition: service_healthy }
 
@@ -173,16 +178,17 @@ services:
       DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
       REDIS_URL:        redis://redis:6379
       MQTT_BROKER_URL:  mqtt://mosquitto:1883
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
 
   hardware-simulator:
     build:
-      context: ../../
-      dockerfile: simulator/Dockerfile
+      context: ../../simulator
+      dockerfile: Dockerfile
     environment:
-      MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_BROKER: mqtt://mosquitto:1883
       MQTT_USERNAME:   ${MQTT_USERNAME}
       MQTT_PASSWORD:   ${MQTT_PASSWORD}
       API_URL:         http://nginx:80
