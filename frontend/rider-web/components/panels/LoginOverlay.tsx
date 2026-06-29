@@ -31,7 +31,11 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
       if (result?.error) {
         setError(result.error || 'Login failed');
       } else if (result?.ok) {
-        window.location.href = '/';
+        if (window.location.pathname === '/login' || window.location.pathname === '/register') {
+          window.location.href = '/';
+        } else {
+          window.location.reload();
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
@@ -173,7 +177,10 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
 
           <button 
             type="button"
-            onClick={() => signIn('google', { callbackUrl: '/' })}
+            onClick={() => {
+              const cbUrl = window.location.pathname === '/login' || window.location.pathname === '/register' ? '/' : window.location.href;
+              signIn('google', { callbackUrl: cbUrl });
+            }}
             className="w-full h-14 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-3 border border-white/10 hover:border-white/20 transition-all"
           >
             <Chrome className="w-5 h-5" />

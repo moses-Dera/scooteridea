@@ -26,9 +26,24 @@ export default function RegisterOverlay({ onClose }: RegisterOverlayProps) {
     try {
       await api.post('/auth/register', { email, password, name, phone });
       setSuccess(true);
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
+      
+      // Auto-login so they don't have to type it again!
+      const { signIn } = await import('next-auth/react');
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        setTimeout(() => {
+          if (window.location.pathname === '/login' || window.location.pathname === '/register') {
+            window.location.href = '/';
+          } else {
+            window.location.reload();
+          }
+        }, 1500);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
       setError(message);
@@ -189,7 +204,8 @@ export default function RegisterOverlay({ onClose }: RegisterOverlayProps) {
           <button 
             type="button"
             onClick={() => {
-              import('next-auth/react').then(({ signIn }) => signIn('google', { callbackUrl: '/' }))
+              const cbUrl = window.location.pathname === '/login' || window.location.pathname === '/register' ? '/' : window.location.href;
+              import('next-auth/react').then(({ signIn }) => signIn('google', { callbackUrl: cbUrl }));
             }}
             className="w-full h-14 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-3 border border-white/10 hover:border-white/20 transition-all"
           >
