@@ -122,7 +122,7 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
   }
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto animate-in fade-in duration-300">
       {/* Centered Modal */}
       <div className="w-full max-w-md bg-surfaceLight border border-white/10 shadow-2xl shadow-primary/5 rounded-3xl p-6 md:p-8 relative overflow-hidden">
         
