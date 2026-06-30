@@ -78,8 +78,8 @@ export default function SimulatorPage() {
         
         el.innerHTML = `
           <div class="relative flex flex-col items-center">
-            <div class="w-8 h-8 rounded-full bg-surface border-[3px] \${bike.status === 'in_use' ? 'border-[#00D4FF] shadow-[0_0_15px_rgba(0,212,255,0.6)]' : 'border-primary shadow-[0_0_15px_rgba(0,255,163,0.6)]'} flex items-center justify-center z-10 transition-colors">
-              <svg class="w-4 h-4 \${bike.status === 'in_use' ? 'text-[#00D4FF]' : 'text-primary'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <div class="w-8 h-8 rounded-full bg-surface border-[3px] ${bike.status === 'in_use' ? 'border-[#00D4FF] shadow-[0_0_15px_rgba(0,212,255,0.6)]' : 'border-primary shadow-[0_0_15px_rgba(0,255,163,0.6)]'} flex items-center justify-center z-10 transition-colors">
+              <svg class="w-4 h-4 ${bike.status === 'in_use' ? 'text-[#00D4FF]' : 'text-primary'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
           </div>
         `;
@@ -249,8 +249,8 @@ export default function SimulatorPage() {
                     {/* Simulated Physical QR Code Sticker */}
                     <div className="bg-white p-1.5 rounded-lg border-2 border-slate-300 shadow-md transform rotate-2 hover:rotate-0 transition-transform">
                         <img 
-                            src={\`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=\${selectedBikeId}\`} 
-                            alt={\`QR Code for \${selectedBikeId}\`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${selectedBikeId}`} 
+                            alt={`QR Code for ${selectedBikeId}`}
                             className="w-16 h-16"
                         />
                         <div className="text-center mt-1">
@@ -265,7 +265,7 @@ export default function SimulatorPage() {
                             {hardwareState === 'LOCKED' ? <Lock className="w-4 h-4 text-warning" /> : <Unlock className="w-4 h-4 text-[#00D4FF]" />}
                             <span className="text-sm font-medium text-slate-300">Relay Status</span>
                         </div>
-                        <span className={\`text-sm font-bold \${hardwareState === 'LOCKED' ? 'text-warning' : 'text-[#00D4FF]'}\`}>
+                        <span className={`text-sm font-bold ${hardwareState === 'LOCKED' ? 'text-warning' : 'text-[#00D4FF]'}`}>
                             {hardwareState}
                         </span>
                     </div>
@@ -275,7 +275,7 @@ export default function SimulatorPage() {
                         <div className="flex flex-col gap-1">
                             <span className="text-xs font-bold text-slate-500 uppercase">Status LED</span>
                             <div className="flex items-center gap-2 mt-1">
-                                <div className={\`w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] \${hardwareState === 'LOCKED' ? 'bg-warning text-warning' : 'bg-[#00FFA3] text-[#00FFA3] animate-pulse'}\`}></div>
+                                <div className={`w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] ${hardwareState === 'LOCKED' ? 'bg-warning text-warning' : 'bg-[#00FFA3] text-[#00FFA3] animate-pulse'}`}></div>
                                 <span className="text-sm font-medium text-white">
                                     {hardwareState === 'LOCKED' ? 'Solid Amber' : 'Pulsing Green'}
                                 </span>
@@ -290,7 +290,7 @@ export default function SimulatorPage() {
                                 <span className="text-sm font-medium text-white">
                                     {hardwareState === 'LOCKED' ? 'Silent' : 'Unlock Chime'}
                                 </span>
-                                <div className={\`w-8 h-8 rounded-full flex items-center justify-center \${hardwareState === 'UNLOCKED' ? 'bg-[#00D4FF]/20 text-[#00D4FF] animate-pulse' : 'bg-surface text-slate-500'}\`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${hardwareState === 'UNLOCKED' ? 'bg-[#00D4FF]/20 text-[#00D4FF] animate-pulse' : 'bg-surface text-slate-500'}`}>
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.898a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l5 5V3l-5 5H7a2 2 0 00-2 2z"></path></svg>
                                 </div>
                             </div>
@@ -310,7 +310,7 @@ export default function SimulatorPage() {
                             {battery > 20 ? <BatteryCharging className="w-4 h-4 text-primary" /> : <BatteryWarning className="w-4 h-4 text-danger animate-pulse" />}
                             <label className="text-sm font-medium text-slate-300">Battery Cell Level</label>
                         </div>
-                        <span className={\`text-sm font-bold \${battery <= 20 ? 'text-danger' : 'text-primary'}\`}>{battery}%</span>
+                        <span className={`text-sm font-bold ${battery <= 20 ? 'text-danger' : 'text-primary'}`}>{battery}%</span>
                     </div>
                     <input 
                         type="range" 
@@ -326,7 +326,7 @@ export default function SimulatorPage() {
                 <div className="grid grid-cols-2 gap-3">
                     <button 
                         onClick={toggleLock}
-                        className={\`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-colors \${hardwareState === 'LOCKED' ? 'bg-surface/50 border-white/10 hover:bg-white/5 text-slate-300' : 'bg-[#00D4FF]/10 border-[#00D4FF]/30 text-[#00D4FF] hover:bg-[#00D4FF]/20'}\`}
+                        className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-colors ${hardwareState === 'LOCKED' ? 'bg-surface/50 border-white/10 hover:bg-white/5 text-slate-300' : 'bg-[#00D4FF]/10 border-[#00D4FF]/30 text-[#00D4FF] hover:bg-[#00D4FF]/20'}`}
                     >
                         {hardwareState === 'LOCKED' ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                         <span className="text-xs font-bold">{hardwareState === 'LOCKED' ? 'Force Unlock' : 'Force Lock'}</span>

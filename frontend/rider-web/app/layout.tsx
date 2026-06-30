@@ -4,7 +4,7 @@ import { AuthProvider } from '@/providers/AuthProvider'
 import { RideProvider } from '@/context/RideContext'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import RiderMap from '@/components/Map/RiderMap'
 import MenuPanel from '@/components/panels/MenuPanel'
 import ProfilePanel from '@/components/panels/ProfilePanel'
@@ -78,13 +78,17 @@ export default function RootLayout({
           {isFullScreenPage ? (
             /* Full-screen pages get their own layout */
             <main className="h-full w-full relative flex-1">
-              {children}
+              <Suspense fallback={null}>
+                {children}
+              </Suspense>
             </main>
           ) : (
             <>
               {/* 🗺️ Persistent Map Background */}
               <div className="absolute inset-0 z-0 pointer-events-auto">
-                <RiderMap />
+                <Suspense fallback={<div className="w-full h-full bg-[#0A0D14] animate-pulse" />}>
+                  <RiderMap />
+                </Suspense>
               </div>
 
               {/* 📱 Main Floating Header Navigation (Hide when login overlay is active) */}
@@ -184,7 +188,9 @@ export default function RootLayout({
 
               {/* Page-specific overlays (bike details, etc.) */}
               <div className="absolute inset-0 z-30 pointer-events-none">
-                {children}
+                <Suspense fallback={null}>
+                  {children}
+                </Suspense>
               </div>
             </>
           )}
