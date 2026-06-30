@@ -15,9 +15,9 @@ COPY backend/shared ./backend/shared
 COPY backend/services/notification ./backend/services/notification
 
 RUN npm run build --workspace=@ebike/types
+RUN npm run build --workspace=@ebike/redis
 RUN npm run build --workspace=@ebike/core
 RUN npm run build --workspace=@ebike/events
-RUN npm run build --workspace=@ebike/redis
 RUN npm run build --workspace=@ebike/notification-service
 
 # ── Runtime image ─────────────────────────────────────────────────────────────

@@ -15,8 +15,8 @@ COPY backend/shared ./backend/shared
 COPY backend/services/pricing ./backend/services/pricing
 
 RUN npm run build --workspace=@ebike/types
-RUN npm run build --workspace=@ebike/core
 RUN npm run build --workspace=@ebike/redis
+RUN npm run build --workspace=@ebike/core
 RUN npm run build --workspace=@ebike/db
 RUN npm run build --workspace=@ebike/pricing-service
 

@@ -20,8 +20,8 @@ COPY backend/services/auth ./backend/services/auth
 
 # Build shared libs then the service
 RUN npm run build --workspace=@ebike/types
-RUN npm run build --workspace=@ebike/core
 RUN npm run build --workspace=@ebike/redis
+RUN npm run build --workspace=@ebike/core
 RUN npm run build --workspace=@ebike/events
 RUN npm run build --workspace=@ebike/mqtt
 RUN npm run db:generate --workspace=@ebike/db
