@@ -66,8 +66,8 @@ services:
       JWT_ACCESS_EXPIRY:   15m
       GOOGLE_CLIENT_ID:    ${GOOGLE_CLIENT_ID}
     depends_on:
-      postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
+      - postgres
+      - redis
 
   fleet-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-fleet-service:latest
@@ -82,8 +82,8 @@ services:
       MQTT_PASSWORD:    ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-      postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
+      - postgres
+      - redis
 
   ride-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-ride-service:latest
@@ -96,8 +96,8 @@ services:
       MQTT_BROKER_URL:  mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-      postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
+      - postgres
+      - redis
 
   pricing-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-pricing-service:latest
@@ -108,7 +108,7 @@ services:
       REDIS_URL:  redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-      redis: { condition: service_healthy }
+      - redis
 
   payment-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-payment-service:latest
@@ -122,7 +122,7 @@ services:
       PAYSTACK_SECRET_KEY:   ${PAYSTACK_SECRET_KEY}
       JWT_ACCESS_SECRET:     ${JWT_ACCESS_SECRET}
     depends_on:
-      postgres: { condition: service_healthy }
+      - postgres
 
   notification-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-notification-service:latest
@@ -134,7 +134,7 @@ services:
       EXPO_ACCESS_TOKEN:  ${EXPO_ACCESS_TOKEN}
       JWT_ACCESS_SECRET:  ${JWT_ACCESS_SECRET}
     depends_on:
-      redis: { condition: service_healthy }
+      - redis
 
   websocket-hub:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-websocket-hub:latest
@@ -145,7 +145,7 @@ services:
       REDIS_URL:          redis://redis:6379
       JWT_ACCESS_SECRET:  ${JWT_ACCESS_SECRET}
     depends_on:
-      redis: { condition: service_healthy }
+      - redis
 
   dock-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-dock-service:latest
@@ -158,8 +158,8 @@ services:
       MQTT_BROKER_URL:  mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-      postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
+      - postgres
+      - redis
 
   hardware-simulator:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-hardware-simulator:latest
@@ -169,8 +169,8 @@ services:
       MQTT_PASSWORD:   ${MQTT_PASSWORD}
       API_URL:         http://nginx:80
     depends_on:
-      mosquitto: { condition: service_healthy }
-      nginx:     { condition: service_started }
+      - mosquitto
+      - nginx
 
   # ── Observability & Logging ───────────────────────────────────────────────────
   loki:

@@ -101,6 +101,11 @@ jobs:
             # Since the packages might be private initially, we need to login
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
+            # Load environment variables from .env file for docker stack
+            if [ -f .env ]; then
+              export $(cat .env | grep -v '#' | awk '/=/ {print $1}')
+            fi
+            
             docker compose pull
             
             # 4. Apply Zero-Downtime update using Docker Swarm
