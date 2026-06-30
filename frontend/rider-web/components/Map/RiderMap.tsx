@@ -424,11 +424,20 @@ export default function RiderMap() {
               const loc = { lat: e.coords.latitude, lng: e.coords.longitude };
               setUserLocation(loc);
               setSearchCenter(loc);
-              // Camera movement is handled by GeolocateControl's built-in tracking
+              
+              // Forcefully fly to the exact coordinate instead of letting the browser's 
+              // massive IP-based accuracy radius zoom the map out to the whole country.
+              if (!isNavigating) {
+                mapRef.current?.flyTo({
+                  center: [loc.lng, loc.lat],
+                  zoom: 15,
+                  pitch: 45,
+                  duration: 1500
+                });
+              }
             }
           }}
           positionOptions={{ enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }}
-          fitBoundsOptions={{ maxZoom: 15, pitch: 45 }}
           style={{ marginBottom: '100px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
         />
       </Map>
