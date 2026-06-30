@@ -38,6 +38,7 @@ const app  = express();
 const PORT = Number(process.env.DOCK_PORT ?? process.env.PORT ?? 3009);
 
 process.env.SERVICE_NAME = 'dock-service';
+app.set('trust proxy', 1);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
