@@ -1,5 +1,3 @@
-
-
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────────
   postgres:
@@ -29,8 +27,6 @@ services:
       interval: 5s
       retries: 5
 
-
-
   mosquitto:
     image: eclipse-mosquitto:2
     ports:
@@ -58,9 +54,7 @@ services:
 
   # ── Backend Services ──────────────────────────────────────────────────────────
   auth-service:
-    build:
-      context: ../../
-      dockerfile: backend/services/auth/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-auth-service:latest
     expose:
       - '3001'
     environment:
@@ -76,9 +70,7 @@ services:
       redis:    { condition: service_healthy }
 
   fleet-service:
-    build:
-      context: ../../
-      dockerfile: backend/services/fleet/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-fleet-service:latest
     expose:
       - '3002'
     environment:
@@ -94,9 +86,7 @@ services:
       redis:    { condition: service_healthy }
 
   ride-service:
-    build:
-      context: ../../
-      dockerfile: backend/services/ride/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-ride-service:latest
     expose:
       - '3003'
     environment:
@@ -109,12 +99,8 @@ services:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
 
-
-
   pricing-service:
-    build:
-      context: ../../
-      dockerfile: backend/services/pricing/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-pricing-service:latest
     expose:
       - '3005'
     environment:
@@ -125,9 +111,7 @@ services:
       redis: { condition: service_healthy }
 
   payment-service:
-    build:
-      context: ../../
-      dockerfile: backend/services/payment/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-payment-service:latest
     expose:
       - '3006'
     environment:
@@ -141,9 +125,7 @@ services:
       postgres: { condition: service_healthy }
 
   notification-service:
-    build:
-      context: ../../
-      dockerfile: backend/services/notification/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-notification-service:latest
     expose:
       - '3007'
     environment:
@@ -155,9 +137,7 @@ services:
       redis: { condition: service_healthy }
 
   websocket-hub:
-    build:
-      context: ../../
-      dockerfile: backend/services/websocket-hub/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-websocket-hub:latest
     expose:
       - '3008'
     environment:
@@ -168,9 +148,7 @@ services:
       redis: { condition: service_healthy }
 
   dock-service:
-    build:
-      context: ../../
-      dockerfile: backend/services/dock/Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-dock-service:latest
     expose:
       - '3009'
     environment:
@@ -184,9 +162,7 @@ services:
       redis:    { condition: service_healthy }
 
   hardware-simulator:
-    build:
-      context: ../../simulator
-      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-hardware-simulator:latest
     environment:
       MQTT_BROKER: mqtt://mosquitto:1883
       MQTT_USERNAME:   ${MQTT_USERNAME}

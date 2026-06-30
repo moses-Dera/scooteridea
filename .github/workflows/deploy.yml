@@ -5,14 +5,79 @@ on:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+
 jobs:
-  deploy-backend:
-    name: Deploy Backend (VPS)
+  build-and-push:
+    name: Build & Push Images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [auth-service, fleet-service, ride-service, pricing-service, payment-service, notification-service, websocket-hub, dock-service]
+    
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # We convert the service name to the exact folder name
+      - name: Set folder name
+        id: folder
+        run: |
+          if [ "${{ matrix.service }}" == "websocket-hub" ]; then
+            echo "dir=websocket-hub" >> $GITHUB_OUTPUT
+          else
+            echo "dir=${{ matrix.service }}" | sed 's/-service//' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/services/${{ steps.folder.outputs.dir }}/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/scooteridea-${{ matrix.service }}:latest
+
+  build-simulator:
+    name: Build Simulator
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./simulator
+          file: ./simulator/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/scooteridea-hardware-simulator:latest
+
+  deploy-backend:
+    name: Deploy Backend (VPS)
+    needs: [build-and-push, build-simulator]
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -20,17 +85,23 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_PASSPHRASE }}
-          command_timeout: "30m"
+          command_timeout: "10m"
           script: |
             # 1. Navigate to the project directory
             cd /var/www/scooteridea
             
-            # 2. Pull the latest code
+            # 2. Pull the latest code (for docker-compose.yml updates)
             git pull origin main
-            
-            # 3. Rebuild the Docker images locally (since we aren't using an external registry yet)
             cd backend/infra
-            docker compose build
+            
+            # 3. Pull the pre-built images from GitHub Container Registry
+            # Provide the repository owner name as an environment variable for docker-compose
+            export GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
+            
+            # Since the packages might be private initially, we need to login
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            docker compose pull
             
             # 4. Apply Zero-Downtime update using Docker Swarm
             docker stack deploy -c docker-compose.yml scooter_stack
