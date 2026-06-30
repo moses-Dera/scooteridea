@@ -46,7 +46,7 @@ jobs:
           context: .
           file: backend/services/${{ steps.folder.outputs.dir }}/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/scooteridea-${{ matrix.service }}:latest
+          tags: ${{ env.REGISTRY }}/moses-dera/scooteridea-${{ matrix.service }}:latest
 
   build-simulator:
     name: Build Simulator
@@ -71,7 +71,7 @@ jobs:
           context: ./simulator
           file: ./simulator/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/scooteridea-hardware-simulator:latest
+          tags: ${{ env.REGISTRY }}/moses-dera/scooteridea-hardware-simulator:latest
 
   deploy-backend:
     name: Deploy Backend (VPS)
@@ -96,7 +96,7 @@ jobs:
             
             # 3. Pull the pre-built images from GitHub Container Registry
             # Provide the repository owner name as an environment variable for docker-compose
-            export GITHUB_REPOSITORY_OWNER=${{ github.repository_owner }}
+            export GITHUB_REPOSITORY_OWNER=moses-dera
             
             # Since the packages might be private initially, we need to login
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
