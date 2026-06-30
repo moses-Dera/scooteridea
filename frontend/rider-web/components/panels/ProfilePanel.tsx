@@ -5,6 +5,7 @@ import { useProfile } from '@/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface ProfilePanelProps {
   onClose: () => void;
@@ -24,7 +25,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="px-6 py-12 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00FFA3]"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -32,10 +33,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
   if (loading) {
     return (
       <div className="px-6 py-12 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#00FFA3] mx-auto mb-3"></div>
-          <p className="text-slate-400 text-sm">Loading profile...</p>
-        </div>
+        <LoadingSpinner size="md" text="Loading profile..." />
       </div>
     );
   }

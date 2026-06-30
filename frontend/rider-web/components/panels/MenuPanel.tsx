@@ -3,6 +3,7 @@
 import { signOut, useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Wallet, BarChart, MapPin, Settings, HelpCircle, Shield, AlertTriangle } from 'lucide-react';
 
 interface MenuPanelProps {
   onClose: () => void;
@@ -30,43 +31,43 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
     {
       title: 'Wallet',
       description: 'Balance & Payment Methods',
-      icon: '💳',
+      icon: <Wallet className="w-6 h-6" />,
       panelType: 'wallet',
     },
     {
       title: 'Ride History',
       description: 'View past trips & analytics',
-      icon: '📊',
+      icon: <BarChart className="w-6 h-6" />,
       panelType: 'history',
     },
     {
       title: 'Docking Stations',
       description: 'Find nearby docks',
-      icon: '🚲',
+      icon: <MapPin className="w-6 h-6" />,
       panelType: 'docks',
     },
     {
       title: 'Settings',
       description: 'Preferences & Security',
-      icon: '⚙️',
+      icon: <Settings className="w-6 h-6" />,
       panelType: 'settings',
     },
     {
       title: 'Help & Support',
       description: 'FAQ & Customer Support',
-      icon: '❓',
+      icon: <HelpCircle className="w-6 h-6" />,
       panelType: 'help',
     },
     {
       title: 'Safety',
       description: 'Safety features & tips',
-      icon: '🛡️',
+      icon: <Shield className="w-6 h-6" />,
       panelType: 'safety',
     },
     {
       title: 'Report a Problem',
       description: 'Report bug or issue',
-      icon: '⚠️',
+      icon: <AlertTriangle className="w-6 h-6" />,
       panelType: 'report',
     },
   ];
@@ -104,7 +105,7 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
             
             <div className="relative p-5 flex items-center justify-between">
               <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors shadow-inner">
                   {item.icon}
                 </div>
                 <div>

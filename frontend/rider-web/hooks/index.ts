@@ -120,7 +120,8 @@ export function useRideHistory(): UseRideHistory {
 
       const response = await rideApi.getHistory(pageNum, 20);
 
-      setRides((response.data as Ride[]) || []);
+      const responseData = response.data as any;
+      setRides(Array.isArray(responseData) ? responseData : (responseData?.items || []));
       setHasMore(response.pagination?.hasMore ?? false);
       setPage(pageNum);
     } catch (err) {
