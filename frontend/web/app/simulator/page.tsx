@@ -104,7 +104,8 @@ export default function SimulatorPage() {
         markersRef.current.set(bike.id, marker);
       } else {
         // If not dragging, update position from WS
-        if (!marker.isDragging()) {
+        // Mapbox GL JS Marker doesn't expose isDragging in its public TS types
+        if (!(marker as any)._isDragging) {
           marker.setLngLat([bike.lng, bike.lat]);
           
           // Update icon color based on status dynamically
@@ -115,10 +116,10 @@ export default function SimulatorPage() {
           if (innerDiv && svgIcon) {
             if (isUnlocked) {
               innerDiv.className = 'w-8 h-8 rounded-full bg-surface border-[3px] border-[#00D4FF] flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.6)] z-10 transition-all';
-              svgIcon.className = 'w-4 h-4 text-[#00D4FF] transition-colors';
+              svgIcon.setAttribute('class', 'w-4 h-4 text-[#00D4FF] transition-colors');
             } else {
               innerDiv.className = 'w-8 h-8 rounded-full bg-surface border-[3px] border-primary flex items-center justify-center shadow-[0_0_15px_rgba(0,255,163,0.6)] z-10 transition-all';
-              svgIcon.className = 'w-4 h-4 text-primary transition-colors';
+              svgIcon.setAttribute('class', 'w-4 h-4 text-primary transition-colors');
             }
           }
         }
