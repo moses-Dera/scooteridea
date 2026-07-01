@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
-import { BarChart, AlertTriangle, AlertCircle, Info, Wrench, ClipboardList, TrendingUp, BatteryWarning, Activity, Users } from 'lucide-react';
+import { BarChart, AlertTriangle, AlertCircle, Info, Wrench, ClipboardList, TrendingUp, BatteryWarning, Activity, Users, CheckCircle } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 interface BikeModel {
