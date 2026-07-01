@@ -19,6 +19,12 @@ export default function SimulatorPage() {
   const [battery, setBattery] = useState<number>(100);
   const [hardwareState, setHardwareState] = useState<'LOCKED' | 'UNLOCKED'>('LOCKED');
 
+  // Auto-Navigation State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navInterval, setNavInterval] = useState<NodeJS.Timeout | null>(null);
+
   // Initialize Map
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -181,6 +187,87 @@ export default function SimulatorPage() {
     await updateBikeTelemetry(bike.id, bike.lat, bike.lng, battery, newState);
   };
 
+  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.length > 2) {
+      const bike = bikes.find(b => b.id === selectedBikeId);
+      const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&proximity=${bike?.lng || 0},${bike?.lat || 0}`);
+      const data = await res.json();
+      setSearchResults(data.features || []);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const startSimulation = async (destLng: number, destLat: number) => {
+    const bike = bikes.find(b => b.id === selectedBikeId);
+    if (!bike) return;
+    setSearchResults([]);
+    setSearchQuery('');
+    
+    try {
+      const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${bike.lng},${bike.lat};${destLng},${destLat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`);
+      const data = await res.json();
+      
+      if (!data.routes || data.routes.length === 0) return;
+      const coords = data.routes[0].geometry.coordinates;
+      
+      // Draw route on map
+      if (map.current?.getSource('route')) {
+        (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'LineString', coordinates: coords }
+        });
+      } else {
+        map.current?.addSource('route', {
+          type: 'geojson',
+          data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }
+        });
+        map.current?.addLayer({
+          id: 'route',
+          type: 'line',
+          source: 'route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#00D4FF', 'line-width': 4, 'line-opacity': 0.6 }
+        });
+      }
+      
+      setIsNavigating(true);
+      setHardwareState('UNLOCKED'); // Auto unlock for driving
+      let step = 0;
+      let currentBatt = battery;
+      
+      const interval = setInterval(async () => {
+        if (step >= coords.length) {
+          stopSimulation();
+          return;
+        }
+        const [lng, lat] = coords[step];
+        currentBatt = Math.max(0, currentBatt - 0.2); // battery drain
+        setBattery(Math.round(currentBatt));
+        
+        await updateBikeTelemetry(bike.id, lat, lng, Math.round(currentBatt), 'UNLOCKED');
+        step++;
+      }, 1500); // move to next coord every 1.5s
+      
+      setNavInterval(interval);
+    } catch (err) {
+      console.error('Simulation failed', err);
+    }
+  };
+
+  const stopSimulation = () => {
+    if (navInterval) clearInterval(navInterval);
+    setNavInterval(null);
+    setIsNavigating(false);
+    if (map.current?.getLayer('route')) {
+      map.current.removeLayer('route');
+      map.current.removeSource('route');
+    }
+  };
+
   const selectedBike = bikes.find(b => b.id === selectedBikeId);
 
   return (
@@ -339,17 +426,54 @@ export default function SimulatorPage() {
                     </button>
                 </div>
 
-                {/* Auto-Navigation Module (Coming next) */}
+                {/* Auto-Navigation Module */}
                 <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl relative overflow-hidden mt-2">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
                     <div className="flex items-start gap-3 relative z-10">
                         <Navigation className="w-5 h-5 text-primary mt-0.5" />
-                        <div>
+                        <div className="w-full">
                             <div className="text-sm font-bold text-white mb-1">Auto-Navigation</div>
-                            <p className="text-xs text-slate-400 mb-3 leading-relaxed">Select a destination on the map to simulate a real ride and broadcast live telemetry.</p>
-                            <button className="w-full py-2 bg-primary text-background text-xs font-bold rounded-lg hover:bg-[#00e693] transition-colors shadow-[0_0_15px_rgba(0,255,163,0.3)]">
-                                Enter Navigation Mode
-                            </button>
+                            
+                            {!isNavigating ? (
+                              <>
+                                <p className="text-xs text-slate-400 mb-3 leading-relaxed">Search a destination to simulate a ride and broadcast live telemetry.</p>
+                                <div className="relative">
+                                  <input 
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={handleSearch}
+                                    placeholder="Enter destination..."
+                                    className="w-full bg-surface/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary placeholder:text-slate-500"
+                                  />
+                                  {searchResults.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-white/10 rounded-lg overflow-hidden z-50 shadow-2xl max-h-48 overflow-y-auto">
+                                      {searchResults.map((result) => (
+                                        <button 
+                                          key={result.id}
+                                          onClick={() => startSimulation(result.center[0], result.center[1])}
+                                          className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5 last:border-0 truncate"
+                                        >
+                                          {result.place_name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2 mb-3 mt-1">
+                                  <div className="w-2 h-2 rounded-full bg-[#00D4FF] animate-pulse shadow-[0_0_8px_#00D4FF]"></div>
+                                  <span className="text-xs font-bold text-[#00D4FF]">Simulating Ride in Progress...</span>
+                                </div>
+                                <button 
+                                  onClick={stopSimulation}
+                                  className="w-full py-2 bg-danger/10 text-danger border border-danger/30 text-xs font-bold rounded-lg hover:bg-danger/20 transition-colors"
+                                >
+                                  Stop Simulation
+                                </button>
+                              </>
+                            )}
                         </div>
                     </div>
                 </div>
