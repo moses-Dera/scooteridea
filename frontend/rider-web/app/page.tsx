@@ -285,11 +285,34 @@ export default function RiderHome() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-2">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#00B3FF]/20 mx-auto mb-3 flex items-center justify-center">
-                 <svg className="w-8 h-8 text-[#00B3FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0">
+                  <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </div>
+                <div>
+                  <div className="text-white font-extrabold text-lg">Scooter Ride</div>
+                  <div className="text-slate-400 text-xs font-medium">Estimated route based on current traffic</div>
+                </div>
               </div>
-              <p className="text-slate-300 text-sm font-medium mb-4">Location acquired successfully. Ready to route your ride to this destination.</p>
+              
+              {/* Estimated Ride Stats */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-[#0A0D14] border border-white/5 rounded-xl p-3 flex flex-col justify-center">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-0.5">Est. Fare</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-white font-extrabold text-xl">₦250</span>
+                    <span className="text-slate-500 text-xs">- ₦400</span>
+                  </div>
+                </div>
+                <div className="bg-[#0A0D14] border border-white/5 rounded-xl p-3 flex flex-col justify-center">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-0.5">Time</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-white font-extrabold text-xl">~12</span>
+                    <span className="text-slate-500 text-xs">mins</span>
+                  </div>
+                </div>
+              </div>
               
               <button 
                 onClick={() => router.push(`/?navigate=true&lat=${selectedLat}&lng=${selectedLng}`)}
