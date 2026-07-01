@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
 
-// Using a public demo token if env is missing, but env should be configured for production
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
-
 export type NavigationProfile = 'walking' | 'cycling' | 'driving-traffic';
 
 export interface RouteManeuver {
@@ -29,6 +26,34 @@ export interface NavigationState {
   totalDuration: number; // in seconds
   etaText: string;
   distanceText: string;
+}
+
+// Google Polyline Decoder to GeoJSON LineString
+function decodePolyline(encoded: string) {
+  let index = 0, lat = 0, lng = 0, coordinates = [];
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = (result & 1) !== 0 ? ~(result >> 1) : (result >> 1);
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = (result & 1) !== 0 ? ~(result >> 1) : (result >> 1);
+    lng += dlng;
+
+    coordinates.push([lng / 1e5, lat / 1e5]);
+  }
+  return { type: 'LineString', coordinates };
 }
 
 export function useNavigationEngine(
@@ -60,36 +85,54 @@ export function useNavigationEngine(
       setLoading(true);
       setError(null);
       try {
-        // We request steps=true to get turn-by-turn instructions
-        // We request overview=full to get a smooth polyline
-        // We allow ferries because crossing the Lagos harbour via bridge is a 17km detour!
-        const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startLocation.lng},${startLocation.lat};${destination.lng},${destination.lat}?geometries=geojson&steps=true&overview=full&alternatives=true&access_token=${MAPBOX_TOKEN}`;
+        // Map our profiles to Google's profiles
+        let googleMode = 'walking';
+        if (profile === 'cycling') googleMode = 'bicycling';
+        if (profile === 'driving-traffic') googleMode = 'driving';
+
+        const originStr = `${startLocation.lat},${startLocation.lng}`;
+        const destStr = `${destination.lat},${destination.lng}`;
+        const url = `/api/directions?origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destStr)}&mode=${googleMode}`;
         
         const res = await fetch(url);
         const data = await res.json();
         
         if (data.routes && data.routes.length > 0) {
-          // Mapbox defaults to the "fastest" (or "safest" for bikes) route, which often takes long detours.
-          // By requesting alternatives and sorting by distance, we force it to pick the shortest physical path.
-          const sortedRoutes = data.routes.sort((a: any, b: any) => a.distance - b.distance);
-          const route = sortedRoutes[0];
-          const leg = route.legs[0]; // assuming single destination
+          const route = data.routes[0];
+          const leg = route.legs[0];
           
+          // Convert Google steps to our format
+          const mappedSteps: RouteStep[] = leg.steps.map((s: any) => {
+            const rawInstruction = s.html_instructions.replace(/<[^>]+>/g, ' '); // Strip HTML tags safely
+            return {
+              distance: s.distance.value,
+              duration: s.duration.value,
+              geometry: decodePolyline(s.polyline.points),
+              name: rawInstruction,
+              maneuver: {
+                instruction: rawInstruction,
+                type: s.maneuver || 'straight',
+                modifier: s.maneuver ? s.maneuver.replace(/-/g, ' ') : 'straight',
+                location: [s.start_location.lng, s.start_location.lat]
+              }
+            };
+          });
+
           setNavState({
             isActive: true,
-            routeGeoJSON: route.geometry,
-            steps: leg.steps,
-            currentStepIndex: 0, // Start at the first step
-            totalDistance: route.distance,
-            totalDuration: route.duration,
-            etaText: Math.ceil(route.duration / 60) + ' min',
-            distanceText: (route.distance / 1000).toFixed(1) + ' km',
+            routeGeoJSON: decodePolyline(route.overview_polyline.points),
+            steps: mappedSteps,
+            currentStepIndex: 0,
+            totalDistance: leg.distance.value,
+            totalDuration: leg.duration.value,
+            etaText: leg.duration.text,
+            distanceText: leg.distance.text,
           });
         } else {
-          setError('No route found');
+          setError(data.error || 'No route found');
         }
       } catch (err) {
-        console.error('Failed to fetch navigation route:', err);
+        console.error('Failed to fetch navigation route from Google API:', err);
         setError('Network error');
       } finally {
         setLoading(false);
