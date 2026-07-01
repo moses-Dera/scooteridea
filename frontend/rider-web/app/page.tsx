@@ -1,5 +1,5 @@
 'use client'
-
+import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useLiveFleet } from '@/hooks/useLiveFleet'
 import { useNearbyDocks } from '@/hooks/useNearbyDocks'
@@ -16,9 +16,24 @@ export default function RiderHome() {
   // Extract the exact coordinates of the clicked item from the URL
   const selectedLat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : undefined;
   const selectedLng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')!) : undefined;
+  const isDestinationPreview = searchParams.get('destination') === 'true';
+  const destName = searchParams.get('name') || 'Selected Destination';
   
-  // Fetch a tight radius around the clicked item to get its full details dynamically
-  const { bikes: liveBikes } = useLiveFleet(selectedLat, selectedLng, 2);
+  // Track user's current location for smart trip validation
+  const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      }, () => {}, { enableHighAccuracy: true });
+    }
+  }, []);
+  
+  // If previewing destination, fetch bikes near USER and docks near DESTINATION
+  const originLat = isDestinationPreview ? userLoc?.lat : selectedLat;
+  const originLng = isDestinationPreview ? userLoc?.lng : selectedLng;
+  
+  const { bikes: liveBikes } = useLiveFleet(originLat, originLng, 2);
   const { docks } = useNearbyDocks(selectedLat, selectedLng);
   
   const displayBikes = liveBikes;
@@ -26,9 +41,6 @@ export default function RiderHome() {
   const selectedBike = bikeId ? displayBikes.find(b => b.id === bikeId) : null;
   const selectedDock = dockId ? docks.find(d => d.id === dockId) : null;
   const shouldNavigate = searchParams.get('navigate') === 'true';
-  const isDestinationPreview = searchParams.get('destination') === 'true';
-  const destName = searchParams.get('name') || 'Selected Destination';
-
   // If no bike or dock is selected, show the destination search bar
   if (!selectedBike && !selectedDock && !isDestinationPreview && !shouldNavigate) {
     return (
@@ -285,14 +297,45 @@ export default function RiderHome() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-2">
+            {/* Smart Trip Validation UI */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0">
-                  <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              
+              {/* Validation Checklist */}
+              <div className="flex flex-col gap-4 mb-5 pb-5 border-b border-white/10">
+                {/* 1. Origin Bikes Check */}
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${liveBikes.length > 0 ? 'bg-primary/20 border border-primary/30 text-primary' : 'bg-red-500/20 border border-red-500/30 text-red-500'}`}>
+                    {liveBikes.length > 0 ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-sm">Nearby Scooters</div>
+                    <div className="text-slate-400 text-xs">
+                      {!userLoc ? 'Locating you...' : (liveBikes.length > 0 ? `${liveBikes.length} available at your location` : 'No scooters near your current location')}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-white font-extrabold text-lg">Scooter Ride</div>
-                  <div className="text-slate-400 text-xs font-medium">Estimated route based on current traffic</div>
+
+                {/* 2. Destination Docks Check */}
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${docks.some(d => d.availableSlots > 0) ? 'bg-[#00B3FF]/20 border border-[#00B3FF]/30 text-[#00B3FF]' : 'bg-warning/20 border border-warning/30 text-warning'}`}>
+                    {docks.some(d => d.availableSlots > 0) ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-sm">Destination Parking</div>
+                    <div className="text-slate-400 text-xs">
+                      {docks.some(d => d.availableSlots > 0) 
+                        ? 'Parking docks available near destination' 
+                        : 'Free-parking permitted (Convenience fee applies)'}
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -314,6 +357,7 @@ export default function RiderHome() {
                 </div>
               </div>
               
+              {/* Dynamic Action Button (Soft Warning Approach) */}
               <button 
                 onClick={() => router.push(`/?navigate=true&lat=${selectedLat}&lng=${selectedLng}`)}
                 className="relative w-full h-14 bg-white text-black font-extrabold text-lg rounded-2xl overflow-hidden group active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(0,255,163,0.3)]"
@@ -321,7 +365,7 @@ export default function RiderHome() {
                 <div className="absolute inset-0 bg-gradient-to-r from-primary via-[#00D1FF] to-primary opacity-90 group-hover:opacity-100 transition-opacity"></div>
                 <div className="relative z-10 flex items-center justify-center gap-3 w-full h-full">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                  <span>Start Navigation</span>
+                  <span>{liveBikes.length === 0 ? 'Navigate Anyway' : 'Start Trip'}</span>
                 </div>
               </button>
             </div>
