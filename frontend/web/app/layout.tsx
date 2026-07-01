@@ -4,7 +4,7 @@ import { FiLayout, FiMap, FiBatteryCharging, FiSettings, FiBell, FiBarChart2 } f
 import { MdDirectionsBike } from 'react-icons/md'
 import Link from 'next/link'
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "./api/auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 import HeaderActions from '@/components/HeaderActions'
 
 export const metadata: Metadata = {
