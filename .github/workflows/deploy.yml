@@ -87,6 +87,12 @@ jobs:
           passphrase: ${{ secrets.VPS_PASSPHRASE }}
           command_timeout: "10m"
           script: |
+            # 0. Server Initialization & Cleanup
+            # Initialize Swarm if not already active (ignore error if already active)
+            docker swarm init || true
+            # Aggressively delete all unused containers, networks, images, and volumes to free space
+            docker system prune -a --volumes -f
+            
             # 1. Navigate to the project directory
             cd /var/www/scooteridea
             
