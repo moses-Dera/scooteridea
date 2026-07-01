@@ -29,6 +29,23 @@ pricingRouter.get('/estimate', async (req: Request, res: Response) => {
   }
 });
 
+// POST /pricing/trip-estimate
+pricingRouter.post('/trip-estimate', async (req: Request, res: Response) => {
+  try {
+    const { userLat, userLng, destLat, destLng } = req.body;
+    
+    if (!userLat || !userLng || !destLat || !destLng) {
+      return res.status(400).json({ success: false, error: 'Missing coordinates' });
+    }
+
+    const estimate = await PricingService.estimateTrip(userLat, userLng, destLat, destLng);
+    res.json({ success: true, data: estimate });
+  } catch (err) {
+    console.error('Trip estimate failed:', err);
+    res.status(500).json({ success: false, error: 'Trip estimate failed' });
+  }
+});
+
 // POST /pricing/demand  — increment demand counter (fire-and-forget)
 pricingRouter.post('/demand', async (req: Request, res: Response) => {
   const { lat, lng } = req.body;
