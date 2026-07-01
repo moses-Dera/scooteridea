@@ -86,8 +86,10 @@ export function useNavigationEngine(
       setError(null);
       try {
         // Map our profiles to Google's profiles
+        // Note: Google Maps does NOT support 'bicycling' mode in Nigeria/Africa. 
+        // We map our 'cycling' profile to 'driving' so the scooter can use the standard road network.
         let googleMode = 'walking';
-        if (profile === 'cycling') googleMode = 'bicycling';
+        if (profile === 'cycling') googleMode = 'driving'; 
         if (profile === 'driving-traffic') googleMode = 'driving';
 
         const originStr = `${startLocation.lat},${startLocation.lng}`;
