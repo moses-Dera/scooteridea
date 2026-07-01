@@ -16,7 +16,8 @@ export async function GET(request: Request) {
 
   try {
     // Bias results to Lagos, Nigeria coordinates (6.5244, 3.3792) with a 50km radius
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&location=6.5244,3.3792&radius=50000&key=${apiKey}`;
+    // Use components=country:ng to restrict search to Nigeria without a strict distance bias
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:ng&key=${apiKey}`;
     const res = await fetch(url);
     const data = await res.json();
     return NextResponse.json(data);
