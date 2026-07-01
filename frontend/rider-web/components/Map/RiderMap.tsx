@@ -503,13 +503,7 @@ export default function RiderMap() {
           showAccuracyCircle={false}
           onGeolocate={(e: any) => {
             if (e && e.coords) {
-              // PREVENT MASSIVE TELEPORTS: 
-              // If the accuracy radius is worse than 1000 meters, this is a fake IP-based location (like an ISP in Lagos).
-              // We completely ignore it and wait for the true GPS hardware lock.
-              if (e.coords.accuracy > 1000) {
-                console.warn(`Ignoring inaccurate location ping (Accuracy: ${e.coords.accuracy}m)`);
-                return;
-              }
+
 
               const loc = { lat: e.coords.latitude, lng: e.coords.longitude };
               
