@@ -45,7 +45,9 @@ export default function RiderMap() {
     steps, 
     currentStepIndex, 
     distanceText, 
-    etaText 
+    etaText,
+    loading: isRoutingLoading,
+    error: routingError
   } = useNavigationEngine(
     shouldNavigate ? userLocation : null,
     shouldNavigate ? destination : null,
@@ -338,6 +340,33 @@ export default function RiderMap() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Navigation Loading / GPS Waiting States */}
+        {shouldNavigate && (!userLocation || isRoutingLoading) && !isNavigating && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20">
+            <div className="bg-[#111622]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-in slide-in-from-top duration-500">
+              <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin"></div>
+              <div className="text-white font-bold text-sm">
+                {!userLocation ? 'Waiting for GPS Lock...' : 'Calculating Route...'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Error State */}
+        {shouldNavigate && routingError && !isNavigating && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20">
+            <div className="bg-red-500/90 backdrop-blur-xl border border-red-400 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-in slide-in-from-top duration-500">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <div className="text-white font-bold text-sm">
+                {routingError}
+              </div>
+              <button onClick={() => router.push('/')} className="ml-2 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-bold transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
         )}
 
         <NavigationControl position="bottom-right" showCompass={false} style={{ marginBottom: '60px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />

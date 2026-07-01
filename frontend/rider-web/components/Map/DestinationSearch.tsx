@@ -15,8 +15,51 @@ export function DestinationSearch() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [recentSearches, setRecentSearches] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const pathname = usePathname();
+
+  // Load recent searches from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('scooteridea_recent_searches');
+      if (saved) {
+        setRecentSearches(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load recent searches', e);
+    }
+  }, []);
+
+  const saveRecentSearch = (result: SearchResult) => {
+    try {
+      setRecentSearches((prev) => {
+        // Remove duplicate if exists, then prepend
+        const filtered = prev.filter(r => r.id !== result.id);
+        const newRecent = [result, ...filtered].slice(0, 5); // Keep last 5
+        localStorage.setItem('scooteridea_recent_searches', JSON.stringify(newRecent));
+        return newRecent;
+      });
+    } catch (e) {
+      console.error('Failed to save recent search', e);
+    }
+  };
+
+  const removeRecentSearch = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // prevent clicking the item
+    setRecentSearches((prev) => {
+      const newRecent = prev.filter(r => r.id !== id);
+      localStorage.setItem('scooteridea_recent_searches', JSON.stringify(newRecent));
+      return newRecent;
+    });
+  };
+
+  const clearAllHistory = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('scooteridea_recent_searches');
+  };
 
   const pathname = usePathname();
 
@@ -59,6 +102,8 @@ export function DestinationSearch() {
       const data = await res.json();
       
       if (data.result?.geometry?.location) {
+        saveRecentSearch(result); // Save to history when successfully clicked
+        
         const { lat, lng } = data.result.geometry.location;
         // Show destination preview instead of instantly navigating
         router.push(`?destination=true&lat=${lat}&lng=${lng}&name=${encodeURIComponent(result.place_name.split(',')[0])}`);
@@ -108,7 +153,8 @@ export function DestinationSearch() {
         </button>
       </div>
 
-      {results.length > 0 && (
+      {/* Search Results */}
+      {query && results.length > 0 && (
         <div className="flex flex-col gap-1 mt-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
           {results.map((result) => (
             <button
@@ -125,6 +171,43 @@ export function DestinationSearch() {
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Recent Searches (Show when no query) */}
+      {!query && recentSearches.length > 0 && (
+        <div className="flex flex-col gap-1 mt-2">
+          <div className="flex items-center justify-between px-2 mb-1">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Recent Searches</span>
+            <button onClick={clearAllHistory} className="text-slate-500 hover:text-red-400 text-xs font-medium transition-colors">
+              Clear All
+            </button>
+          </div>
+          <div className="max-h-64 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-1">
+            {recentSearches.map((result) => (
+              <div
+                key={result.id}
+                onClick={() => handleSelect(result)}
+                className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer"
+              >
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-[#111622] flex items-center justify-center shrink-0 border border-white/5 group-hover:border-slate-500/50 transition-colors">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-slate-200 text-sm font-medium truncate">{result.place_name.split(',')[0]}</div>
+                    <div className="text-slate-500 text-xs truncate mt-0.5">{result.place_name.split(',').slice(1).join(',')}</div>
+                  </div>
+                </div>
+                <button 
+                  onClick={(e) => removeRecentSearch(e, result.id)}
+                  className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       
