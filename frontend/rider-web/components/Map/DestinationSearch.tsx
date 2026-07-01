@@ -18,8 +18,20 @@ export function DestinationSearch() {
   const [recentSearches, setRecentSearches] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   const pathname = usePathname();
+
+  // Get rough location for search biasing (resolves instantly if map already has permission)
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.warn('Could not get location for search bias', err),
+        { enableHighAccuracy: false, maximumAge: 300000 } // cached for 5 mins is fine
+      );
+    }
+  }, []);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -70,7 +82,11 @@ export function DestinationSearch() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`/api/places/autocomplete?q=${encodeURIComponent(query)}`);
+        let url = `/api/places/autocomplete?q=${encodeURIComponent(query)}`;
+        if (userLocation) {
+          url += `&lat=${userLocation.lat}&lng=${userLocation.lng}`;
+        }
+        const res = await fetch(url);
         const data = await res.json();
         
         if (data.predictions) {
