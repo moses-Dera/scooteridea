@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useLiveFleet } from '@/hooks/useLiveFleet'
 import { useNearbyDocks } from '@/hooks/useNearbyDocks'
 import { UnlockModal } from '@/components/UnlockModal'
+import { DestinationSearch } from '@/components/Map/DestinationSearch'
 
 export default function RiderHome() {
   const searchParams = useSearchParams();
@@ -26,8 +27,14 @@ export default function RiderHome() {
   const selectedDock = dockId ? docks.find(d => d.id === dockId) : null;
   const shouldNavigate = searchParams.get('navigate') === 'true';
 
-  // Don't show anything if neither bike nor dock is selected
-  if (!selectedBike && !selectedDock) return <></>;
+  // If no bike or dock is selected, show the destination search bar
+  if (!selectedBike && !selectedDock) {
+    return (
+      <div className="absolute top-28 left-1/2 -translate-x-1/2 z-30 w-full md:w-auto px-6 pointer-events-auto flex justify-center">
+        <DestinationSearch />
+      </div>
+    );
+  }
 
   return (
     <>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, MapPin, X } from 'lucide-react';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
@@ -18,6 +18,8 @@ export function DestinationSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!query) {
@@ -54,7 +56,7 @@ export function DestinationSearch() {
   };
 
   const handleClear = () => {
-    router.push('/ride/active'); // Clear navigation params
+    router.push(pathname || '/'); // Clear navigation params
     setIsExpanded(false);
     setQuery('');
   };
