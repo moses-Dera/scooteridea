@@ -23,6 +23,7 @@ export default function RiderMap() {
   const destination = destLat && destLng ? { lat: destLat, lng: destLng } : null;
 
   const mapRef = useRef<MapRef>(null);
+  const hasInitialLock = useRef(false);
 
   const [viewState, setViewState] = useState({
     latitude: 6.4541,
@@ -423,17 +424,21 @@ export default function RiderMap() {
             if (e && e.coords) {
               const loc = { lat: e.coords.latitude, lng: e.coords.longitude };
               setUserLocation(loc);
-              setSearchCenter(loc);
               
-              // Forcefully fly to the exact coordinate instead of letting the browser's 
-              // massive IP-based accuracy radius zoom the map out to the whole country.
-              if (!isNavigating) {
-                mapRef.current?.flyTo({
-                  center: [loc.lng, loc.lat],
-                  zoom: 15,
-                  pitch: 45,
-                  duration: 1500
-                });
+              if (!hasInitialLock.current) {
+                setSearchCenter(loc);
+                hasInitialLock.current = true;
+                
+                // Forcefully fly to the exact coordinate on first lock instead of letting the browser's 
+                // massive IP-based accuracy radius zoom the map out to the whole country.
+                if (!isNavigating) {
+                  mapRef.current?.flyTo({
+                    center: [loc.lng, loc.lat],
+                    zoom: 15,
+                    pitch: 45,
+                    duration: 1500
+                  });
+                }
               }
             }
           }}
