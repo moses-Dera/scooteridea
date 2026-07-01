@@ -169,8 +169,10 @@ export default function ProfilePage() {
               Privacy & Security
             </button>
             <button className="w-full py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors font-medium flex items-center gap-2" onClick={() => {
-              logout();
-              // Redirect handled by middleware or router
+              import('next-auth/react').then(({ signOut }) => {
+                logout();
+                signOut({ callbackUrl: '/' });
+              });
             }}>
               <LogOut className="w-4 h-4" />
               Logout

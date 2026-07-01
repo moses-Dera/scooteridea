@@ -3,7 +3,7 @@
 import { Mail, Phone, Shield, LogOut } from 'lucide-react';
 import { useProfile } from '@/hooks';
 import { useAuthStore } from '@/store/authStore';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useEffect } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
@@ -131,6 +131,9 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
         className="w-full py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98]" 
         onClick={() => {
           logout();
+          signOut({ redirect: false }).then(() => {
+            window.location.reload();
+          });
           onClose();
         }}
       >
