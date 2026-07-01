@@ -141,11 +141,57 @@ export default function RiderMap() {
 
   const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng, 10);
   
-  // Use live socket bikes ONLY for production (No hardcoding)
-  const displayBikes = liveBikes;
+  // ============================================================================
+  // TEST HACK: Spawns fake bikes around the user's GPS location for testing
+  // Set IS_TEST_MODE to false before deploying to production!
+  // ============================================================================
+  const IS_TEST_MODE = true;
+  const [mockBikes, setMockBikes] = useState<{id: string, lat: number, lng: number}[]>([]);
+  
+  useEffect(() => {
+    if (IS_TEST_MODE && userLocation && mockBikes.length === 0) {
+      const generated = Array.from({ length: 5 }).map((_, i) => {
+        const angle = i * ((Math.PI * 2) / 5); 
+        const radiusLat = 0.0008 + (Math.random() * 0.002);
+        const radiusLng = 0.0008 + (Math.random() * 0.002);
+        return {
+          id: `test-scooter-${i}`,
+          lat: userLocation.lat + (Math.cos(angle) * radiusLat),
+          lng: userLocation.lng + (Math.sin(angle) * radiusLng)
+        };
+      });
+      setMockBikes(generated);
+    }
+  }, [userLocation, IS_TEST_MODE]);
+
+  // Combine live database bikes with test bikes
+  const displayBikes = [...liveBikes, ...mockBikes];
 
   // Fetch real docks from Postgres based on view center!
   const { docks } = useNearbyDocks(searchLat, searchLng);
+
+  // ============================================================================
+  // TEST HACK: Spawns fake docks around the user's GPS location for testing
+  // ============================================================================
+  const [mockDocks, setMockDocks] = useState<{id: string, name: string, lat: number, lng: number}[]>([]);
+  useEffect(() => {
+    if (IS_TEST_MODE && userLocation && mockDocks.length === 0) {
+      const generated = Array.from({ length: 2 }).map((_, i) => {
+        const angle = i * Math.PI; 
+        const radiusLat = 0.0015 + (Math.random() * 0.001);
+        const radiusLng = 0.0015 + (Math.random() * 0.001);
+        return {
+          id: `test-dock-${i}`,
+          name: `Test Hub ${i + 1}`,
+          lat: userLocation.lat + (Math.cos(angle) * radiusLat),
+          lng: userLocation.lng + (Math.sin(angle) * radiusLng)
+        };
+      });
+      setMockDocks(generated);
+    }
+  }, [userLocation, IS_TEST_MODE]);
+
+  const displayDocks = [...docks, ...mockDocks];
 
   // Prevent hydration mismatch
   const [mounted, setMounted] = useState(false);
@@ -168,12 +214,12 @@ export default function RiderMap() {
   // Convert docks to GeoJSON
   const docksGeoJSON = useMemo(() => ({
     type: 'FeatureCollection',
-    features: docks.map(dock => ({
+    features: displayDocks.map(dock => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [dock.lng, dock.lat] },
       properties: { id: dock.id, name: dock.name }
     }))
-  }), [docks]);
+  }), [displayDocks]);
 
   // Handle WebGL Layer Clicks
   const onMapClick = useCallback((e: any) => {

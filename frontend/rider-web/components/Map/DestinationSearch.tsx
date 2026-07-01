@@ -61,8 +61,6 @@ export function DestinationSearch() {
     localStorage.removeItem('scooteridea_recent_searches');
   };
 
-  const pathname = usePathname();
-
   useEffect(() => {
     if (!query) {
       setResults([]);
