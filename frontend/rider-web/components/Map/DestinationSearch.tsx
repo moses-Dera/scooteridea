@@ -7,9 +7,8 @@ import { Search, MapPin, X } from 'lucide-react';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
 
 interface SearchResult {
-  id: string;
-  place_name: string;
-  center: [number, number];
+  id: string; // place_id
+  place_name: string; // description
 }
 
 export function DestinationSearch() {
@@ -30,13 +29,18 @@ export function DestinationSearch() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-            query
-          )}.json?access_token=${MAPBOX_TOKEN}&proximity=3.3792,6.4541&autocomplete=true&limit=5`
-        );
+        const res = await fetch(`/api/places/autocomplete?q=${encodeURIComponent(query)}`);
         const data = await res.json();
-        setResults(data.features || []);
+        
+        if (data.predictions) {
+          const formattedResults = data.predictions.map((p: any) => ({
+            id: p.place_id,
+            place_name: p.description
+          }));
+          setResults(formattedResults);
+        } else {
+          setResults([]);
+        }
       } catch (err) {
         console.error('Geocoding error:', err);
       } finally {
@@ -47,12 +51,27 @@ export function DestinationSearch() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const handleSelect = (result: SearchResult) => {
-    const [lng, lat] = result.center;
-    // Activate the turn-by-turn navigation overlay via URL params
-    router.push(`?navigate=true&lat=${lat}&lng=${lng}`);
-    setIsExpanded(false);
-    setQuery('');
+  const handleSelect = async (result: SearchResult) => {
+    setIsSearching(true);
+    try {
+      // Fetch the exact coordinates for the selected place
+      const res = await fetch(`/api/places/details?place_id=${result.id}`);
+      const data = await res.json();
+      
+      if (data.result?.geometry?.location) {
+        const { lat, lng } = data.result.geometry.location;
+        // Activate the turn-by-turn navigation overlay via URL params
+        router.push(`?navigate=true&lat=${lat}&lng=${lng}`);
+        setIsExpanded(false);
+        setQuery('');
+      } else {
+        console.error("No geometry found for place");
+      }
+    } catch (e) {
+      console.error("Failed to get location details", e);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleClear = () => {

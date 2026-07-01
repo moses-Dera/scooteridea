@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get('q');
+  
+  if (!query) {
+    return NextResponse.json({ predictions: [] });
+  }
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    console.error("Missing GOOGLE_MAPS_API_KEY in environment variables.");
+    return NextResponse.json({ error: 'Missing Google Maps API Key' }, { status: 500 });
+  }
+
+  try {
+    // Bias results to Lagos, Nigeria coordinates (6.5244, 3.3792) with a 50km radius
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&location=6.5244,3.3792&radius=50000&key=${apiKey}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch places' }, { status: 500 });
+  }
+}
