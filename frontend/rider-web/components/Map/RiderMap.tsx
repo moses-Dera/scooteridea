@@ -141,7 +141,7 @@ export default function RiderMap() {
 
   const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng, 10);
   
-  // Use live socket bikes ONLY
+  // Use live socket bikes ONLY for production (No hardcoding)
   const displayBikes = liveBikes;
 
   // Fetch real docks from Postgres based on view center!
@@ -251,6 +251,24 @@ export default function RiderMap() {
         style={{ width: '100%', height: '100%' }}
         attributionControl={false}
       >
+        {/* Service Unavailable Overlay (Shows when no bikes in area) */}
+        {!shouldNavigate && !isDestinationPreview && userLocation && displayBikes.length === 0 && (
+          <div className="absolute bottom-24 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[380px] z-20 pointer-events-none">
+            <div className="bg-[#111622]/90 backdrop-blur-2xl border border-white/10 rounded-[28px] p-5 shadow-2xl flex flex-col items-center text-center animate-in slide-in-from-bottom duration-500 pointer-events-auto">
+              <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                <svg className="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              </div>
+              <h3 className="text-white font-extrabold text-lg mb-1">No Scooters Nearby</h3>
+              <p className="text-slate-400 text-sm font-medium mb-5">
+                We couldn't find any available scooters in your current location right now.
+              </p>
+              <button className="w-full h-12 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors text-sm">
+                Notify me when available
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Overlays (Compact) */}
         {isNavigating && steps.length > 0 && (
           <>
