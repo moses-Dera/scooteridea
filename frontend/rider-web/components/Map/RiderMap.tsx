@@ -63,6 +63,17 @@ export default function RiderMap() {
     return (bearing + 360) % 360;
   };
 
+  // Utility to calculate distance between two coordinates in meters
+  const getDistanceMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3;
+    const p1 = lat1 * Math.PI / 180;
+    const p2 = lat2 * Math.PI / 180;
+    const dp = (lat2 - lat1) * Math.PI / 180;
+    const dl = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  };
+
   // Navigation Lifecycle: Drone-like Continuous Camera Tracking
   const geoControlRef = useRef<mapboxgl.GeolocateControl>(null);
 
@@ -440,17 +451,43 @@ export default function RiderMap() {
           </Marker>
         )}
 
-        {/* High-Performance Native Navigation Puck (Gyro-compass chevron) */}
+        {/* Custom Smoothed User Location Marker (Anti-Shake) */}
+        {userLocation && (
+          <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center" style={{ transition: 'all 1s cubic-bezier(0.2, 0, 0, 1)' }}>
+            <div className="relative flex items-center justify-center">
+              <div className="absolute w-12 h-12 bg-primary/20 rounded-full animate-ping"></div>
+              <div className="w-5 h-5 bg-primary border-2 border-white rounded-full shadow-[0_0_15px_rgba(0,255,163,0.8)] z-10"></div>
+            </div>
+          </Marker>
+        )}
+
+        {/* High-Performance Native Navigation Puck */}
         <GeolocateControl
           ref={geoControlRef}
           position="bottom-right"
           trackUserLocation={true}
+          showUserLocation={false} // Hidden so we can draw our own smooth marker above
           showUserHeading={true}
           showAccuracyCircle={false}
           onGeolocate={(e: any) => {
             if (e && e.coords) {
+              // PREVENT MASSIVE TELEPORTS: 
+              // If the accuracy radius is worse than 1000 meters, this is a fake IP-based location (like an ISP in Lagos).
+              // We completely ignore it and wait for the true GPS hardware lock.
+              if (e.coords.accuracy > 1000) {
+                console.warn(`Ignoring inaccurate location ping (Accuracy: ${e.coords.accuracy}m)`);
+                return;
+              }
+
               const loc = { lat: e.coords.latitude, lng: e.coords.longitude };
-              setUserLocation(loc);
+              
+              setUserLocation(prev => {
+                if (!prev) return loc;
+                // Anti-Shake Filter: Ignore movements smaller than 8 meters
+                const dist = getDistanceMeters(prev.lat, prev.lng, loc.lat, loc.lng);
+                if (dist < 8) return prev;
+                return loc;
+              });
               
               if (!hasInitialLock.current) {
                 setSearchCenter(loc);
