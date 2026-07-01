@@ -21,6 +21,9 @@ export async function GET(request: Request) {
     let url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&key=${apiKey}`;
     if (lat && lng) {
       url += `&location=${lat},${lng}&radius=50000`;
+    } else {
+      // Fallback bias to the center of Nigeria (1000km radius) to prevent defaulting to the US Vercel server
+      url += `&location=9.0820,8.6753&radius=1000000`;
     }
     
     const res = await fetch(url);
