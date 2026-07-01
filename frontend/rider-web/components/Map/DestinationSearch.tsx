@@ -60,8 +60,8 @@ export function DestinationSearch() {
       
       if (data.result?.geometry?.location) {
         const { lat, lng } = data.result.geometry.location;
-        // Activate the turn-by-turn navigation overlay via URL params
-        router.push(`?navigate=true&lat=${lat}&lng=${lng}`);
+        // Show destination preview instead of instantly navigating
+        router.push(`?destination=true&lat=${lat}&lng=${lng}&name=${encodeURIComponent(result.place_name.split(',')[0])}`);
         setIsExpanded(false);
         setQuery('');
       } else {

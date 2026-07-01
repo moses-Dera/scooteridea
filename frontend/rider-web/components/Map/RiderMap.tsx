@@ -17,6 +17,7 @@ export default function RiderMap() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const shouldNavigate = searchParams.get('navigate') === 'true';
+  const isDestinationPreview = searchParams.get('destination') === 'true';
   const destLat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : null;
   const destLng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')!) : null;
   
@@ -105,6 +106,19 @@ export default function RiderMap() {
       });
     }
   };
+
+  // Handle Destination Preview Camera
+  useEffect(() => {
+    if (isDestinationPreview && destination && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [destination.lng, destination.lat],
+        zoom: 16,
+        pitch: 30,
+        duration: 2000,
+        easing: (t) => t * (2 - t)
+      });
+    }
+  }, [isDestinationPreview, destination?.lat, destination?.lng]);
 
   // Search center tracks where we fetch bikes/docks from.
   // Starts null so we don't spam Lagos requests before we know the user's location.
@@ -411,6 +425,19 @@ export default function RiderMap() {
               }}
             />
           </Source>
+        )}
+
+        {/* Destination Preview Marker */}
+        {isDestinationPreview && destination && (
+          <Marker latitude={destination.lat} longitude={destination.lng} anchor="bottom">
+            <div className="relative group cursor-pointer animate-bounce">
+              <div className="absolute -inset-4 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="w-12 h-12 rounded-full bg-surface border-4 border-primary flex items-center justify-center shadow-2xl relative z-10">
+                <LocateFixed className="w-6 h-6 text-primary" />
+              </div>
+              <div className="w-1 h-8 bg-primary mx-auto -mt-2 shadow-2xl"></div>
+            </div>
+          </Marker>
         )}
 
         {/* High-Performance Native Navigation Puck (Gyro-compass chevron) */}

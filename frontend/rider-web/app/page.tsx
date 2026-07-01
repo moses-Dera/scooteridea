@@ -26,9 +26,11 @@ export default function RiderHome() {
   const selectedBike = bikeId ? displayBikes.find(b => b.id === bikeId) : null;
   const selectedDock = dockId ? docks.find(d => d.id === dockId) : null;
   const shouldNavigate = searchParams.get('navigate') === 'true';
+  const isDestinationPreview = searchParams.get('destination') === 'true';
+  const destName = searchParams.get('name') || 'Selected Destination';
 
   // If no bike or dock is selected, show the destination search bar
-  if (!selectedBike && !selectedDock) {
+  if (!selectedBike && !selectedDock && !isDestinationPreview && !shouldNavigate) {
     return (
       <div className="absolute top-28 left-1/2 -translate-x-1/2 z-30 w-full md:w-auto px-6 pointer-events-auto flex justify-center">
         <DestinationSearch />
@@ -256,6 +258,52 @@ export default function RiderHome() {
       </div>
           )
         })()
+      )}
+
+      {/* Destination Preview Panel */}
+      {isDestinationPreview && !shouldNavigate && selectedLat && selectedLng && (
+        <div className="absolute top-28 right-6 left-6 md:left-auto md:w-[420px] bg-surfaceLight/60 backdrop-blur-3xl border border-white/10 rounded-[36px] p-6 shadow-[0_30px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)] z-30 pointer-events-auto flex flex-col animate-in slide-in-from-right-8 duration-700 ease-out max-h-[calc(100vh-140px)] overflow-hidden">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between shrink-0 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </div>
+              <div>
+                <div className="text-xl font-extrabold tracking-tight text-white">{destName}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs font-semibold text-primary tracking-wide uppercase">
+                    Destination
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button onClick={() => router.push('/')} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-white/5">
+              <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-2">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#00B3FF]/20 mx-auto mb-3 flex items-center justify-center">
+                 <svg className="w-8 h-8 text-[#00B3FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <p className="text-slate-300 text-sm font-medium mb-4">Location acquired successfully. Ready to route your ride to this destination.</p>
+              
+              <button 
+                onClick={() => router.push(`/?navigate=true&lat=${selectedLat}&lng=${selectedLng}`)}
+                className="relative w-full h-14 bg-white text-black font-extrabold text-lg rounded-2xl overflow-hidden group active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(0,255,163,0.3)]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary via-[#00D1FF] to-primary opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative z-10 flex items-center justify-center gap-3 w-full h-full">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                  <span>Start Navigation</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
