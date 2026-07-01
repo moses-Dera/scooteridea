@@ -129,7 +129,7 @@ export function DestinationSearch() {
       )}
       
       {isSearching && query && (
-        <div className="text-center text-slate-400 text-sm py-4 animate-pulse">Searching Mapbox...</div>
+        <div className="text-center text-slate-400 text-sm py-4 animate-pulse">Searching...</div>
       )}
     </div>
   );
