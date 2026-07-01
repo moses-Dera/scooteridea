@@ -63,13 +63,16 @@ export function useNavigationEngine(
         // We request steps=true to get turn-by-turn instructions
         // We request overview=full to get a smooth polyline
         // We allow ferries because crossing the Lagos harbour via bridge is a 17km detour!
-        const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startLocation.lng},${startLocation.lat};${destination.lng},${destination.lat}?geometries=geojson&steps=true&overview=full&access_token=${MAPBOX_TOKEN}`;
+        const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startLocation.lng},${startLocation.lat};${destination.lng},${destination.lat}?geometries=geojson&steps=true&overview=full&alternatives=true&access_token=${MAPBOX_TOKEN}`;
         
         const res = await fetch(url);
         const data = await res.json();
         
         if (data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
+          // Mapbox defaults to the "fastest" (or "safest" for bikes) route, which often takes long detours.
+          // By requesting alternatives and sorting by distance, we force it to pick the shortest physical path.
+          const sortedRoutes = data.routes.sort((a: any, b: any) => a.distance - b.distance);
+          const route = sortedRoutes[0];
           const leg = route.legs[0]; // assuming single destination
           
           setNavState({
