@@ -95,12 +95,12 @@ export default function RootLayout({
                 </Suspense>
               </div>
 
-              {/* 📱 Main Floating Header Navigation (Hide when login overlay is active) */}
+              {/* 📱 Main Floating Header Navigation */}
               {activePanel !== 'login' && !pathname?.startsWith('/login') && !pathname?.startsWith('/register') && (
-                <header className={`absolute top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 px-6 py-3 flex items-center justify-between bg-surfaceLight/40 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 ${activePanel ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+                <header className={`absolute top-safe-6 top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50 px-2 py-2 sm:px-6 sm:py-3 flex items-center justify-between bg-[#111622]/80 backdrop-blur-2xl border border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 ${activePanel ? 'opacity-0 -translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
                 
                 {/* Left: Menu & Profile */}
-                <div className="flex items-center gap-2 sm:gap-6">
+                <div className="flex items-center gap-1 sm:gap-4 flex-1">
                    <button 
                      onClick={() => togglePanel('menu')} 
                      className={`group flex items-center gap-2 px-3 py-2 rounded-full transition-all cursor-pointer active:scale-95 ${activePanel === 'menu' ? 'bg-primary/10 border border-primary/20' : 'hover:bg-white/5'}`}
@@ -121,11 +121,11 @@ export default function RootLayout({
                 </div>
                 
                 {/* Center: Glowing Bike Logo */}
-                <div className="flex items-center justify-center absolute left-1/2 -translate-x-1/2">
+                <div className="flex items-center justify-center shrink-0 mx-2">
                    <button onClick={closePanel} className="relative group cursor-pointer">
                     <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:bg-primary/40 transition-all duration-500"></div>
-                    <div className="relative bg-background border border-white/10 p-2.5 rounded-full shadow-xl transform group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="relative bg-[#0A0D14] border border-white/10 p-2 sm:p-2.5 rounded-full shadow-xl transform group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                         <circle cx="5" cy="18" r="3" strokeWidth={2.5} />
                         <circle cx="19" cy="18" r="3" strokeWidth={2.5} />
@@ -135,17 +135,13 @@ export default function RootLayout({
                    </button>
                 </div>
                 
-                {/* Right: Map, Docks, History */}
-                <div className="flex items-center gap-1 sm:gap-4">
-                   <button onClick={closePanel} className="relative group flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer active:scale-95 transition-all bg-primary/10 border border-primary/20">
-                     <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                     <span className="font-bold text-sm text-primary hidden sm:block">Map</span>
+                {/* Right: Wallet, History */}
+                <div className="flex items-center gap-1 sm:gap-4 flex-1 justify-end">
+                   <button onClick={() => togglePanel('wallet')} className={`group flex items-center gap-2 px-3 py-2 rounded-full transition-all cursor-pointer active:scale-95 ${activePanel === 'wallet' ? 'bg-primary/10 border border-primary/20' : 'hover:bg-white/5'}`}>
+                     <svg className={`w-5 h-5 transition-colors ${activePanel === 'wallet' ? 'text-primary' : 'text-slate-300 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                    </button>
-                   <button onClick={() => togglePanel('wallet')} className="group flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition-all cursor-pointer active:scale-95">
-                     <svg className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                   </button>
-                   <button onClick={() => togglePanel('history')} className="group flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition-all cursor-pointer active:scale-95">
-                     <svg className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                   <button onClick={() => togglePanel('history')} className={`group flex items-center gap-2 px-3 py-2 rounded-full transition-all cursor-pointer active:scale-95 ${activePanel === 'history' ? 'bg-primary/10 border border-primary/20' : 'hover:bg-white/5'}`}>
+                     <svg className={`w-5 h-5 transition-colors ${activePanel === 'history' ? 'text-primary' : 'text-slate-300 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                    </button>
                  </div>
               </header>

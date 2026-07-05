@@ -180,9 +180,32 @@ export default function RiderMap() {
   const { docks } = useNearbyDocks(searchLat, searchLng);
 
 
-  // Prevent hydration mismatch
+  const [initialLocation, setInitialLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  // Prevent hydration mismatch and acquire initial GPS lock before rendering map
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    
+    // Attempt to get user's location immediately before rendering map
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setInitialLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+          setSearchCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
+        },
+        (error) => {
+          console.warn("Geolocation failed or denied, defaulting to Lagos.");
+          setInitialLocation({ lat: 6.4541, lng: 3.3792 });
+          setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    } else {
+      setInitialLocation({ lat: 6.4541, lng: 3.3792 });
+      setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+    }
+  }, []);
 
   // GeolocateControl is auto-triggered in onMapLoad — no duplicate trigger here
 
@@ -256,15 +279,24 @@ export default function RiderMap() {
     }, 500);
   }, []);
 
-  if (!mounted) return <div className="w-full h-full bg-surface animate-pulse" />;
+  if (!mounted || !initialLocation) return (
+    <div className="w-full h-full bg-[#0A0D14] flex flex-col items-center justify-center gap-6">
+       <div className="relative flex items-center justify-center">
+         <div className="absolute w-20 h-20 bg-primary/20 rounded-full animate-ping"></div>
+         <div className="absolute w-12 h-12 bg-primary/40 rounded-full animate-pulse"></div>
+         <LocateFixed className="w-6 h-6 text-primary relative z-10" />
+       </div>
+       <div className="text-primary font-bold tracking-widest text-xs uppercase animate-pulse">Acquiring GPS Signal...</div>
+    </div>
+  );
 
   return (
     <div className="w-full h-full relative">
       <Map
         ref={mapRef}
         initialViewState={{
-          latitude: 6.4541,
-          longitude: 3.3792,
+          latitude: initialLocation.lat,
+          longitude: initialLocation.lng,
           zoom: 15,
           pitch: 45,
           bearing: 0
@@ -294,7 +326,7 @@ export default function RiderMap() {
         {isNavigating && steps.length > 0 && (
           <>
             {/* Top Left: Next Turn Instruction */}
-            <div className="absolute top-24 left-4 z-20 max-w-[320px]">
+            <div className="absolute top-28 left-4 z-20 max-w-[320px]">
               <div className="bg-[#111622]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-in slide-in-from-left duration-500">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
                   {(() => {
