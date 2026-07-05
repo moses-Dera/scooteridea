@@ -85,7 +85,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_PASSPHRASE }}
-          command_timeout: "10m"
+          command_timeout: "30m"
           script: |
             # 0. Server Initialization & Cleanup
             # Initialize Swarm if not already active (ignore error if already active)
