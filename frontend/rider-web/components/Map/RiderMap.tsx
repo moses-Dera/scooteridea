@@ -187,24 +187,54 @@ export default function RiderMap() {
   useEffect(() => {
     setMounted(true);
     
+    let resolved = false;
+    
+    // Hard fallback: If the browser's geolocation API hangs (common indoors or on some OS), 
+    // force-load the map after 3 seconds so the user isn't stuck.
+    const fallbackTimer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        console.warn("Geolocation API took too long, using fallback location.");
+        setInitialLocation({ lat: 6.4541, lng: 3.3792 });
+        setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+      }
+    }, 3000);
+
     // Attempt to get user's location immediately before rendering map
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setInitialLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-          setSearchCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(fallbackTimer);
+            setInitialLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+            setSearchCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
+          }
         },
         (error) => {
-          console.warn("Geolocation failed or denied, defaulting to Lagos.");
-          setInitialLocation({ lat: 6.4541, lng: 3.3792 });
-          setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(fallbackTimer);
+            console.warn("Geolocation failed or denied, defaulting to Lagos.");
+            setInitialLocation({ lat: 6.4541, lng: 3.3792 });
+            setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+          }
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        // IMPORTANT: Use enableHighAccuracy: false for the initial load. 
+        // This instantly returns a WiFi/Cell-tower location so the map loads immediately.
+        // Mapbox's GeolocateControl will grab the HighAccuracy GPS lock after the map mounts!
+        { enableHighAccuracy: false, timeout: 3000, maximumAge: 10000 }
       );
     } else {
-      setInitialLocation({ lat: 6.4541, lng: 3.3792 });
-      setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(fallbackTimer);
+        setInitialLocation({ lat: 6.4541, lng: 3.3792 });
+        setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+      }
     }
+    
+    return () => clearTimeout(fallbackTimer);
   }, []);
 
   // GeolocateControl is auto-triggered in onMapLoad — no duplicate trigger here
