@@ -539,8 +539,7 @@ export default function RiderMap() {
           <Marker 
             latitude={(snappedLocation || userLocation)!.lat} 
             longitude={(snappedLocation || userLocation)!.lng} 
-            anchor="center" 
-            style={{ transition: 'all 1s cubic-bezier(0.2, 0, 0, 1)' }}
+            anchor="center"
           >
             <div className="relative flex items-center justify-center">
               <div className="absolute w-12 h-12 bg-primary/20 rounded-full animate-ping"></div>
