@@ -408,7 +408,7 @@ export default function RiderMap() {
           </div>
         )}
 
-        <NavigationControl position="bottom-right" showCompass={false} style={{ marginBottom: '60px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
+        <NavigationControl position="bottom-right" showCompass={true} style={{ marginBottom: '60px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
         
         {/* Re-center Button (Appears when camera is unlocked during navigation) */}
         {isNavigating && !isCameraLocked && (
@@ -570,7 +570,7 @@ export default function RiderMap() {
                 const dist = getDistanceMeters(prev.lat, prev.lng, loc.lat, loc.lng);
                 
                 if (newHeading === null || newHeading === undefined || isNaN(newHeading)) {
-                   if (dist > 2) { 
+                   if (dist > 10) { 
                        // Calculate bearing based on direction of travel
                        newHeading = getBearing(prev.lat, prev.lng, loc.lat, loc.lng);
                    } else {
