@@ -89,8 +89,15 @@ export function useNavigationEngine(
         // Note: Google Maps does NOT support 'bicycling' mode in Nigeria/Africa. 
         // We map our 'cycling' profile to 'driving' so the scooter can use the standard road network.
         let googleMode = 'walking';
-        if (profile === 'cycling') googleMode = 'driving'; 
-        if (profile === 'driving-traffic') googleMode = 'driving';
+        let durationMultiplier = 1.0;
+
+        if (profile === 'cycling') {
+            googleMode = 'driving'; 
+            durationMultiplier = 1.8; // Scooters are generally 1.8x slower than cars in clear traffic
+        }
+        if (profile === 'driving-traffic') {
+            googleMode = 'driving';
+        }
 
         const originStr = `${startLocation.lat},${startLocation.lng}`;
         const destStr = `${destination.lat},${destination.lng}`;
@@ -120,14 +127,20 @@ export function useNavigationEngine(
             };
           });
 
+          // Calculate Scooter-adjusted ETA
+          const adjustedDuration = Math.round(leg.duration.value * durationMultiplier);
+          const minutes = Math.ceil(adjustedDuration / 60);
+          const hours = Math.floor(minutes / 60);
+          const adjustedEtaText = hours > 0 ? `${hours} hr ${minutes % 60} min` : `${minutes} min`;
+
           setNavState({
             isActive: true,
             routeGeoJSON: decodePolyline(route.overview_polyline.points),
             steps: mappedSteps,
             currentStepIndex: 0,
             totalDistance: leg.distance.value,
-            totalDuration: leg.duration.value,
-            etaText: leg.duration.text,
+            totalDuration: adjustedDuration,
+            etaText: adjustedEtaText,
             distanceText: leg.distance.text,
           });
         } else {

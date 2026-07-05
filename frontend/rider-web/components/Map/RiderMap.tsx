@@ -6,6 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useLiveFleet } from '@/hooks/useLiveFleet';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LocateFixed } from 'lucide-react';
+import * as turf from '@turf/turf';
 
 import { useNearbyDocks } from '@/hooks/useNearbyDocks';
 import { useNavigationEngine, NavigationProfile } from '@/hooks/useNavigationEngine';
@@ -36,7 +37,13 @@ export default function RiderMap() {
   const [navProfile, setNavProfile] = useState<NavigationProfile>('cycling');
 
   // Real user geolocation
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; heading?: number | null } | null>(null);
+
+  // Camera Lock for Navigation
+  const [isCameraLocked, setIsCameraLocked] = useState(true);
+
+  // The location snapped perfectly to the route line via Map Matching
+  const [snappedLocation, setSnappedLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Use the Smart Navigation Engine
   const { 
@@ -79,18 +86,43 @@ export default function RiderMap() {
   // Navigation Lifecycle: Drone-like Continuous Camera Tracking
   const geoControlRef = useRef<mapboxgl.GeolocateControl>(null);
 
+  // Map Matching: Snap user to the route using Turf.js
+  useEffect(() => {
+    if (!userLocation) return;
+    
+    if (isNavigating && routeGeoJSON) {
+      const point = turf.point([userLocation.lng, userLocation.lat]);
+      const line = turf.lineString(routeGeoJSON.coordinates);
+      
+      const distance = turf.pointToLineDistance(point, line, { units: 'meters' });
+      
+      // If we are within 60 meters of the road, snap perfectly to it
+      if (distance < 60) {
+        const snapped = turf.nearestPointOnLine(line, point, { units: 'meters' });
+        setSnappedLocation({ lat: snapped.geometry.coordinates[1], lng: snapped.geometry.coordinates[0] });
+      } else {
+        // Off route! (Future: Trigger a recalculation here)
+        setSnappedLocation(null);
+      }
+    } else {
+      setSnappedLocation(null);
+    }
+  }, [userLocation, isNavigating, routeGeoJSON]);
+
   useEffect(() => {
     if (isNavigating) {
       // Programmatically trigger the native geolocation tracking
       geoControlRef.current?.trigger();
     }
 
-    if (isNavigating && userLocation && destination && mapRef.current) {
-      const targetBearing = getBearing(userLocation.lat, userLocation.lng, destination.lat, destination.lng);
+    if (isNavigating && userLocation && destination && mapRef.current && isCameraLocked) {
+      // Use the device heading or direction of travel, fallback to current camera bearing
+      const targetBearing = userLocation.heading ?? mapRef.current.getBearing();
+      const displayLocation = snappedLocation || userLocation;
       
       // We use easeTo instead of flyTo for continuous smooth gliding
       mapRef.current.easeTo({
-        center: [userLocation.lng, userLocation.lat],
+        center: [displayLocation.lng, displayLocation.lat],
         zoom: 18.5,
         pitch: 65,
         bearing: targetBearing,
@@ -98,7 +130,7 @@ export default function RiderMap() {
         easing: (t) => t * (2 - t) // Smooth cubic easing
       });
     }
-  }, [isNavigating, userLocation, destination?.lat, destination?.lng]);
+  }, [isNavigating, userLocation, destination?.lat, destination?.lng, isCameraLocked]);
 
   const handleFocusLocation = () => {
     if (!userLocation) return;
@@ -244,6 +276,10 @@ export default function RiderMap() {
             setSearchCenter({ lat: evt.viewState.latitude, lng: evt.viewState.longitude });
           }, 500);
         }}
+        onDragStart={() => {
+          // If the user manually drags the map while navigating, unlock the camera
+          if (isNavigating) setIsCameraLocked(false);
+        }}
         onClick={onMapClick}
         onLoad={onMapLoad}
         interactiveLayerIds={['bikes-symbol-layer', 'docks-symbol-layer']}
@@ -374,6 +410,21 @@ export default function RiderMap() {
 
         <NavigationControl position="bottom-right" showCompass={false} style={{ marginBottom: '60px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
         
+        {/* Re-center Button (Appears when camera is unlocked during navigation) */}
+        {isNavigating && !isCameraLocked && (
+          <div className="absolute bottom-[130px] right-[20px] z-20">
+            <button 
+              onClick={() => {
+                setIsCameraLocked(true);
+                handleFocusLocation();
+              }}
+              className="w-10 h-10 bg-[#111622]/90 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center shadow-2xl hover:bg-white/10 transition-colors"
+            >
+              <LocateFixed className="w-5 h-5 text-primary" />
+            </button>
+          </div>
+        )}
+        
         {/* Custom Controls Container removed to prevent duplicate buttons */}
 
         {/* Immersive 3D Buildings Layer (Appears when pitched and zoomed) */}
@@ -483,9 +534,14 @@ export default function RiderMap() {
           </Marker>
         )}
 
-        {/* Custom Smoothed User Location Marker (Anti-Shake) */}
-        {userLocation && (
-          <Marker latitude={userLocation.lat} longitude={userLocation.lng} anchor="center" style={{ transition: 'all 1s cubic-bezier(0.2, 0, 0, 1)' }}>
+        {/* Custom Smoothed User Location Marker (Anti-Shake & Snapped) */}
+        {(snappedLocation || userLocation) && (
+          <Marker 
+            latitude={(snappedLocation || userLocation)!.lat} 
+            longitude={(snappedLocation || userLocation)!.lng} 
+            anchor="center" 
+            style={{ transition: 'all 1s cubic-bezier(0.2, 0, 0, 1)' }}
+          >
             <div className="relative flex items-center justify-center">
               <div className="absolute w-12 h-12 bg-primary/20 rounded-full animate-ping"></div>
               <div className="w-5 h-5 bg-primary border-2 border-white rounded-full shadow-[0_0_15px_rgba(0,255,163,0.8)] z-10"></div>
@@ -505,14 +561,29 @@ export default function RiderMap() {
             if (e && e.coords) {
 
 
-              const loc = { lat: e.coords.latitude, lng: e.coords.longitude };
+              const loc = { lat: e.coords.latitude, lng: e.coords.longitude, heading: e.coords.heading };
               
               setUserLocation(prev => {
                 if (!prev) return loc;
-                // Anti-Shake Filter: Ignore movements smaller than 8 meters
+                
+                // Fallback heading calculation if device doesn't have a compass, but is moving
+                let newHeading = loc.heading;
                 const dist = getDistanceMeters(prev.lat, prev.lng, loc.lat, loc.lng);
-                if (dist < 8) return prev;
-                return loc;
+                
+                if (newHeading === null || newHeading === undefined || isNaN(newHeading)) {
+                   if (dist > 2) { 
+                       // Calculate bearing based on direction of travel
+                       newHeading = getBearing(prev.lat, prev.lng, loc.lat, loc.lng);
+                   } else {
+                       newHeading = prev.heading; // Keep previous heading
+                   }
+                }
+                
+                // Anti-Shake Filter: Ignore movements smaller than 8 meters for position, 
+                // but we can still update the heading if they are turning in place.
+                if (dist < 8) return { ...prev, heading: newHeading };
+                
+                return { ...loc, heading: newHeading };
               });
               
               if (!hasInitialLock.current) {
