@@ -12,6 +12,10 @@ import WalletPanel from '@/components/panels/WalletPanel'
 import HistoryPanel from '@/components/panels/HistoryPanel'
 import DocksPanel from '@/components/panels/DocksPanel'
 import LoginOverlay from '@/components/panels/LoginOverlay'
+import SettingsPanel from '@/components/panels/SettingsPanel'
+import HelpPanel from '@/components/panels/HelpPanel'
+import SafetyPanel from '@/components/panels/SafetyPanel'
+import ReportPanel from '@/components/panels/ReportPanel'
 
 import { AlertCircle } from 'lucide-react'
 
@@ -167,13 +171,10 @@ export default function RootLayout({
                       {activePanel === 'wallet' && <WalletPanel onClose={closePanel} />}
                       {activePanel === 'history' && <HistoryPanel onClose={closePanel} />}
                       {activePanel === 'docks' && <DocksPanel onClose={closePanel} />}
-                      {['settings', 'help', 'safety', 'report'].includes(activePanel || '') && (
-                        <div className="px-6 pb-6 text-center py-12">
-                          <div className="flex justify-center mb-4"><AlertCircle className="w-12 h-12 text-slate-500" /></div>
-                          <h2 className="text-xl font-bold text-white mb-2">Coming Soon</h2>
-                          <p className="text-slate-400">This feature is currently under development.</p>
-                        </div>
-                      )}
+                      {activePanel === 'settings' && <SettingsPanel onClose={closePanel} />}
+                      {activePanel === 'help' && <HelpPanel onClose={closePanel} />}
+                      {activePanel === 'safety' && <SafetyPanel onClose={closePanel} />}
+                      {activePanel === 'report' && <ReportPanel onClose={closePanel} />}
                     </div>
                   </div>
                 </div>
