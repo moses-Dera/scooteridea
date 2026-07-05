@@ -97,7 +97,8 @@ fleetRouter.get('/nearby', async (req, res) => {
     const bikes = await FleetService.getNearbyBikes(lat, lng, radius);
     res.json({ success: true, data: bikes });
   } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to find nearby bikes' });
+    console.error('[Fleet API] /nearby Error:', err);
+    res.status(500).json({ success: false, error: 'Failed to find nearby bikes', details: err instanceof Error ? err.message : String(err) });
   }
 });
 

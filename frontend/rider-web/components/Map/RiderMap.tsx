@@ -470,7 +470,7 @@ export default function RiderMap() {
           </div>
         )}
 
-        <NavigationControl position="bottom-right" showCompass={true} style={{ marginBottom: '60px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
+        <NavigationControl position="bottom-right" showCompass={true} style={{ marginBottom: '80px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', pointerEvents: 'auto' }} />
         
         {/* Re-center Button (Appears when camera is unlocked during navigation) */}
         {isNavigating && !isCameraLocked && (
@@ -665,7 +665,7 @@ export default function RiderMap() {
             }
           }}
           positionOptions={{ enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }}
-          style={{ marginBottom: '100px', marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+          style={{ marginRight: '20px', backgroundColor: '#111622', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
         />
       </Map>
     </div>

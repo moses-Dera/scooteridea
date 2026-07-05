@@ -14,7 +14,8 @@ export async function GET(
   console.log('[Proxy GET] Session:', session)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '')
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`
   
   const headers: HeadersInit = {}
   
@@ -29,10 +30,22 @@ export async function GET(
       credentials: 'include',
     })
     
-    const data = await response.json()
+    let data;
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { text };
+    }
+    
+    if (!response.ok) {
+      console.error(`[Proxy GET] Backend returned ${response.status}:`, text);
+    }
+    
     return NextResponse.json(data, { status: response.status })
-  } catch (err) {
-    return NextResponse.json({ error: 'Request failed' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[Proxy GET] Fetch failed:', err);
+    return NextResponse.json({ error: 'Proxy Request failed', details: err.message, backendUrl }, { status: 500 })
   }
 }
 
@@ -43,7 +56,8 @@ export async function POST(
   const session = await getServerSession(authOptions)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '')
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`
   
   const headers: HeadersInit = { 'Content-Type': 'application/json' }
   
@@ -60,10 +74,22 @@ export async function POST(
       credentials: 'include',
     })
     
-    const data = await response.json()
+    let data;
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { text };
+    }
+    
+    if (!response.ok) {
+      console.error(`[Proxy POST] Backend returned ${response.status}:`, text);
+    }
+    
     return NextResponse.json(data, { status: response.status })
-  } catch (err) {
-    return NextResponse.json({ error: 'Request failed' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[Proxy POST] Fetch failed:', err);
+    return NextResponse.json({ error: 'Proxy Request failed', details: err.message, backendUrl }, { status: 500 })
   }
 }
 
@@ -74,7 +100,8 @@ export async function PUT(
   const session = await getServerSession(authOptions)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '')
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`
   
   const headers: HeadersInit = { 'Content-Type': 'application/json' }
   
@@ -91,10 +118,22 @@ export async function PUT(
       credentials: 'include',
     })
     
-    const data = await response.json()
+    let data;
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { text };
+    }
+    
+    if (!response.ok) {
+      console.error(`[Proxy PUT] Backend returned ${response.status}:`, text);
+    }
+    
     return NextResponse.json(data, { status: response.status })
-  } catch (err) {
-    return NextResponse.json({ error: 'Request failed' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[Proxy PUT] Fetch failed:', err);
+    return NextResponse.json({ error: 'Proxy Request failed', details: err.message, backendUrl }, { status: 500 })
   }
 }
 
@@ -105,7 +144,8 @@ export async function DELETE(
   const session = await getServerSession(authOptions)
   const targetPath = '/' + (params.path || []).join('/')
   const queryString = req.nextUrl.search || ''
-  const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}${targetPath}${queryString}`
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '')
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`
   
   const headers: HeadersInit = {}
   
@@ -120,9 +160,21 @@ export async function DELETE(
       credentials: 'include',
     })
     
-    const data = await response.json().catch(() => ({}))
+    let data;
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { text };
+    }
+    
+    if (!response.ok) {
+      console.error(`[Proxy DELETE] Backend returned ${response.status}:`, text);
+    }
+    
     return NextResponse.json(data, { status: response.status })
-  } catch (err) {
-    return NextResponse.json({ error: 'Request failed' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[Proxy DELETE] Fetch failed:', err);
+    return NextResponse.json({ error: 'Proxy Request failed', details: err.message, backendUrl }, { status: 500 })
   }
 }
