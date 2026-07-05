@@ -40,6 +40,31 @@ export default function RiderHome() {
   
   const selectedBike = bikeId ? displayBikes.find(b => b.id === bikeId) : null;
   const selectedDock = dockId ? docks.find(d => d.id === dockId) : null;
+  // Dynamic Trip Estimations
+  let estDistanceKm = 0;
+  let estRideTimeMins = 0;
+  let estWalkTimeMins = 0;
+  let estFareMin = 0;
+  let estFareMax = 0;
+
+  if (userLoc && selectedLat && selectedLng) {
+    const R = 6371; 
+    const dLat = (selectedLat - userLoc.lat) * Math.PI / 180;
+    const dLon = (selectedLng - userLoc.lng) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+              Math.cos(userLoc.lat * Math.PI / 180) * Math.cos(selectedLat * Math.PI / 180) * 
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const straightLine = R * c;
+    
+    estDistanceKm = straightLine * 1.3; // 30% routing factor
+    estRideTimeMins = Math.max(1, Math.ceil(estDistanceKm * 4)); // ~15km/h scooter speed
+    estWalkTimeMins = Math.max(1, Math.ceil(estDistanceKm * 12)); // ~5km/h walking speed
+    
+    estFareMin = estRideTimeMins * 50; // 50 NGN base rate per min
+    estFareMax = Math.ceil(estFareMin * 1.2); // 20% variance
+  }
+
   const shouldNavigate = searchParams.get('navigate') === 'true';
   // If no bike or dock is selected, show the destination search bar
   if (!selectedBike && !selectedDock && !isDestinationPreview && !shouldNavigate) {
@@ -339,33 +364,54 @@ export default function RiderHome() {
                 </div>
               </div>
               
-              {/* Estimated Ride Stats */}
+              {/* Estimated Walk Stats (Always shown for destination preview) */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-[#0A0D14] border border-white/5 rounded-xl p-3 flex flex-col justify-center">
-                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-0.5">Est. Fare</span>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-0.5">Est. Distance</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-white font-extrabold text-xl">₦250</span>
-                    <span className="text-slate-500 text-xs">- ₦400</span>
+                    <span className="text-white font-extrabold text-xl">{estDistanceKm.toFixed(1)}</span>
+                    <span className="text-slate-500 text-xs">km</span>
                   </div>
                 </div>
                 <div className="bg-[#0A0D14] border border-white/5 rounded-xl p-3 flex flex-col justify-center">
-                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-0.5">Time</span>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-0.5">Walk Time</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-white font-extrabold text-xl">~12</span>
+                    <span className="text-white font-extrabold text-xl">~{estWalkTimeMins}</span>
                     <span className="text-slate-500 text-xs">mins</span>
                   </div>
                 </div>
               </div>
+
+              {/* Upsell: Get there faster with a scooter */}
+              {liveBikes.length > 0 && estWalkTimeMins > 3 && (
+                <div 
+                  onClick={() => router.push(`/?bike=${liveBikes[0].id}&lat=${selectedLat}&lng=${selectedLng}&name=${encodeURIComponent(destName)}`)}
+                  className="bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-xl p-3 mb-4 flex items-center justify-between cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div>
+                      <div className="text-white text-sm font-bold">Get there faster</div>
+                      <div className="text-primary text-xs font-medium">Ride for ~₦{estFareMin} in {estRideTimeMins} mins</div>
+                    </div>
+                  </div>
+                  <div className="text-primary text-[10px] uppercase font-extrabold px-3 py-1.5 bg-primary/20 rounded-full group-hover:bg-primary group-hover:text-black transition-colors">
+                    Find Scooter
+                  </div>
+                </div>
+              )}
               
               {/* Dynamic Action Button (Soft Warning Approach) */}
               <button 
                 onClick={() => router.push(`/?navigate=true&lat=${selectedLat}&lng=${selectedLng}`)}
-                className="relative w-full h-14 bg-white text-black font-extrabold text-lg rounded-2xl overflow-hidden group active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(0,255,163,0.3)]"
+                className="relative w-full h-14 bg-white text-black font-extrabold text-lg rounded-2xl overflow-hidden group active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.1)]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-primary via-[#00D1FF] to-primary opacity-90 group-hover:opacity-100 transition-opacity"></div>
                 <div className="relative z-10 flex items-center justify-center gap-3 w-full h-full">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                  <span>{liveBikes.length === 0 ? 'Navigate Anyway' : 'Start Trip'}</span>
+                  <span>Start Navigation</span>
                 </div>
               </button>
             </div>
