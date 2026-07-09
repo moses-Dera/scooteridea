@@ -84,19 +84,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
       <div>
         <h2 className="text-lg font-bold mb-4 text-slate-200">Payment Methods</h2>
         <div className="space-y-3">
-          <div className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#1A1F2B] rounded-xl flex items-center justify-center border border-white/5">
-                <CreditCard className="w-6 h-6 text-slate-300" />
-              </div>
-              <div>
-                <div className="font-bold text-white">•••• 4242</div>
-                <div className="text-xs text-slate-400">Expires 12/28</div>
-              </div>
-            </div>
-            <div className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">Default</div>
-          </div>
-
+          <div className="text-sm text-slate-400 mb-2 px-2">No payment methods saved.</div>
           <button className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center gap-4 hover:bg-white/5 transition-colors border-dashed text-slate-400 hover:text-white cursor-pointer">
             <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center">
               <Plus className="w-5 h-5" />
