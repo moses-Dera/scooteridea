@@ -71,8 +71,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl">
         <div className="flex items-center justify-center mb-8">
-          <img src="https://scooterfy.vercel.app/wordmark-transparent.png" alt="Scooterfy" className="h-8 object-contain drop-shadow-md" />
-          <span className="ml-3 text-2xl font-bold text-primary tracking-tight">Ops</span>
+          <img src="https://scooterfy.vercel.app/wordmark-transparent.png" alt="Scooterfy" className="h-16 object-contain drop-shadow-md" />
+          <span className="ml-3 text-3xl font-bold text-primary tracking-tight">Ops</span>
         </div>
 
         <h1 className="text-xl font-bold text-center mb-6 text-white">

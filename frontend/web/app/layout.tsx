@@ -36,9 +36,10 @@ export default async function RootLayout({
               <div className="flex items-center mb-10">
                 <img 
                   src="https://scooterfy.vercel.app/wordmark-transparent.png" 
-                  alt="Scooterfy Ops" 
+                  alt="Scooterfy" 
                   className="h-12 object-contain"
                 />
+                <span className="ml-3 text-2xl font-bold text-primary tracking-tight">Ops</span>
               </div>
               <nav className="flex flex-col gap-2 flex-grow">
                 <Link href="/" className="px-4 py-2.5 rounded-lg bg-primary/10 text-primary font-medium flex items-center gap-3 transition-colors cursor-pointer">
