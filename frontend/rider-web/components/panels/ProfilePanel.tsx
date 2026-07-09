@@ -4,7 +4,7 @@ import { Mail, Phone, Shield, LogOut } from 'lucide-react';
 import { useProfile } from '@/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { useSession, signOut } from 'next-auth/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface ProfilePanelProps {
