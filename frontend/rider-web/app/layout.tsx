@@ -154,9 +154,9 @@ export default function RootLayout({
                     onClick={closePanel}
                   />
                   {/* Panel */}
-                  <div className="relative pointer-events-auto max-h-[85vh] bg-[#0A0D14]/95 backdrop-blur-2xl border-t border-white/10 rounded-t-[32px] shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-500 ease-out overflow-hidden flex flex-col">
+                  <div className="relative pointer-events-auto max-h-[85vh] w-full md:max-w-md md:mx-auto md:mb-6 md:rounded-[32px] bg-[#0A0D14]/95 backdrop-blur-2xl border border-transparent border-t-white/10 md:border-white/10 rounded-t-[32px] shadow-[0_-20px_60px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-500 ease-out overflow-hidden flex flex-col">
                     {/* Drag handle */}
-                    <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
+                    <div className="flex justify-center pt-3 pb-2 flex-shrink-0 md:hidden">
                       <div className="w-10 h-1 rounded-full bg-white/20"></div>
                     </div>
                     <div className="overflow-y-auto flex-1 scrollbar-hide pb-8">

@@ -88,9 +88,7 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
             className="w-full text-left group block relative overflow-hidden rounded-2xl bg-surfaceLight/40 backdrop-blur-md border border-white/5 hover:border-primary/30 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,255,135,0.1)] cursor-pointer"
             style={{ animationDelay: `${i * 100}ms` }}
           >
-            {/* Hover Glow */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
+
             <div className="relative p-5 flex items-center justify-between">
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors shadow-inner">
