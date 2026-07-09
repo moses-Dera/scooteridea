@@ -24,8 +24,9 @@ export default function HeaderActions() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-md md:hidden flex flex-col pointer-events-auto">
           <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <img src="/wordmark-transparent.png" alt="Scooterfy Ops" className="h-8 object-contain" />
+            <div className="flex items-center">
+              <img src="https://scooterfy.vercel.app/wordmark-transparent.png" alt="Scooterfy" className="h-10 object-contain drop-shadow-md" />
+              <span className="ml-2 text-xl font-bold text-primary tracking-tight">Ops</span>
             </div>
             <button 
               onClick={() => setMobileMenuOpen(false)}

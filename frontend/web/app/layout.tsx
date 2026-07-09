@@ -96,8 +96,16 @@ export default async function RootLayout({
             
             {/* Main Content */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
-              <header className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-surface/40 backdrop-blur-sm z-10 sticky top-0">
-                 <div className="text-lg font-semibold">Dashboard Overview</div>
+              <header className="h-16 border-b border-white/10 flex items-center justify-between px-4 md:px-8 bg-surface/40 backdrop-blur-sm z-10 sticky top-0">
+                 <div className="hidden md:block text-lg font-semibold">Dashboard Overview</div>
+                 <div className="md:hidden flex items-center">
+                    <img 
+                      src="https://scooterfy.vercel.app/wordmark-transparent.png" 
+                      alt="Scooterfy" 
+                      className="h-8 object-contain drop-shadow-md"
+                    />
+                    <span className="ml-2 text-xl font-bold text-primary tracking-tight">Ops</span>
+                 </div>
                  <HeaderActions />
               </header>
               <div className="flex-1 overflow-auto p-4 md:p-8">
