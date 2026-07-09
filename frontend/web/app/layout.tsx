@@ -35,7 +35,7 @@ export default async function RootLayout({
             <aside className="w-full md:w-64 border-r border-white/10 glass-panel flex flex-col p-6 hidden md:flex">
               <div className="flex items-center mb-10">
                 <img 
-                  src="/wordmark-transparent.png" 
+                  src="https://scooterfy.vercel.app/wordmark-transparent.png" 
                   alt="Scooterfy Ops" 
                   className="h-12 object-contain"
                 />
