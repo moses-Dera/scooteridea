@@ -1,10 +1,26 @@
 import { withAuth } from "next-auth/middleware";
 
-export default withAuth({
-  pages: {
-    signIn: "/login",
+import { NextResponse } from "next/server";
+
+export default withAuth(
+  function middleware(req) {
+    return NextResponse.next();
   },
-});
+  {
+    callbacks: {
+      authorized: ({ req, token }) => {
+        // Since we use a custom cookie name, we must check it manually 
+        // if withAuth's getToken fails to find the default cookie.
+        const secureCookie = req.cookies.get('__Secure-scooter-session-token');
+        const standardCookie = req.cookies.get('scooter-session-token');
+        return !!token || !!secureCookie || !!standardCookie;
+      },
+    },
+    pages: {
+      signIn: "/login",
+    },
+  }
+);
 
 export const config = {
   matcher: [
