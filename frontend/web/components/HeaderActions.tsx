@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import { FiBell, FiLogOut, FiMenu, FiX, FiLayout, FiMap, FiBatteryCharging, FiSettings, FiBarChart2 } from 'react-icons/fi';
 import { MdDirectionsBike } from 'react-icons/md';
