@@ -54,7 +54,7 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
       ) : rides.length === 0 ? (
         <div className="text-center py-8 text-slate-500 font-medium">No past trips found.</div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {rides.map((trip: any) => (
             <div key={trip.id} className="glass-panel p-5 rounded-2xl border border-white/5 hover:border-primary/30 transition-colors group cursor-pointer relative overflow-hidden">
               {/* Top row */}

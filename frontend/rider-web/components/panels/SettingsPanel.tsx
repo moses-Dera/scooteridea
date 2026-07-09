@@ -51,15 +51,14 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
 
       <div className="space-y-2">
         <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Security</div>
-        <div className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center"><Lock className="w-5 h-5 text-slate-300" /></div>
-            <div>
-              <div className="font-bold text-white">Change Password</div>
-              <div className="text-xs text-slate-400">Update your credentials</div>
-            </div>
+        <div 
+          onClick={() => alert("A secure password reset link has been sent to your registered email address.")}
+          className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-center hover:bg-white/5 cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-slate-300" />
+            <div className="font-bold text-white text-sm">Send Password Reset Link</div>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-500" />
         </div>
       </div>
     </div>

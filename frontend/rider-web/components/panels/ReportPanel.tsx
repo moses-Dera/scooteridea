@@ -6,6 +6,15 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
   const [issueType, setIssueType] = useState('broken_vehicle');
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = () => {
+    setSubmitting(true);
+    setTimeout(() => {
+      setSubmitting(false);
+      setSubmitted(true);
+    }, 1500);
+  };
 
   if (submitted) {
     return (
@@ -14,7 +23,7 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
           <Send className="w-8 h-8 text-primary" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Report Received</h2>
-        <p className="text-slate-400 mb-8">Thank you for helping keep our fleet safe and reliable. Our team is reviewing your report.</p>
+        <p className="text-slate-400 mb-6">Thank you for helping keep our fleet safe and reliable. Our team is reviewing your report.</p>
         <button onClick={onClose} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors">
           Close
         </button>
@@ -35,7 +44,7 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
 
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Issue Type</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Issue Type</label>
           <select 
             value={issueType}
             onChange={(e) => setIssueType(e.target.value)}
@@ -50,7 +59,7 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Description</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Description</label>
           <textarea 
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -65,11 +74,18 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
         </button>
 
         <button 
-          onClick={() => setSubmitted(true)}
-          disabled={description.trim() === ''}
-          className="w-full mt-4 py-4 bg-primary disabled:bg-primary/30 disabled:text-slate-500 text-black font-bold rounded-xl shadow-glow-primary transition-all flex items-center justify-center"
+          onClick={handleSubmit}
+          disabled={description.trim() === '' || submitting}
+          className="w-full mt-4 py-4 bg-primary disabled:bg-primary/30 disabled:text-slate-500 text-black font-bold rounded-xl shadow-glow-primary transition-all flex items-center justify-center gap-2"
         >
-          Submit Report
+          {submitting ? (
+            <>
+              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+              Sending...
+            </>
+          ) : (
+            'Submit Report'
+          )}
         </button>
       </div>
     </div>

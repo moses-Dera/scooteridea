@@ -16,7 +16,7 @@ const config: Config = {
         surfaceHover: '#242E45',
         
         // Brand colors
-        primary: '#00FFA3',
+        primary: '#1ED760',
         accent: '#10B981',
         danger: '#EF4444',
         warning: '#F59E0B',

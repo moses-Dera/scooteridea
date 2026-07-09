@@ -29,18 +29,6 @@ export default function MenuPanel({ onClose, onOpenPanel }: MenuPanelProps) {
 
   const menuItems = [
     {
-      title: 'Wallet',
-      description: 'Balance & Payment Methods',
-      icon: <Wallet className="w-6 h-6" />,
-      panelType: 'wallet',
-    },
-    {
-      title: 'Ride History',
-      description: 'View past trips & analytics',
-      icon: <BarChart className="w-6 h-6" />,
-      panelType: 'history',
-    },
-    {
       title: 'Docking Stations',
       description: 'Find nearby docks',
       icon: <MapPin className="w-6 h-6" />,

@@ -112,8 +112,8 @@ export default function DashboardOverview() {
             <BarChart className="w-5 h-5" />
             Generate Report
           </button>
-          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 rounded-xl shadow-[0_0_15px_rgba(0,255,163,0.1)]">
-            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(0,255,163,0.8)]"></div>
+          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 rounded-xl shadow-[0_0_15px_rgba(30, 215, 96,0.1)]">
+            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(30, 215, 96,0.8)]"></div>
             <span className="text-sm font-bold text-primary">System Live</span>
           </div>
         </div>
@@ -186,8 +186,8 @@ export default function DashboardOverview() {
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00FFA3" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#00FFA3" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#1ED760" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#1ED760" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorAvailable" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
@@ -202,7 +202,7 @@ export default function DashboardOverview() {
                   itemStyle={{ color: '#E2E8F0', fontWeight: 'bold' }}
                 />
                 <Area type="monotone" dataKey="available" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorAvailable)" name="Available" />
-                <Area type="monotone" dataKey="active" stroke="#00FFA3" strokeWidth={3} fillOpacity={1} fill="url(#colorActive)" name="Active Rides" />
+                <Area type="monotone" dataKey="active" stroke="#1ED760" strokeWidth={3} fillOpacity={1} fill="url(#colorActive)" name="Active Rides" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

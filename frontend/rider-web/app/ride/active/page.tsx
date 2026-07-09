@@ -233,7 +233,7 @@ export default function ActiveRide() {
         {/* Developer Tether Mode */}
         <button 
           onClick={() => setTetherEnabled(!tetherEnabled)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg ${tetherEnabled ? 'bg-[#00FFA3] text-black shadow-[0_0_15px_rgba(0,255,163,0.5)] scale-110' : 'glass-panel text-white hover:bg-white/10'}`} 
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg ${tetherEnabled ? 'bg-[#1ED760] text-black shadow-[0_0_15px_rgba(30, 215, 96,0.5)] scale-110' : 'glass-panel text-white hover:bg-white/10'}`} 
           title="Tether Bike to Phone (Dev)"
         >
           {tetherEnabled ? <Link2 className="w-5 h-5" /> : <Smartphone className="w-5 h-5 text-slate-300" />}

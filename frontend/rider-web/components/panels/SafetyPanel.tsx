@@ -13,9 +13,9 @@ export default function SafetyPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      <button className="w-full bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 text-red-400 font-bold hover:bg-red-500/20 transition-colors">
+      <a href="tel:112" className="w-full bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 text-red-400 font-bold hover:bg-red-500/20 transition-colors">
         <Phone className="w-5 h-5" /> Emergency SOS (112)
-      </button>
+      </a>
 
       <div>
         <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 mt-2">The Golden Rules</div>

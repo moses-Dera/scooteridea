@@ -16,7 +16,7 @@ const config: Config = {
         surfaceHover: '#242E45',
         
         // Legacy support (for emerald-based design)
-        primary: '#00FF87', // Neon green for glow effects
+        primary: '#1ED760', // Neon green for glow effects
         secondary: '#00D4FF',
         danger: '#EF4444',
         warning: '#F59E0B',

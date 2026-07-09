@@ -286,8 +286,8 @@ export default function RiderMap() {
     bikeImg.onload = () => { if (!map.hasImage('bike-icon')) map.addImage('bike-icon', bikeImg); };
     bikeImg.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
       <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="24" cy="24" r="18" fill="#00FFA3" fill-opacity="0.25"/>
-        <circle cx="24" cy="24" r="10" fill="#00FFA3" stroke="#0A0D14" stroke-width="3"/>
+        <circle cx="24" cy="24" r="18" fill="#1ED760" fill-opacity="0.25"/>
+        <circle cx="24" cy="24" r="10" fill="#1ED760" stroke="#0A0D14" stroke-width="3"/>
         <path d="M19 24l3 3 7-7" fill="none" stroke="#0A0D14" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     `)}`;
@@ -310,14 +310,7 @@ export default function RiderMap() {
   }, []);
 
   if (!mounted || !initialLocation) return (
-    <div className="w-full h-full bg-[#0A0D14] flex flex-col items-center justify-center gap-6">
-       <div className="relative flex items-center justify-center">
-         <div className="absolute w-20 h-20 bg-primary/20 rounded-full animate-ping"></div>
-         <div className="absolute w-12 h-12 bg-primary/40 rounded-full animate-pulse"></div>
-         <LocateFixed className="w-6 h-6 text-primary relative z-10" />
-       </div>
-       <div className="text-primary font-bold tracking-widest text-xs uppercase animate-pulse">Acquiring GPS Signal...</div>
-    </div>
+    <div className="w-full h-full bg-[#0A0D14]" />
   );
 
   return (
@@ -605,7 +598,7 @@ export default function RiderMap() {
           >
             <div className="relative flex items-center justify-center">
               <div className="absolute w-12 h-12 bg-primary/20 rounded-full animate-ping"></div>
-              <div className="w-5 h-5 bg-primary border-2 border-white rounded-full shadow-[0_0_15px_rgba(0,255,163,0.8)] z-10"></div>
+              <div className="w-5 h-5 bg-primary border-2 border-white rounded-full shadow-[0_0_15px_rgba(30, 215, 96,0.8)] z-10"></div>
             </div>
           </Marker>
         )}

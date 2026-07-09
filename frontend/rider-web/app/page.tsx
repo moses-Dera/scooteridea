@@ -154,7 +154,7 @@ export default function RiderHome() {
             <div>
               <div className="text-xl font-extrabold tracking-tight text-white">Scooter <span className="text-slate-400 font-medium">#{selectedBike.id.split('-')[1] || selectedBike.id}</span></div>
               <div className="flex items-center gap-2 mt-0.5">
-                <div className={`w-2 h-2 rounded-full ${isLowBattery ? 'bg-red-500 shadow-[0_0_8px_#EF4444]' : 'bg-primary shadow-[0_0_8px_#00FF87]'} animate-pulse`}></div>
+                <div className={`w-2 h-2 rounded-full ${isLowBattery ? 'bg-red-500 shadow-[0_0_8px_#EF4444]' : 'bg-primary shadow-[0_0_8px_#1ED760]'} animate-pulse`}></div>
                 <span className={`text-xs font-semibold ${isLowBattery ? 'text-red-400' : 'text-primary'} tracking-wide uppercase`}>
                   {isLowBattery ? 'Low Battery' : 'Ready to Ride'}
                 </span>
@@ -181,20 +181,20 @@ export default function RiderHome() {
               <circle cx="310" cy="170" r="45" stroke="#334155" strokeWidth="8" className="animate-[spin_10s_linear_infinite]" strokeDasharray="10 10"/>
               <circle cx="310" cy="170" r="35" fill="#0F172A" stroke="#1E293B" strokeWidth="4"/>
               
-              <path d="M90 170 L140 100 L260 100 L310 170" stroke={isLowBattery ? "#EF4444" : "#00FF87"} strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M140 100 L110 50" stroke={isLowBattery ? "#EF4444" : "#00FF87"} strokeWidth="10" strokeLinecap="round"/>
-              <path d="M260 100 L280 40" stroke={isLowBattery ? "#EF4444" : "#00FF87"} strokeWidth="10" strokeLinecap="round"/>
-              <path d="M140 100 L290 150" stroke={isLowBattery ? "#EF4444" : "#00FF87"} strokeWidth="12" strokeLinecap="round"/>
+              <path d="M90 170 L140 100 L260 100 L310 170" stroke={isLowBattery ? "#EF4444" : "#1ED760"} strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M140 100 L110 50" stroke={isLowBattery ? "#EF4444" : "#1ED760"} strokeWidth="10" strokeLinecap="round"/>
+              <path d="M260 100 L280 40" stroke={isLowBattery ? "#EF4444" : "#1ED760"} strokeWidth="10" strokeLinecap="round"/>
+              <path d="M140 100 L290 150" stroke={isLowBattery ? "#EF4444" : "#1ED760"} strokeWidth="12" strokeLinecap="round"/>
               
               <rect x="160" y="105" width="80" height="25" rx="8" fill="#1E293B" stroke="#334155" strokeWidth="3"/>
-              <rect x="165" y="112" width="20" height="11" rx="3" fill={isLowBattery ? "#EF4444" : "#00FF87"} className="animate-pulse"/>
-              {!isLowBattery && <rect x="190" y="112" width="20" height="11" rx="3" fill="#00FF87" className="animate-pulse" style={{animationDelay: '200ms'}}/>}
-              {battery > 50 && <rect x="215" y="112" width="20" height="11" rx="3" fill="#00FF87" className="animate-pulse" style={{animationDelay: '400ms'}}/>}
+              <rect x="165" y="112" width="20" height="11" rx="3" fill={isLowBattery ? "#EF4444" : "#1ED760"} className="animate-pulse"/>
+              {!isLowBattery && <rect x="190" y="112" width="20" height="11" rx="3" fill="#1ED760" className="animate-pulse" style={{animationDelay: '200ms'}}/>}
+              {battery > 50 && <rect x="215" y="112" width="20" height="11" rx="3" fill="#1ED760" className="animate-pulse" style={{animationDelay: '400ms'}}/>}
               
               <path d="M95 50 L135 50" stroke="#F8FAFC" strokeWidth="8" strokeLinecap="round"/>
               <path d="M260 40 L300 30" stroke="#F8FAFC" strokeWidth="8" strokeLinecap="round"/>
               
-              <path d="M140 100 L260 100" stroke={isLowBattery ? "#EF4444" : "#00FF87"} strokeWidth="4" strokeLinecap="round" style={{filter: 'blur(4px)'}}/>
+              <path d="M140 100 L260 100" stroke={isLowBattery ? "#EF4444" : "#1ED760"} strokeWidth="4" strokeLinecap="round" style={{filter: 'blur(4px)'}}/>
             </svg>
           </div>
 
@@ -284,7 +284,7 @@ export default function RiderHome() {
               <span className="w-1 h-1 rounded-full bg-slate-600"></span>
               <span 
                 onClick={() => router.push(`/?bike=${selectedBike!.id}&lat=${selectedBike.lat}&lng=${selectedBike.lng}&navigate=true`)}
-                className="flex items-center gap-1 hover:text-[#00FFA3] text-primary transition-colors cursor-pointer"
+                className="flex items-center gap-1 hover:text-[#1ED760] text-primary transition-colors cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg> Navigate
               </span>

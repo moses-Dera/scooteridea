@@ -46,13 +46,13 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
   };
 
   return (
-    <div className="h-full w-full relative flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-md overflow-hidden pt-24">
+    <div className="h-full w-full max-w-[100vw] relative flex flex-col bg-black/40 backdrop-blur-md overflow-y-auto overflow-x-hidden p-4 sm:p-8">
       
       {/* Dynamic Background Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#00FFA3]/20 rounded-full blur-[120px] pointer-events-none opacity-50 mix-blend-screen animate-pulse duration-1000"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#1ED760]/20 rounded-full blur-[120px] pointer-events-none opacity-50 mix-blend-screen animate-pulse duration-1000"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none opacity-50 mix-blend-screen"></div>
 
-      <div className="w-full max-w-5xl flex rounded-3xl overflow-hidden glass-panel border border-white/5 shadow-2xl relative z-10">
+      <div className="m-auto w-full max-w-5xl flex flex-col md:flex-row rounded-3xl overflow-hidden glass-panel border border-white/5 shadow-2xl relative z-10 flex-shrink-0 my-8 md:my-auto">
         
         {/* Close Button */}
         <button 
@@ -63,17 +63,17 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
         </button>
 
         {/* Left Side: Branding / Hero (Hidden on smaller screens) */}
-        <div className="hidden lg:flex flex-col justify-between flex-1 p-12 bg-gradient-to-br from-[#111827]/80 to-[#0A0F1E]/90 border-r border-white/5 relative overflow-hidden">
+        <div className="hidden md:flex flex-col justify-between flex-1 p-12 bg-gradient-to-br from-[#111827]/80 to-[#0A0F1E]/90 border-r border-white/5 relative overflow-hidden">
           {/* Subtle grid overlay */}
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay"></div>
           
           <div>
-            <div className="w-14 h-14 rounded-2xl bg-[#00FFA3]/10 flex items-center justify-center border border-[#00FFA3]/30 shadow-[0_0_20px_rgba(0,255,163,0.2)] mb-8">
-               <Zap className="w-7 h-7 text-[#00FFA3] fill-[#00FFA3]" />
+            <div className="mb-6">
+               <img src="/wordmark-transparent.png" alt="Scooterfy" className="h-10 object-contain drop-shadow-md" />
             </div>
-            <div className="text-5xl font-black tracking-tight text-white mb-6 leading-tight">
+            <div className="text-5xl font-black tracking-tight text-white mb-4 leading-tight">
               Unlock Your <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00FFA3] to-emerald-400">Next Ride.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1ED760] to-emerald-400">Next Ride.</span>
             </div>
             <p className="text-lg text-slate-400 max-w-sm">
               Instant access to thousands of premium electric scooters across your city. Sign in to start moving.
@@ -90,17 +90,17 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
         </div>
 
         {/* Right Side: Login Form */}
-        <div className="w-full lg:w-[480px] p-8 sm:p-12 bg-[#1A2235]/60 backdrop-blur-xl flex flex-col justify-center relative">
+        <div className="w-full md:w-[400px] lg:w-[480px] p-6 sm:p-8 bg-[#1A2235]/60 backdrop-blur-xl flex flex-col justify-center relative">
           
           {/* Mobile Logo */}
-          <div className="w-12 h-12 rounded-xl bg-[#00FFA3]/10 flex items-center justify-center border border-[#00FFA3]/30 shadow-[0_0_15px_rgba(0,255,163,0.2)] mb-8 lg:hidden">
-            <Zap className="w-6 h-6 text-[#00FFA3] fill-[#00FFA3]" />
+          <div className="mb-6 md:hidden">
+            <img src="/wordmark-transparent.png" alt="Scooterfy" className="h-8 object-contain drop-shadow-md" />
           </div>
 
           <div className="text-3xl font-bold text-white mb-2">
             {feature ? `Access Required` : `Welcome Back`}
           </div>
-          <p className="text-slate-400 mb-8">
+          <p className="text-slate-400 mb-6">
             {feature 
               ? `Please sign in to securely access ${feature}.` 
               : `Enter your credentials to access your wallet and ride history.`}
@@ -115,40 +115,40 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
 
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="relative group">
-              <label className="text-xs font-bold tracking-wider text-slate-500 uppercase mb-2 block transition-colors group-focus-within:text-[#00FFA3]">
+              <label className="text-xs font-bold tracking-wider text-slate-500 uppercase mb-1.5 block transition-colors group-focus-within:text-[#1ED760]">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#00FFA3] transition-colors" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#1ED760] transition-colors" />
                 <input 
                   type="email" 
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="rider@example.com"
-                  className="w-full h-14 bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFA3]/50 focus:ring-1 focus:ring-[#00FFA3]/50 transition-all"
+                  className="w-full h-12 bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-[#1ED760]/50 focus:ring-1 focus:ring-[#1ED760]/50 transition-all"
                 />
               </div>
             </div>
             
             <div className="relative group">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold tracking-wider text-slate-500 uppercase transition-colors group-focus-within:text-[#00FFA3]">
+                <label className="text-xs font-bold tracking-wider text-slate-500 uppercase transition-colors group-focus-within:text-[#1ED760]">
                   Password
                 </label>
-                <Link href="/forgot-password" className="text-xs font-semibold text-[#00FFA3] hover:text-[#00FFA3]/80 transition-colors">
+                <Link href="/forgot-password" className="text-xs font-semibold text-[#1ED760] hover:text-[#1ED760]/80 transition-colors">
                   Forgot?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#00FFA3] transition-colors" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#1ED760] transition-colors" />
                 <input 
                   type="password" 
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-14 bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFA3]/50 focus:ring-1 focus:ring-[#00FFA3]/50 transition-all"
+                  className="w-full h-12 bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-[#1ED760]/50 focus:ring-1 focus:ring-[#1ED760]/50 transition-all"
                 />
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
             <button 
               type="submit" 
               disabled={loading}
-              className="group relative w-full h-14 bg-[#00FFA3] text-black font-bold text-lg rounded-xl flex items-center justify-center gap-2 overflow-hidden transform hover:-translate-y-0.5 hover:shadow-[0_0_25px_rgba(0,255,163,0.4)] transition-all disabled:opacity-70 disabled:hover:translate-y-0 mt-4"
+              className="group relative w-full h-12 bg-[#1ED760] text-black font-bold text-lg rounded-xl flex items-center justify-center gap-2 overflow-hidden transform hover:-translate-y-0.5 hover:shadow-[0_0_25px_rgba(30, 215, 96,0.4)] transition-all disabled:opacity-70 disabled:hover:translate-y-0 mt-4"
             >
               {loading ? (
                 <span className="w-6 h-6 border-2 border-black/20 border-t-black rounded-full animate-spin"></span>
@@ -181,7 +181,7 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
               const cbUrl = window.location.pathname === '/login' || window.location.pathname === '/register' ? '/' : window.location.href;
               signIn('google', { callbackUrl: cbUrl });
             }}
-            className="w-full h-14 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-3 border border-white/10 hover:border-white/20 transition-all"
+            className="w-full h-12 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl flex items-center justify-center gap-3 border border-white/10 hover:border-white/20 transition-all"
           >
             <Chrome className="w-5 h-5" />
             Google Account
@@ -189,7 +189,7 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
 
           <p className="text-center text-sm text-slate-400 mt-10">
             New to Scooter?{' '}
-            <Link href="/register" className="text-[#00FFA3] font-bold hover:underline underline-offset-4 decoration-2">
+            <Link href="/register" className="text-[#1ED760] font-bold hover:underline underline-offset-4 decoration-2">
               Create an account
             </Link>
           </p>

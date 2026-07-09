@@ -51,20 +51,20 @@ export default function FleetMapPage() {
       {/* Header overlaid on top */}
       <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none">
         <div className="flex justify-between items-start pointer-events-auto">
-          <div className="bg-slate-900/80 backdrop-blur p-4 rounded-xl border border-slate-700 shadow-xl">
-            <div className="text-2xl font-bold text-white">Live Fleet</div>
-            <p className="text-sm text-slate-400">Real-time tracking & zones</p>
+          <div className="bg-slate-900/80 backdrop-blur p-3 md:p-4 rounded-xl border border-slate-700 shadow-xl">
+            <div className="text-lg md:text-2xl font-bold text-white">Live Fleet</div>
+            <p className="hidden sm:block text-xs md:text-sm text-slate-400">Real-time tracking & zones</p>
           </div>
           
-          <div className="flex flex-col items-end gap-2">
-            <div className="bg-slate-900/80 backdrop-blur px-4 py-2 rounded-xl border border-slate-700 flex items-center gap-2">
+          <div className="flex flex-col items-end gap-2 ml-auto">
+            <div className="bg-slate-900/80 backdrop-blur px-3 py-1.5 md:px-4 md:py-2 rounded-xl border border-slate-700 flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-              <span className="text-sm font-medium text-slate-300">{connected ? 'Live' : 'Offline'}</span>
+              <span className="text-xs md:text-sm font-medium text-slate-300">{connected ? 'Live' : 'Offline'}</span>
             </div>
             
             <button
               onClick={() => setShowList(!showList)}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg transition-all"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 md:px-5 md:py-2.5 rounded-xl text-sm md:text-base font-medium shadow-lg transition-all"
             >
               {showList ? 'Hide Dashboard' : `Open Dashboard`}
             </button>

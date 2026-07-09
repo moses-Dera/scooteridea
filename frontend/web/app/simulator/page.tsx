@@ -84,7 +84,7 @@ export default function SimulatorPage() {
         
         el.innerHTML = `
           <div class="relative flex flex-col items-center">
-            <div class="w-8 h-8 rounded-full bg-surface border-[3px] ${bike.status === 'in_use' ? 'border-[#00D4FF] shadow-[0_0_15px_rgba(0,212,255,0.6)]' : 'border-primary shadow-[0_0_15px_rgba(0,255,163,0.6)]'} flex items-center justify-center z-10 transition-colors">
+            <div class="w-8 h-8 rounded-full bg-surface border-[3px] ${bike.status === 'in_use' ? 'border-[#00D4FF] shadow-[0_0_15px_rgba(0,212,255,0.6)]' : 'border-primary shadow-[0_0_15px_rgba(30, 215, 96,0.6)]'} flex items-center justify-center z-10 transition-colors">
               <svg class="w-4 h-4 ${bike.status === 'in_use' ? 'text-[#00D4FF]' : 'text-primary'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function SimulatorPage() {
               innerDiv.className = 'w-8 h-8 rounded-full bg-surface border-[3px] border-[#00D4FF] flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.6)] z-10 transition-all';
               svgIcon.setAttribute('class', 'w-4 h-4 text-[#00D4FF] transition-colors');
             } else {
-              innerDiv.className = 'w-8 h-8 rounded-full bg-surface border-[3px] border-primary flex items-center justify-center shadow-[0_0_15px_rgba(0,255,163,0.6)] z-10 transition-all';
+              innerDiv.className = 'w-8 h-8 rounded-full bg-surface border-[3px] border-primary flex items-center justify-center shadow-[0_0_15px_rgba(30, 215, 96,0.6)] z-10 transition-all';
               svgIcon.setAttribute('class', 'w-4 h-4 text-primary transition-colors');
             }
           }
@@ -322,7 +322,7 @@ export default function SimulatorPage() {
           <div className="p-6 flex flex-col gap-6 animate-in slide-in-from-right-4 duration-300">
             
             {/* The Digital Display (Hardware Screen) */}
-            <div className="bg-[#0A100D] border-2 border-[#1E2D24] rounded-xl p-5 shadow-[inset_0_0_20px_rgba(0,255,163,0.05)] relative overflow-hidden group flex flex-col gap-4">
+            <div className="bg-[#0A100D] border-2 border-[#1E2D24] rounded-xl p-5 shadow-[inset_0_0_20px_rgba(30, 215, 96,0.05)] relative overflow-hidden group flex flex-col gap-4">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 
                 <div className="flex justify-between items-start">
@@ -363,7 +363,7 @@ export default function SimulatorPage() {
                         <div className="flex flex-col gap-1">
                             <span className="text-xs font-bold text-slate-500 uppercase">Status LED</span>
                             <div className="flex items-center gap-2 mt-1">
-                                <div className={`w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] ${hardwareState === 'LOCKED' ? 'bg-warning text-warning' : 'bg-[#00FFA3] text-[#00FFA3] animate-pulse'}`}></div>
+                                <div className={`w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] ${hardwareState === 'LOCKED' ? 'bg-warning text-warning' : 'bg-[#1ED760] text-[#1ED760] animate-pulse'}`}></div>
                                 <span className="text-sm font-medium text-white">
                                     {hardwareState === 'LOCKED' ? 'Solid Amber' : 'Pulsing Green'}
                                 </span>

@@ -28,7 +28,7 @@ export default function ProfilePage() {
         </header>
         <main className="flex-1 px-6 pb-8 overflow-y-auto flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00FFA3] mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1ED760] mx-auto mb-4"></div>
             <p className="text-slate-400">Loading profile...</p>
           </div>
         </main>
@@ -75,14 +75,14 @@ export default function ProfilePage() {
         <div className="w-full bg-gradient-to-br from-[#111622] to-[#0A0D14] border border-white/10 rounded-2xl p-8 mb-6 shadow-xl">
           
             <div className="flex items-center gap-6 mb-8">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#00FFA3] to-[#00CC7F] flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#1ED760] to-[#00CC7F] flex items-center justify-center">
               <span className="text-2xl font-bold text-black">{(user?.name?.[0] || 'U') + (user?.email?.[1] || 'U')}</span>
             </div>
             <div>
               <div className="text-2xl font-bold text-white">{user?.name || 'User'}</div>
               <p className="text-slate-400">{user?.status || 'Active'}</p>
               <div className="flex gap-2 mt-2">
-                <span className="px-3 py-1 rounded-full bg-[#00FFA3]/20 text-[#00FFA3] text-xs font-semibold">
+                <span className="px-3 py-1 rounded-full bg-[#1ED760]/20 text-[#1ED760] text-xs font-semibold">
                   {user?.verified ? 'Verified' : 'Not Verified'}
                 </span>
                 <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold">Active</span>
@@ -95,7 +95,7 @@ export default function ProfilePage() {
             
             {/* Email */}
             <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-              <Mail className="w-5 h-5 text-[#00FFA3]" />
+              <Mail className="w-5 h-5 text-[#1ED760]" />
               <div className="flex-1">
                 <p className="text-xs text-slate-400 uppercase tracking-wider">Email</p>
                 <p className="text-white font-medium text-sm break-all">{user?.email || 'Not set'}</p>
@@ -104,7 +104,7 @@ export default function ProfilePage() {
 
             {/* Phone */}
             <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-              <Phone className="w-5 h-5 text-[#00FFA3]" />
+              <Phone className="w-5 h-5 text-[#1ED760]" />
               <div className="flex-1">
                 <p className="text-xs text-slate-400 uppercase tracking-wider">Phone</p>
                 <p className="text-white font-medium">{user?.phone || 'Not added'}</p>
@@ -113,7 +113,7 @@ export default function ProfilePage() {
 
             {/* Wallet Balance */}
             <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-              <MapPin className="w-5 h-5 text-[#00FFA3]" />
+              <MapPin className="w-5 h-5 text-[#1ED760]" />
               <div className="flex-1">
                 <p className="text-xs text-slate-400 uppercase tracking-wider">Balance</p>
                 <p className="text-white font-medium">₦{user?.wallet?.current?.toLocaleString() || '0'}</p>
@@ -122,7 +122,7 @@ export default function ProfilePage() {
 
             {/* Status */}
             <div className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
-              <Shield className="w-5 h-5 text-[#00FFA3]" />
+              <Shield className="w-5 h-5 text-[#1ED760]" />
               <div className="flex-1">
                 <p className="text-xs text-slate-400 uppercase tracking-wider">Status</p>
                 <p className="text-white font-medium capitalize">{user?.status || 'Active'}</p>
@@ -137,15 +137,15 @@ export default function ProfilePage() {
           
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#00FFA3] mb-2">{stats.totalRides}</div>
+              <div className="text-3xl font-bold text-[#1ED760] mb-2">{stats.totalRides}</div>
               <p className="text-xs text-slate-400 uppercase tracking-wider">Total Rides</p>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#00FFA3] mb-2">{stats.totalDistance}</div>
+              <div className="text-3xl font-bold text-[#1ED760] mb-2">{stats.totalDistance}</div>
               <p className="text-xs text-slate-400 uppercase tracking-wider">km Traveled</p>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#00FFA3] mb-2">{stats.totalTime}h</div>
+              <div className="text-3xl font-bold text-[#1ED760] mb-2">{stats.totalTime}h</div>
               <p className="text-xs text-slate-400 uppercase tracking-wider">Total Time</p>
             </div>
           </div>

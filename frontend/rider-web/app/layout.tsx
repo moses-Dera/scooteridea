@@ -16,6 +16,7 @@ import SettingsPanel from '@/components/panels/SettingsPanel'
 import HelpPanel from '@/components/panels/HelpPanel'
 import SafetyPanel from '@/components/panels/SafetyPanel'
 import ReportPanel from '@/components/panels/ReportPanel'
+import SplashScreen from '@/components/SplashScreen'
 
 import { AlertCircle } from 'lucide-react'
 
@@ -71,10 +72,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <title>Scooter - E-Bike Sharing</title>
+        <title>Scooterfy - Premium Urban Mobility</title>
         <meta name="description" content="Unlock and ride electric bikes in your city." />
       </head>
       <body className="min-h-screen bg-background text-white antialiased overflow-hidden">
+        <SplashScreen />
         <AuthProvider>
         <RideProvider>
         <div className="w-full h-screen h-[100dvh] relative flex flex-col overflow-hidden bg-background">
@@ -120,18 +122,14 @@ export default function RootLayout({
                    </button>
                 </div>
                 
-                {/* Center: Glowing Bike Logo */}
+                {/* Center: Custom Brand Logo */}
                 <div className="flex items-center justify-center shrink-0 mx-2">
-                   <button onClick={closePanel} className="relative group cursor-pointer">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl group-hover:bg-primary/40 transition-all duration-500"></div>
-                    <div className="relative bg-[#0A0D14] border border-white/10 p-2 sm:p-2.5 rounded-full shadow-xl transform group-hover:scale-110 transition-transform duration-300">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                        <circle cx="5" cy="18" r="3" strokeWidth={2.5} />
-                        <circle cx="19" cy="18" r="3" strokeWidth={2.5} />
-                        <path strokeWidth={2.5} d="M12 17.5V14l-3-3 4-3 2 3h2" />
-                      </svg>
-                    </div>
+                   <button onClick={closePanel} className="relative group cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
+                      <img 
+                        src="/wordmark-transparent.png" 
+                        alt="Scooterfy" 
+                        className="h-9 sm:h-12 object-contain drop-shadow-md"
+                      />
                    </button>
                 </div>
                 

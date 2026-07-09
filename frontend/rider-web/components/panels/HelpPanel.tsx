@@ -4,6 +4,15 @@ import { useState } from 'react';
 
 export default function HelpPanel({ onClose }: { onClose: () => void }) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [connecting, setConnecting] = useState(false);
+
+  const handleLiveChat = () => {
+    setConnecting(true);
+    setTimeout(() => {
+      alert("All our support agents are currently busy. Please leave us an email.");
+      setConnecting(false);
+    }, 1500);
+  };
 
   const faqs = [
     { q: "How do I unlock a scooter?", a: "Scan the QR code on the handlebars or enter the vehicle ID manually in the app." },
@@ -24,14 +33,25 @@ export default function HelpPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <button className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors">
-          <MessageSquare className="w-6 h-6 text-primary" />
-          <span className="font-bold text-sm">Live Chat</span>
+        <button 
+          onClick={handleLiveChat}
+          disabled={connecting}
+          className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50"
+        >
+          {connecting ? (
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <MessageSquare className="w-6 h-6 text-primary" />
+          )}
+          <span className="font-bold text-sm">{connecting ? 'Connecting...' : 'Live Chat'}</span>
         </button>
-        <button className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+        <a 
+          href="mailto:support@scooterfy.com?subject=Rider%20Support%20Request"
+          className="glass-panel p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors"
+        >
           <Mail className="w-6 h-6 text-[#00D4FF]" />
           <span className="font-bold text-sm">Email Us</span>
-        </button>
+        </a>
       </div>
 
       <div>

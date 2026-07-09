@@ -8,8 +8,8 @@ import { authOptions } from "@/lib/auth"
 import HeaderActions from '@/components/HeaderActions'
 
 export const metadata: Metadata = {
-  title: 'Scooter Operator Dashboard',
-  description: 'Fleet management and operations dashboard for Scooter E-Bikes.',
+  title: 'Scooterfy Operator Dashboard',
+  description: 'Fleet management and operations dashboard for Scooterfy.',
 }
 
 export default async function RootLayout({
@@ -33,9 +33,12 @@ export default async function RootLayout({
           <>
             {/* Sidebar (Mobile Hidden / Desktop Visible) */}
             <aside className="w-full md:w-64 border-r border-white/10 glass-panel flex flex-col p-6 hidden md:flex">
-              <div className="flex items-center gap-3 mb-10">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20">V</div>
-                <div className="text-xl font-bold tracking-tight">Scooter <span className="text-primary">Ops</span></div>
+              <div className="flex items-center mb-10">
+                <img 
+                  src="/wordmark-transparent.png" 
+                  alt="Scooterfy Ops" 
+                  className="h-12 object-contain"
+                />
               </div>
               <nav className="flex flex-col gap-2 flex-grow">
                 <Link href="/" className="px-4 py-2.5 rounded-lg bg-primary/10 text-primary font-medium flex items-center gap-3 transition-colors cursor-pointer">
@@ -58,7 +61,7 @@ export default async function RootLayout({
                   <FiBarChart2 className="w-5 h-5" />
                   <span>Analytics</span>
                 </Link>
-                <Link href="/simulator" className="px-4 py-2.5 rounded-lg bg-[#00FFA3]/10 hover:bg-[#00FFA3]/20 text-[#00FFA3] border border-[#00FFA3]/20 font-medium flex items-center gap-3 transition-colors cursor-pointer mt-4">
+                <Link href="/simulator" className="px-4 py-2.5 rounded-lg bg-[#1ED760]/10 hover:bg-[#1ED760]/20 text-[#1ED760] border border-[#1ED760]/20 font-medium flex items-center gap-3 transition-colors cursor-pointer mt-4">
                   <span className="text-xl">🎮</span>
                   <span>Simulator</span>
                 </Link>

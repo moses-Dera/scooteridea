@@ -34,3 +34,18 @@ body {
     scrollbar-width: none;  /* Firefox */
   }
 }
+
+/* Cursor Overrides: Fix Palm on Map and Pointer on Buttons */
+.mapboxgl-canvas-container.mapboxgl-interactive {
+  cursor: grab !important;
+}
+.mapboxgl-canvas-container.mapboxgl-interactive:active {
+  cursor: grabbing !important;
+}
+
+button, a, [role="button"], .cursor-pointer {
+  cursor: pointer !important;
+}
+button:disabled {
+  cursor: not-allowed !important;
+}
