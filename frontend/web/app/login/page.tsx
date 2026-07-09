@@ -70,9 +70,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl">
-        <div className="flex items-center gap-3 justify-center mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 text-xl">V</div>
-          <div className="text-2xl font-bold tracking-tight">Scooter <span className="text-primary">Ops</span></div>
+        <div className="flex items-center justify-center mb-8">
+          <img src="/wordmark-transparent.png" alt="Scooterfy" className="h-8 object-contain drop-shadow-md" />
+          <span className="ml-3 text-2xl font-bold text-primary tracking-tight">Ops</span>
         </div>
 
         <h1 className="text-xl font-bold text-center mb-6 text-white">
@@ -127,7 +127,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary/90 text-background font-bold py-3 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full bg-primary hover:bg-primary/90 text-background font-bold py-3 rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {loading ? "Authenticating..." : "Access Dashboard"}
             </button>
@@ -148,7 +148,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !!successMsg}
-              className="w-full bg-primary hover:bg-primary/90 text-background font-bold py-3 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full bg-primary hover:bg-primary/90 text-background font-bold py-3 rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {loading ? "Sending..." : "Send Reset Link"}
             </button>
