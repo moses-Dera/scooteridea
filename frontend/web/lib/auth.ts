@@ -26,8 +26,8 @@ export const authOptions: NextAuthOptions = {
 
           const json = await res.json();
           
-          if (res.ok && json.success && json.data?.token) {
-            const { user, token } = json.data;
+          if (res.ok && json.success && json.data?.accessToken) {
+            const { user, accessToken, refreshToken } = json.data;
             
             // Only allow Operators and Admins
             if (user.role !== 'OPERATOR' && user.role !== 'ADMIN') {
@@ -39,7 +39,8 @@ export const authOptions: NextAuthOptions = {
               name: user.name,
               email: user.email,
               role: user.role,
-              accessToken: token
+              accessToken,
+              refreshToken
             };
           }
           return null;
@@ -60,6 +61,40 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = (user as any).role;
         token.accessToken = (user as any).accessToken;
+        token.refreshToken = (user as any).refreshToken;
+      }
+      
+      // Check if access token is expired (or close to expiring)
+      if (token.accessToken && typeof token.accessToken === 'string') {
+        try {
+          const payloadBase64 = token.accessToken.split('.')[1];
+          if (payloadBase64) {
+            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const exp = decodedPayload.exp * 1000;
+            
+            // If token expires in less than 5 minutes, refresh it
+            if (Date.now() > exp - 5 * 60 * 1000) {
+              console.log('[NextAuth] Access token expired/expiring, refreshing...');
+              const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+              const refreshRes = await fetch(`${backendUrl}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: token.refreshToken }),
+              });
+              
+              if (refreshRes.ok) {
+                const refreshedTokens = await refreshRes.json();
+                if (refreshedTokens.success && refreshedTokens.data) {
+                  token.accessToken = refreshedTokens.data.accessToken;
+                  token.refreshToken = refreshedTokens.data.refreshToken;
+                  console.log('[NextAuth] Successfully refreshed access token!');
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[NextAuth] Error parsing token payload for expiration check:', e);
+        }
       }
       return token;
     },
@@ -68,6 +103,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
         (session as any).accessToken = token.accessToken; // Store safely in encrypted HttpOnly cookie
+        (session as any).refreshToken = token.refreshToken;
       }
       return session;
     }

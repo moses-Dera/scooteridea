@@ -65,4 +65,11 @@ export class AuthController {
     await AuthService.resetPassword(req.body.token, req.body.newPassword);
     res.json({ success: true, message: 'Password has been reset successfully' });
   }
+
+  static async topUpWallet(req: Request, res: Response): Promise<void> {
+    const userId = req.user!.sub;
+    const { reference } = req.body;
+    const user = await AuthService.verifyAndTopUpWallet(userId, reference);
+    res.json({ success: true, data: user });
+  }
 }

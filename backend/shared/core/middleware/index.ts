@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { ZodSchema, ZodError } from 'zod';
 import rateLimit from 'express-rate-limit';
+import * as Sentry from '@sentry/node';
 import {
   AppError,
   ValidationError,
@@ -86,7 +87,7 @@ export function notFoundHandler(req: Request, _res: Response, next: NextFunction
 //
 //  Behaviour:
 //    - AppError (isOperational)  → log warn, return structured JSON
-//    - AppError (!isOperational) → log error + full stack, return 500
+//    - AppError (!isOperational) → log error + full stack, return 500, capture to Sentry
 //    - ZodError                  → convert to ValidationError
 //    - Prisma errors             → map known codes to AppError
 //    - Unknown Error             → log error, return 500 (never leak stack in prod)
@@ -141,6 +142,10 @@ export function errorHandler(
     logger.warn(logPayload, `[${appErr.code}] ${appErr.message}`);
   } else {
     logger.error(logPayload, `[UNHANDLED] ${appErr.message}`);
+    // Beam non-operational (500) crashes directly to Sentry
+    Sentry.captureException(err instanceof Error ? err : appErr, {
+      tags: { requestId, userId, errorCode: appErr.code }
+    });
   }
 
   // ── Respond ───────────────────────────────────────────────────────────────

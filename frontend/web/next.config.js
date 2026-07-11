@@ -2,12 +2,21 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@ebike/types", "@ebike/api-client"],
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 };
 
-module.exports = nextConfig;
+const { withSentryConfig } = require("@sentry/nextjs");
+
+module.exports = withSentryConfig(
+  nextConfig,
+  {
+    silent: true,
+    org: "scooteridea",
+    project: "web-operator",
+  },
+  {
+    widenClientFileUpload: true,
+    transpileClientSDK: true,
+    hideSourceMaps: true,
+    disableLogger: true,
+  }
+);

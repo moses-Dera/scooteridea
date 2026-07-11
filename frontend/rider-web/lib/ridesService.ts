@@ -12,7 +12,7 @@ export const ridesService = {
    * @param startDockId - The dock where bike is located
    * @returns The reserved ride object
    */
-  async reserve(bikeId: string, startDockId: string): Promise<Ride> {
+  async reserve(bikeId: string, startDockId?: string): Promise<Ride> {
     const response = (await rideApi.reserve(bikeId, startDockId)) as ApiResponse<Ride>;
     if (!response.success || !response.data) {
       throw new Error(response.error || 'Failed to reserve bike');

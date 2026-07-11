@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ridesService } from '@/lib/ridesService'
-import { pricingApi } from '@/lib/api'
+import { pricingApi, bikeApi } from '@/lib/api'
 import { useRide } from '@/context/RideContext'
 import { Smartphone, Scan, KeyRound, Unlock, X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
@@ -25,17 +25,35 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
   const [unlockPin, setUnlockPin] = useState<string>('')
   const [pricing, setPricing] = useState<{ perMinute: number, baseFare: number, surgeMult: number } | null>(null)
 
+  const [bikeHubId, setBikeHubId] = useState<string | null>(null)
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'Unlock Bike' } }));
     }
   }, [status]);
 
-  // Fetch dynamic pricing data for the area
+  // Fetch dynamic pricing data based on the bike's exact GPS location
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const res = await pricingApi.estimate(6.4541, 3.3792); // Lagos approx
+        let lat = 6.4541; // Default fallback (Lagos approx)
+        let lng = 3.3792;
+        
+        // Fetch the bike's exact real-time coordinates from Swarm backend
+        const bikeRes = await bikeApi.getById(bikeId);
+        if (bikeRes.success && bikeRes.data) {
+          const bike = bikeRes.data as any;
+          if (bike.hubId) {
+             setBikeHubId(bike.hubId);
+          }
+          if (bike.latitude && bike.longitude) {
+            lat = bike.latitude;
+            lng = bike.longitude;
+          }
+        }
+
+        const res = await pricingApi.estimate(lat, lng);
         if (res.success && res.data) {
           setPricing({
             perMinute: res.data.perMinute,
@@ -48,7 +66,7 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
       }
     };
     fetchPricing();
-  }, []);
+  }, [bikeId]);
 
   if (status === 'loading' || status === 'unauthenticated') {
     return null; // Return nothing while auth checks/redirects occur
@@ -64,8 +82,8 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
 
       // If no active ride exists, create one now!
       if (!rideId) {
-        // Defaulting to 'dock-1' for free-floating mock
-        const newRide = await ridesService.reserve(bikeId, 'dock-1');
+        // Use dynamic hubId if the bike is currently docked, else pass undefined for free-floating
+        const newRide = await ridesService.reserve(bikeId, bikeHubId || undefined);
         setActiveRide(newRide);
         rideId = newRide.id;
       }
@@ -96,8 +114,8 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
 
       // If no active ride exists, create one now!
       if (!rideId) {
-        // Defaulting to 'dock-1' for free-floating mock
-        const newRide = await ridesService.reserve(bikeId, 'dock-1');
+        // Use dynamic hubId if the bike is currently docked, else pass undefined for free-floating
+        const newRide = await ridesService.reserve(bikeId, bikeHubId || undefined);
         setActiveRide(newRide);
         rideId = newRide.id;
         actualPin = newRide.bike?.currentPin;
