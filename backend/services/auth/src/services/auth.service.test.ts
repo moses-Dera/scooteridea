@@ -176,7 +176,7 @@ describe('AuthService.oauthGoogle', () => {
     }));
 
     const oauthUser = { ...mockUser, email: 'google-user@gmail.com', name: 'Google User' };
-    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue(oauthUser);
+    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue({ user: oauthUser, isNew: false });
     (getRedisClient as jest.Mock).mockResolvedValue(makeMockRedis());
 
     const tokens = await AuthService.oauthGoogle('valid-google-id-token');
@@ -204,7 +204,7 @@ describe('AuthService.oauthGoogle', () => {
     }));
 
     const oauthUser = { ...mockUser, email: 'noname@gmail.com', name: 'noname' };
-    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue(oauthUser);
+    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue({ user: oauthUser, isNew: false });
     (getRedisClient as jest.Mock).mockResolvedValue(makeMockRedis());
 
     await AuthService.oauthGoogle('valid-token');

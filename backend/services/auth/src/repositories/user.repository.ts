@@ -31,19 +31,26 @@ export class UserRepository {
     };
   }
 
-  static async findOrCreateOAuth(email: string, name: string): Promise<User> {
+  static async findOrCreateOAuth(email: string, name: string): Promise<{ user: User, isNew: boolean }> {
     let user = await prisma.user.findUnique({ where: { email } });
+    let isNew = false;
+    
     if (!user) {
       user = await prisma.user.create({ data: { email, name, role: 'RIDER' } });
+      isNew = true;
     }
+    
     return {
-      id:          user.id,
-      email:       user.email,
-      name:        user.name,
-      phone:       user.phone ?? undefined,
-      role:        user.role as User['role'],
-      walletCents: user.walletCents,
-      createdAt:   user.createdAt,
+      user: {
+        id:          user.id,
+        email:       user.email,
+        name:        user.name,
+        phone:       user.phone ?? undefined,
+        role:        user.role as User['role'],
+        walletCents: user.walletCents,
+        createdAt:   user.createdAt,
+      },
+      isNew
     };
   }
 

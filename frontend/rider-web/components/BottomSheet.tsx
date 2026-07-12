@@ -80,7 +80,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         )}
 
         {/* Content */}
-        <div className="px-6 py-6 pb-20">{children}</div>
+        <div className="px-6 py-6 pb-28">{children}</div>
       </div>
     </>
   )

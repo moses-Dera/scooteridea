@@ -11,16 +11,16 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^7.0.0",
     "@prisma/adapter-pg": "^7.0.0",
-    "pg": "^8.11.5",
-    "dotenv": "^16.4.0"
+    "@prisma/client": "^7.0.0",
+    "@yudiel/react-qr-scanner": "^2.6.0",
+    "dotenv": "^16.4.0",
+    "pg": "^8.11.5"
   },
   "devDependencies": {
-    "prisma": "^7.0.0",
+    "@types/node": "^20.0.0",
     "@types/pg": "^8.11.6",
-    "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
+    "prisma": "^7.0.0",
+    "typescript": "^5.4.0"
   }
 }
-

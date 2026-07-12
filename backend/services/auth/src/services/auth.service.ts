@@ -9,6 +9,7 @@ import bcrypt        from 'bcryptjs';
 import jwt           from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { OAuth2Client } from 'google-auth-library';
+import sgMail from '@sendgrid/mail';
 import {
   ConflictError,
   UnauthorizedError,
@@ -30,6 +31,27 @@ const REFRESH_TTL_S   = 30 * 24 * 60 * 60; // 30 days
 const BCRYPT_ROUNDS   = 12;
 
 export class AuthService {
+  // ── Email Helpers ─────────────────────────────────────────────────────────────
+  private static async sendWelcomeEmail(email: string, name: string): Promise<void> {
+    if (!process.env.SENDGRID_API_KEY) return;
+    
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+      to: email,
+      from: 'support@scooteridea.com',
+      subject: 'Welcome to Scooterfy! 🛴',
+      text: `Hi ${name},\n\nWelcome to Scooterfy! We're thrilled to have you on board. Start exploring the city with your first ride.\n\nThe Scooterfy Team`,
+      html: `<strong>Hi ${name},</strong><br><br>Welcome to Scooterfy! We're thrilled to have you on board. Start exploring the city with your first ride.<br><br>The Scooterfy Team`,
+    };
+
+    try {
+      await sgMail.send(msg);
+      logger.info({ email }, '[Auth] Welcome email sent successfully');
+    } catch (err) {
+      logger.error({ err }, '[Auth] Failed to send welcome email');
+    }
+  }
+
   // ── Register ─────────────────────────────────────────────────────────────────
   static async register(dto: RegisterDto): Promise<Omit<User, 'walletCents'>> {
     const existing = await UserRepository.findByEmail(dto.email);
@@ -39,6 +61,9 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user         = await UserRepository.create({ ...dto, passwordHash });
+
+    // Send welcome email asynchronously
+    AuthService.sendWelcomeEmail(user.email, user.name).catch(() => {});
 
     // Omit sensitive / internal fields before returning
     const { ...safeUser } = user;
@@ -124,7 +149,12 @@ export class AuthService {
       throw new UnauthorizedError('Invalid Google ID token');
     }
 
-    const user = await UserRepository.findOrCreateOAuth(email, name);
+    const { user, isNew } = await UserRepository.findOrCreateOAuth(email, name);
+    
+    if (isNew) {
+      AuthService.sendWelcomeEmail(user.email, user.name).catch(() => {});
+    }
+
     return AuthService.issueTokenPair(user);
   }
 
@@ -177,21 +207,40 @@ export class AuthService {
     await redis.setEx(`reset:${resetToken}`, 15 * 60, user.id);
     
     let redirectType = 'WEB_DASHBOARD';
-    let mockEmailLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
+    let resetLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
 
     if (user.role === 'RIDER') {
       redirectType = 'MOBILE_APP_DEEP_LINK';
-      mockEmailLink = `scooterapp://reset-password?token=${resetToken}`;
+      resetLink = `scooterapp://reset-password?token=${resetToken}`;
     }
     
     logger.info({ 
       userId: user.id, 
       role: user.role, 
-      resetToken, 
-      mockEmailLink 
-    }, '[Auth] Generated Password Reset Token (Simulating Email Send)');
+      resetToken 
+    }, '[Auth] Generated Password Reset Token');
 
-    // TODO: Integrate SES / SendGrid here to send real email based on role.
+    if (process.env.SENDGRID_API_KEY) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      
+      const msg = {
+        to: email,
+        from: 'support@scooteridea.com',
+        subject: 'Scooterfy Password Reset Request',
+        text: `You requested a password reset. Please click this link to reset your password: ${resetLink}. This link expires in 15 minutes.`,
+        html: `<strong>You requested a password reset.</strong><br><br>Please click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`,
+      };
+
+      try {
+        await sgMail.send(msg);
+        logger.info({ email }, '[Auth] SendGrid password reset email sent successfully');
+      } catch (error) {
+        logger.error({ err: error }, '[Auth] SendGrid failed to send password reset email');
+        // We don't throw an error here to prevent email enumeration attacks
+      }
+    } else {
+      logger.warn({ resetLink }, '[Auth] SENDGRID_API_KEY missing. Mocking email delivery in logs.');
+    }
     
     return { 
       message: 'If an account exists for that email, a reset link has been sent.',
@@ -224,6 +273,7 @@ export class AuthService {
   static async verifyAndTopUpWallet(userId: string, reference: string): Promise<Omit<User, 'passwordHash'>> {
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock';
     let amountCents = 0;
+    let authCode: string | undefined = undefined;
 
     // Call Paystack API to verify transaction
     try {
@@ -249,6 +299,11 @@ export class AuthService {
 
       // Paystack amount is in Kobo (which maps perfectly to our cents architecture for NGN)
       amountCents = data.data.amount;
+      
+      // Extract the authorization code for future auto-deductions (Tokenization)
+      if (data.data.authorization?.authorization_code) {
+        authCode = data.data.authorization.authorization_code;
+      }
     } catch (err: any) {
       logger.error({ err, reference }, 'Paystack verification failed');
       
@@ -277,7 +332,8 @@ export class AuthService {
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
-        walletCents: { increment: amountCents }
+        walletCents: { increment: amountCents },
+        ...(authCode ? { paystackAuthCode: authCode } : {})
       }
     });
 

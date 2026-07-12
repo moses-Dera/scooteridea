@@ -5,6 +5,7 @@ import { useLiveFleet } from '@/hooks/useLiveFleet'
 import { useNearbyDocks } from '@/hooks/useNearbyDocks'
 import { UnlockModal } from '@/components/UnlockModal'
 import { DestinationSearch } from '@/components/Map/DestinationSearch'
+import { QRScannerOverlay } from '@/components/panels/QRScannerOverlay'
 
 export default function RiderHome() {
   const searchParams = useSearchParams();
@@ -28,6 +29,16 @@ export default function RiderHome() {
       }, () => {}, { enableHighAccuracy: true });
     }
   }, []);
+
+  // Handle QR scanner state and redirect
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const unlockId = searchParams.get('unlock');
+  useEffect(() => {
+    if (unlockId) {
+      // If we got redirected from scanner with an ID, swap query params to trigger unlock modal
+      router.replace(`/?bike=${unlockId}&action=unlock`);
+    }
+  }, [unlockId, router]);
   
   // If previewing destination, fetch bikes near USER and docks near DESTINATION
   const originLat = isDestinationPreview ? userLoc?.lat : selectedLat;
@@ -77,6 +88,16 @@ export default function RiderHome() {
 
   return (
     <>
+      <QRScannerOverlay 
+        isOpen={isScannerOpen} 
+        onClose={() => setIsScannerOpen(false)} 
+        onManualEntryClick={() => {
+          // Open manual entry modal (can just trigger a generic prompt for MVP)
+          const manualId = window.prompt("Enter Scooter ID (e.g. SCT123)");
+          if (manualId) router.push(`/?bike=${manualId}&action=unlock`);
+        }} 
+      />
+
       {action === 'unlock' && bikeId && (
         <UnlockModal bikeId={bikeId} onClose={() => router.push(`/?bike=${bikeId}`)} />
       )}
@@ -107,7 +128,7 @@ export default function RiderHome() {
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-2">
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-12">
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center justify-center text-center">
@@ -167,7 +188,7 @@ export default function RiderHome() {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-2">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-12">
           {/* Bike Hero SVG Illustration */}
           <div className="w-full h-[180px] shrink-0 relative mt-2 flex items-center justify-center group cursor-pointer">
             {/* Dynamic Background Glow */}
@@ -278,9 +299,14 @@ export default function RiderHome() {
             </button>
             
             <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-400 font-medium tracking-wide">
-              <span className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Scan QR</span>
+              <span onClick={() => setIsScannerOpen(true)} className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Scan QR</span>
               <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-              <span className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> Enter PIN</span>
+              <span 
+                onClick={() => {
+                  const manualId = window.prompt("Enter Scooter ID (e.g. SCT123)");
+                  if (manualId) router.push(`/?bike=${manualId}&action=unlock`);
+                }}
+                className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> Enter Bike ID</span>
               <span className="w-1 h-1 rounded-full bg-slate-600"></span>
               <span 
                 onClick={() => router.push(`/?bike=${selectedBike!.id}&lat=${selectedBike.lat}&lng=${selectedBike.lng}&navigate=true`)}
@@ -321,7 +347,7 @@ export default function RiderHome() {
             </button>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-2">
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide flex flex-col gap-6 -mx-2 px-2 pb-12">
             {/* Smart Trip Validation UI */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
               

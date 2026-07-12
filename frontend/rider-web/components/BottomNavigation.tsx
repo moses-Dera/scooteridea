@@ -25,6 +25,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items }) => 
         sm:static sm:border-t-0 sm:border-r
         flex sm:flex-col
         sm:w-64 sm:h-screen
+        pb-6 sm:pb-0
       `}
     >
       {items.map((item) => {
