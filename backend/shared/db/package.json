@@ -8,7 +8,11 @@
     "db:generate": "DATABASE_URL=postgresql://dummy:dummy@localhost/dummy prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "npx ts-node seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.0",
