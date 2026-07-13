@@ -98,8 +98,12 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Hardware Simulation Console</h1>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage virtual fleet and telemetry injection</p>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
+                Hardware Simulation Console
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Manage virtual fleet and telemetry injection
+              </p>
             </div>
             <div className="flex items-center gap-3">
               {connected ? (
@@ -119,7 +123,9 @@ export default function Dashboard() {
           {!connected && (
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end w-full max-w-md">
               <div className="flex-1 w-full">
-                <label className="block text-xs font-medium text-slate-700 mb-1">Target Endpoint</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Target Endpoint
+                </label>
                 <input
                   type="text"
                   value={brokerUrl}
@@ -148,11 +154,12 @@ export default function Dashboard() {
 
       {connected && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          
           {/* Controls Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
             <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
-              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 mb-3 sm:mb-4 uppercase tracking-wider">Provision Virtual Bike</h2>
+              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 mb-3 sm:mb-4 uppercase tracking-wider">
+                Provision Virtual Bike
+              </h2>
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="text"
@@ -172,7 +179,9 @@ export default function Dashboard() {
             </div>
 
             <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm">
-              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 mb-3 sm:mb-4 uppercase tracking-wider">Provision Virtual Dock</h2>
+              <h2 className="text-xs sm:text-sm font-semibold text-slate-900 mb-3 sm:mb-4 uppercase tracking-wider">
+                Provision Virtual Dock
+              </h2>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex gap-2 w-full sm:w-auto sm:flex-1">
                   <input
@@ -208,7 +217,7 @@ export default function Dashboard() {
                 {Object.keys(bikes).length} Instances Running
               </span>
             </div>
-            
+
             {Object.keys(bikes).length === 0 ? (
               <div className="bg-slate-50 rounded-xl p-12 text-center text-slate-500 border border-slate-200 border-dashed">
                 <p>No active bike instances. Provision a new bike to begin simulation.</p>
@@ -216,7 +225,10 @@ export default function Dashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {Object.values(bikes).map((bike) => (
-                  <div key={bike.bike_id} className="relative bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5">
+                  <div
+                    key={bike.bike_id}
+                    className="relative bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5"
+                  >
                     <BikeCard bike={bike} onCommand={sendCommand} />
                     <button
                       onClick={() => removeBike(bike.bike_id)}
@@ -255,7 +267,9 @@ export default function Dashboard() {
 
       {!connected && (
         <div className="max-w-7xl mx-auto px-6 py-24 text-center text-slate-500">
-          <p className="text-lg">Connect to the simulator endpoint to initialize the environment.</p>
+          <p className="text-lg">
+            Connect to the simulator endpoint to initialize the environment.
+          </p>
         </div>
       )}
     </div>

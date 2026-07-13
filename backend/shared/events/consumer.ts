@@ -11,12 +11,9 @@ export function createConsumer(groupId?: string) {
 
   return {
     /** Connect and subscribe to one or more topics, then start processing. */
-    async subscribe(
-      topics: string[],
-      handler: MessageHandler<unknown>,
-    ): Promise<void> {
+    async subscribe(topics: string[], handler: MessageHandler<unknown>): Promise<void> {
       await subscriber.subscribe(...topics);
-      
+
       subscriber.on('message', async (channel, message) => {
         if (!topics.includes(channel)) return;
         try {
@@ -26,7 +23,7 @@ export function createConsumer(groupId?: string) {
           console.error(`[Redis Subscriber] Failed to process message from ${channel}`, err);
         }
       });
-      
+
       console.log(`[Redis Subscriber] Subscribed to ${topics.join(', ')}`);
     },
     async disconnect() {

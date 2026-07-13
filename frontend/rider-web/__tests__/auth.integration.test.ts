@@ -1,6 +1,6 @@
 /**
  * Integration Tests for BFF + NextAuth Authentication
- * 
+ *
  * Tests verify:
  * 1. NextAuth session creation and HTTPOnly cookie storage
  * 2. BFF proxy forwards authenticated requests with JWT
@@ -20,7 +20,7 @@ describe('Authentication Integration Tests', () => {
       // 2. Backend /auth/login returns accessToken + refreshToken
       // 3. NextAuth callback stores tokens in session
       // 4. Session cookie set with HTTPOnly, secure, sameSite flags
-      
+
       const result = await signIn('credentials', {
         email: 'test@example.com',
         password: 'TestPass123!',
@@ -41,7 +41,7 @@ describe('Authentication Integration Tests', () => {
       // 2. Extract accessToken from session
       // 3. Add "Bearer {token}" to Authorization header
       // 4. Forward request to backend with JWT
-      
+
       const session = await getServerSession();
       expect(session).toBeDefined();
       expect((session as any).accessToken).toBeDefined();
@@ -81,7 +81,7 @@ describe('Authentication Integration Tests', () => {
       // 3. NextAuth callback sends to backend /auth/oauth/google
       // 4. Backend exchanges for platform JWT
       // 5. NextAuth stores in HTTPOnly cookie
-      
+
       const result = await signIn('google', { redirect: false });
       // Note: Requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars
       expect(true).toBe(true);
@@ -96,7 +96,7 @@ describe('Authentication Integration Tests', () => {
       // 3. Backend returns new accessToken
       // 4. Update session with new token
       // 5. Next request uses new token
-      
+
       expect(true).toBe(true);
     });
   });
@@ -108,7 +108,7 @@ describe('Authentication Integration Tests', () => {
       // 2. HTTPOnly cookies cleared
       // 3. BFF proxy has no session for next request
       // 4. Subsequent API requests rejected (401)
-      
+
       await signOut({ redirect: false });
       // Verify cookies are cleared (browser automatically does this)
       expect(true).toBe(true);

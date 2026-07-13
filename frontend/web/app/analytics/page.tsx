@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
@@ -30,19 +30,19 @@ export default function AnalyticsOverview() {
         const [res, ridersRes, maintRes] = await Promise.all([
           fetch(`${baseUrl}/api/proxy/ride/analytics?timeRange=${timeRange}`),
           fetch(`${baseUrl}/api/proxy/ride/riders/top?limit=5`),
-          fetch(`${baseUrl}/api/proxy/fleet/maintenance?status=open`)
+          fetch(`${baseUrl}/api/proxy/fleet/maintenance?status=open`),
         ]);
 
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) setAnalytics(json.data);
         }
-        
+
         if (ridersRes.ok) {
           const json = await ridersRes.json();
           if (json.success && json.data) setRiders(json.data);
         }
-        
+
         if (maintRes.ok) {
           const json = await maintRes.json();
           if (json.success && json.data) setMaintenance(json.data);
@@ -63,7 +63,9 @@ export default function AnalyticsOverview() {
       <div className="flex justify-between items-start pb-6 border-b border-neutral-800">
         <div>
           <div className="text-3xl font-bold text-white">Platform Analytics</div>
-          <p className="text-sm text-neutral-400 mt-1">Real-time insights and performance metrics</p>
+          <p className="text-sm text-neutral-400 mt-1">
+            Real-time insights and performance metrics
+          </p>
         </div>
         <div className="flex gap-2 bg-neutral-900 border border-neutral-800 rounded-lg p-1">
           {['Today', 'Week', 'Month'].map((period) => (
@@ -159,17 +161,28 @@ export default function AnalyticsOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Riders */}
         <Card>
-          <CardHeader title={<span className="flex items-center gap-2"><Star className="w-4 h-4 text-yellow-500" /> Top Riders Today</span>} />
+          <CardHeader
+            title={
+              <span className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-yellow-500" /> Top Riders Today
+              </span>
+            }
+          />
           <CardContent>
             <div className="space-y-3">
               {riders.length > 0 ? (
                 riders.map((rider) => (
-                  <div key={rider.id} className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors">
+                  <div
+                    key={rider.id}
+                    className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors"
+                  >
                     <div>
                       <p className="text-white font-medium text-sm">{rider.name}</p>
                       <p className="text-xs text-neutral-400">{rider.rides_count} rides</p>
                     </div>
-                    <p className="text-emerald-400 font-bold text-sm">{(rider.total_distance / 1000).toFixed(1)} km</p>
+                    <p className="text-emerald-400 font-bold text-sm">
+                      {(rider.total_distance / 1000).toFixed(1)} km
+                    </p>
                   </div>
                 ))
               ) : (
@@ -181,12 +194,21 @@ export default function AnalyticsOverview() {
 
         {/* Maintenance Needed */}
         <Card>
-          <CardHeader title={<span className="flex items-center gap-2"><Wrench className="w-4 h-4" /> Bikes Needing Maintenance</span>} />
+          <CardHeader
+            title={
+              <span className="flex items-center gap-2">
+                <Wrench className="w-4 h-4" /> Bikes Needing Maintenance
+              </span>
+            }
+          />
           <CardContent>
             <div className="space-y-3">
               {maintenance.length > 0 ? (
                 maintenance.map((bike) => (
-                  <div key={bike.id} className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border-l-2 border-red-500/50">
+                  <div
+                    key={bike.id}
+                    className="flex justify-between items-center p-3 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border-l-2 border-red-500/50"
+                  >
                     <div>
                       <p className="text-white font-medium text-sm">{bike.bike_id}</p>
                       <p className="text-xs text-neutral-400">{bike.issue_type}</p>

@@ -40,6 +40,7 @@ This implementation replaces client-side JWT storage (localStorage) with a produ
 ## File Changes
 
 ### 1. NextAuth Configuration
+
 **File**: `/app/api/auth/[...nextauth]/route.ts`
 
 - **Credentials Provider**: Handles email/password login
@@ -55,6 +56,7 @@ This implementation replaces client-side JWT storage (localStorage) with a produ
   - Stores in NextAuth session
 
 - **HTTPOnly Cookie Configuration**:
+
   ```typescript
   cookies: {
     sessionToken: {
@@ -79,11 +81,14 @@ This implementation replaces client-side JWT storage (localStorage) with a produ
   ```
 
 ### 2. BFF Proxy Routes
-**Files**: 
+
+**Files**:
+
 - `/app/api/proxy/route.ts` (handles `/api/proxy/*`)
 - `/app/api/proxy/[...path]/route.ts` (dynamic routing)
 
 **What it does**:
+
 1. Intercepts all frontend API requests to `/api/proxy/*`
 2. Calls `getServerSession()` to get authenticated session
 3. Extracts `accessToken` from session
@@ -92,6 +97,7 @@ This implementation replaces client-side JWT storage (localStorage) with a produ
 6. Returns backend response to frontend
 
 **Example flow**:
+
 ```
 Frontend: GET /api/proxy/user/profile
    ↓
@@ -105,15 +111,18 @@ Frontend: Receives user data
 ```
 
 ### 3. API Client Configuration
+
 **File**: `/lib/api.ts`
 
 Changes:
+
 - **baseURL**: `/api/proxy` (not direct backend)
 - **withCredentials**: `true` (sends HTTPOnly cookies)
 - **Token functions**: Deprecated (return null)
 - **Error handling**: 401 redirects to `/login`
 
 Old flow:
+
 ```
 Frontend → stores JWT in localStorage
          → axios adds JWT header manually
@@ -122,6 +131,7 @@ Frontend → stores JWT in localStorage
 ```
 
 New flow:
+
 ```
 Frontend → browser stores JWT in HTTPOnly cookie
          → browser sends cookie automatically
@@ -132,9 +142,11 @@ Frontend → browser stores JWT in HTTPOnly cookie
 ```
 
 ### 4. Login Page Refactor
+
 **File**: `/app/login/page.tsx`
 
 Changes:
+
 - Removed manual `authApi.login()` calls
 - Uses `signIn('credentials')` for email/password
 - Uses `signIn('google')` for Google OAuth
@@ -144,7 +156,9 @@ Changes:
 ## Security Benefits
 
 ### 1. XSS Protection (HTTPOnly Cookies)
+
 - **Before**: localStorage vulnerable to JavaScript injection
+
   ```javascript
   // XSS attacker can do this:
   const token = localStorage.getItem('token');
@@ -159,16 +173,19 @@ Changes:
   ```
 
 ### 2. CSRF Protection (SameSite Cookie)
+
 - Cookie sent only for same-site requests
 - Prevents cross-site form submissions from stealing authentication
 - SameSite=Lax allows normal navigation (user clicks link)
 
 ### 3. HTTPS Enforcement (Secure Flag)
+
 - Secure flag ensures cookie only sent over HTTPS
 - Prevents man-in-the-middle attacks
 - Enabled in production
 
 ### 4. Session Isolation
+
 - All authentication state on server (NextAuth session)
 - Client never handles raw JWT
 - Token refresh done server-side before token expires
@@ -191,6 +208,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ## Testing the Authentication Flow
 
 ### 1. Email/Password Login
+
 ```bash
 curl -X POST http://localhost:3010/api/auth/callback/credentials \
   -H "Content-Type: application/json" \
@@ -198,20 +216,23 @@ curl -X POST http://localhost:3010/api/auth/callback/credentials \
 ```
 
 ### 2. Check Session (Server-side only)
-```typescript
-import { getServerSession } from 'next-auth/next'
 
-const session = await getServerSession()
-console.log(session?.accessToken) // JWT from session
+```typescript
+import { getServerSession } from 'next-auth/next';
+
+const session = await getServerSession();
+console.log(session?.accessToken); // JWT from session
 ```
 
 ### 3. Make API Request Through BFF
+
 ```bash
 curl -X GET http://localhost:3010/api/proxy/user/profile \
-  --cookie "__Secure-next-auth.session-token=..." 
+  --cookie "__Secure-next-auth.session-token=..."
 ```
 
 ### 4. Verify HTTPOnly Cookie
+
 1. Open browser DevTools (F12)
 2. Go to Application → Cookies
 3. Look for `__Secure-next-auth.session-token` or `next-auth.session-token`
@@ -225,25 +246,29 @@ curl -X GET http://localhost:3010/api/proxy/user/profile \
 ## Troubleshooting
 
 ### Issue: "NEXTAUTH_URL not set"
+
 - **Fix**: Add NEXTAUTH_URL to .env.local
   ```bash
   NEXTAUTH_URL=http://localhost:3010
   ```
 
 ### Issue: "NEXTAUTH_SECRET not set"
+
 - **Fix**: Add NEXTAUTH_SECRET to .env.local
   ```bash
   NEXTAUTH_SECRET=$(openssl rand -base64 32)
   ```
 
 ### Issue: Backend returns 401 Unauthorized
+
 - **Cause**: BFF proxy JWT not included or expired
-- **Fix**: 
+- **Fix**:
   1. Check NextAuth session exists: `console.log(session)`
   2. Check backend expects Bearer token format
   3. Verify token not expired
 
 ### Issue: Cookie not being sent to backend
+
 - **Cause**: CORS or credentials issue
 - **Fix**:
   1. Ensure backend CORS allows credentials
@@ -251,6 +276,7 @@ curl -X GET http://localhost:3010/api/proxy/user/profile \
   3. Check cookie domain matches
 
 ### Issue: "XSS Attack" warning in production
+
 - **Cause**: Forgot to set HTTPS
 - **Fix**: Deploy with HTTPS, update NEXTAUTH_URL to https://...
 
@@ -259,6 +285,7 @@ curl -X GET http://localhost:3010/api/proxy/user/profile \
 If updating existing code that uses localStorage:
 
 1. **Remove token management**:
+
    ```diff
    - const token = localStorage.getItem('token')
    - headers['Authorization'] = `Bearer ${token}`
@@ -266,12 +293,14 @@ If updating existing code that uses localStorage:
    ```
 
 2. **Update API client baseURL**:
+
    ```diff
    - baseURL: 'http://localhost:3001'
    + baseURL: '/api/proxy'
    ```
 
 3. **Use NextAuth for auth state**:
+
    ```diff
    - const { user } = useAuthStore()
    + const { data: session } = useSession()
@@ -281,7 +310,7 @@ If updating existing code that uses localStorage:
    ```diff
    - await authApi.login(email, password)
    + await signIn('credentials', { email, password })
-   
+
    - localStorage.clear()
    + await signOut()
    ```

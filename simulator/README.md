@@ -30,17 +30,21 @@ npm run docks   # Docks only
 ## MQTT Topics
 
 ### Published by Bikes
+
 - `bikes/{bike_id}/telemetry` - GPS, battery, lock status (every 3-5s)
 
 ### Published by Docks
+
 - `docks/{dock_id}/status` - Slot availability, charging status (every 10s)
 
 ### Commands for Bikes (subscribe)
+
 - `bikes/{bike_id}/commands` - UNLOCK, LOCK, ALARM, DISABLE, SPEED_LIMIT, LOCATE
 
 ## Example Telemetry
 
 ### Bike
+
 ```json
 {
   "bike_id": "BK-00123",
@@ -56,6 +60,7 @@ npm run docks   # Docks only
 ```
 
 ### Dock
+
 ```json
 {
   "dock_id": "DOCK-007",

@@ -2,40 +2,40 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding docks in Lagos...");
-  
+  console.log('Seeding docks in Lagos...');
+
   await prisma.dock.createMany({
     data: [
       {
-        name: "Lagos Island Dock",
-        location_lat: 6.4530,
-        location_lng: 3.3800,
+        name: 'Lagos Island Dock',
+        location_lat: 6.453,
+        location_lng: 3.38,
         total_slots: 10,
-        available_slots: 5
+        available_slots: 5,
       },
       {
-        name: "Marina Dock",
-        location_lat: 6.4500,
-        location_lng: 3.3850,
+        name: 'Marina Dock',
+        location_lat: 6.45,
+        location_lng: 3.385,
         total_slots: 15,
-        available_slots: 15
+        available_slots: 15,
       },
       {
-        name: "Eko Atlantic Dock",
-        location_lat: 6.4350,
-        location_lng: 3.3950,
+        name: 'Eko Atlantic Dock',
+        location_lat: 6.435,
+        location_lng: 3.395,
         total_slots: 20,
-        available_slots: 12
-      }
+        available_slots: 12,
+      },
     ],
-    skipDuplicates: true
+    skipDuplicates: true,
   });
 
-  console.log("Docks seeded successfully!");
+  console.log('Docks seeded successfully!');
 }
 
 main()
-  .catch(e => console.error(e))
+  .catch((e) => console.error(e))
   .finally(async () => {
     await prisma.$disconnect();
   });

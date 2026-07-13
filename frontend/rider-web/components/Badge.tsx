@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import React from 'react'
+import React from 'react';
 
-type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral'
+type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: BadgeVariant
-  children: React.ReactNode
+  variant?: BadgeVariant;
+  children: React.ReactNode;
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
@@ -15,7 +15,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   warning: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
   info: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
   neutral: 'bg-neutral-700 text-neutral-200 border border-neutral-600',
-}
+};
 
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
   ({ variant = 'neutral', className = '', children, ...props }, ref) => {
@@ -31,8 +31,8 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       >
         {children}
       </span>
-    )
-  }
-)
+    );
+  },
+);
 
-Badge.displayName = 'Badge'
+Badge.displayName = 'Badge';

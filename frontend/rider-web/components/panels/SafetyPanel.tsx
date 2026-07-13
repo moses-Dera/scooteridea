@@ -10,8 +10,18 @@ export default function SafetyPanel({ onClose }: { onClose: () => void }) {
             onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'menu' }))}
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
-            <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-5 h-5 text-slate-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <div className="text-2xl font-bold flex items-center gap-2">
@@ -23,17 +33,27 @@ export default function SafetyPanel({ onClose }: { onClose: () => void }) {
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
         >
           <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
 
-      <a href="tel:112" className="w-full bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 text-red-400 font-bold hover:bg-red-500/20 transition-colors">
+      <a
+        href="tel:112"
+        className="w-full bg-red-500/10 border border-red-500/30 p-4 rounded-2xl flex items-center justify-center gap-3 text-red-400 font-bold hover:bg-red-500/20 transition-colors"
+      >
         <Phone className="w-5 h-5" /> Emergency SOS (112)
       </a>
 
       <div>
-        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 mt-2">The Golden Rules</div>
+        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 mt-2">
+          The Golden Rules
+        </div>
         <div className="space-y-3">
           <div className="glass-panel p-4 rounded-2xl border border-white/5 flex items-start gap-4">
             <div className="w-10 h-10 rounded-full bg-primary/20 flex flex-shrink-0 items-center justify-center text-primary">
@@ -41,7 +61,10 @@ export default function SafetyPanel({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <div className="font-bold text-white mb-1">Wear a Helmet</div>
-              <div className="text-xs text-slate-400">Always protect your head. We strongly recommend bringing your own helmet for every ride.</div>
+              <div className="text-xs text-slate-400">
+                Always protect your head. We strongly recommend bringing your own helmet for every
+                ride.
+              </div>
             </div>
           </div>
 
@@ -51,7 +74,9 @@ export default function SafetyPanel({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <div className="font-bold text-white mb-1">One Rider Per Vehicle</div>
-              <div className="text-xs text-slate-400">Tandem riding is illegal and highly dangerous. Keep it to one person per scooter.</div>
+              <div className="text-xs text-slate-400">
+                Tandem riding is illegal and highly dangerous. Keep it to one person per scooter.
+              </div>
             </div>
           </div>
 
@@ -61,7 +86,10 @@ export default function SafetyPanel({ onClose }: { onClose: () => void }) {
             </div>
             <div>
               <div className="font-bold text-white mb-1">Ride in Bike Lanes</div>
-              <div className="text-xs text-slate-400">Stay off the sidewalks. Use bike lanes whenever available, and follow all local traffic laws.</div>
+              <div className="text-xs text-slate-400">
+                Stay off the sidewalks. Use bike lanes whenever available, and follow all local
+                traffic laws.
+              </div>
             </div>
           </div>
         </div>

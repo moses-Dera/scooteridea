@@ -11,7 +11,7 @@ export class DockService {
     getMqttClient();
 
     subscribeToTopic('docks/+/status', async (topic, raw) => {
-      const dockId  = topic.split('/')[1];
+      const dockId = topic.split('/')[1];
       const payload = JSON.parse(raw) as DockTelemetryPayload;
       await DockService.handleDockTelemetry(dockId, payload);
     });
@@ -22,10 +22,7 @@ export class DockService {
   /**
    * Core dock telemetry handler — mirrors backend_architecture.md §3.7
    */
-  static async handleDockTelemetry(
-    dockId: string,
-    payload: DockTelemetryPayload,
-  ): Promise<void> {
+  static async handleDockTelemetry(dockId: string, payload: DockTelemetryPayload): Promise<void> {
     const redis = await getRedisClient();
     const { slots, available_slots, total_slots } = payload;
 
@@ -39,16 +36,18 @@ export class DockService {
       if (!prevSlot) return true;
       try {
         return JSON.parse(prevSlot).bikeId !== s.bikeId;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     });
 
     // 2. Confirm ride-end for each newly docked bike via internal HTTP or Kafka
     for (const slot of newlyDocked) {
       if (slot.bikeId) {
         await kafka.fleetCommand({
-          bikeId:  slot.bikeId,
+          bikeId: slot.bikeId,
           command: 'LOCK',
-          ts:      Date.now(),
+          ts: Date.now(),
         });
         // Ride service listens to fleet.command events and calls confirmDockIn
         console.log(`[Dock] Bike ${slot.bikeId} docked at ${dockId} slot ${slot.slot}`);
@@ -58,7 +57,7 @@ export class DockService {
     // 3. Update Redis dock state
     await redis.hSet(`dock:${dockId}:status`, {
       available_slots: available_slots.toString(),
-      total_slots:     total_slots.toString(),
+      total_slots: total_slots.toString(),
     });
 
     for (const slot of slots) {
@@ -79,10 +78,15 @@ export class DockService {
 
     // 5. Rebalancing alerts
     const pct = available_slots / total_slots;
-    if (pct <= 0.1) await kafka.opsAlert({ type: 'DOCK_FULL',  dockId, ts: Date.now() });
+    if (pct <= 0.1) await kafka.opsAlert({ type: 'DOCK_FULL', dockId, ts: Date.now() });
     if (pct >= 0.9) await kafka.opsAlert({ type: 'DOCK_EMPTY', dockId, ts: Date.now() });
 
     // 6. Emit dock status event for WS Hub
-    await kafka.dockStatus({ dockId, availableSlots: available_slots, totalSlots: total_slots, ts: Date.now() });
+    await kafka.dockStatus({
+      dockId,
+      availableSlots: available_slots,
+      totalSlots: total_slots,
+      ts: Date.now(),
+    });
   }
 }

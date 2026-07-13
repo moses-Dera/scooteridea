@@ -12,13 +12,14 @@ import pinoHttp from 'pino-http';
 import { Request } from 'express';
 
 const SERVICE_NAME = process.env.SERVICE_NAME ?? 'ebike-service';
-const LOG_LEVEL    = process.env.LOG_LEVEL    ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+const LOG_LEVEL =
+  process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
 
 const baseOptions: LoggerOptions = {
   level: LOG_LEVEL,
   base: {
     service: SERVICE_NAME,
-    env:     process.env.NODE_ENV ?? 'development',
+    env: process.env.NODE_ENV ?? 'development',
   },
   // Production: pure JSON. Development: human-readable.
   transport:
@@ -58,17 +59,15 @@ export const httpLogger = pinoHttp({
   // Attach requestId from header (injected by our requestId middleware)
   customProps: (req: Request) => ({
     requestId: req.headers['x-request-id'] ?? 'unknown',
-    userId:    req.headers['x-user-id']    ?? undefined,
+    userId: req.headers['x-user-id'] ?? undefined,
   }),
   customLogLevel: (_req, res, err) => {
     if (err || res.statusCode >= 500) return 'error';
-    if (res.statusCode >= 400)        return 'warn';
+    if (res.statusCode >= 400) return 'warn';
     return 'info';
   },
-  customSuccessMessage: (req, res) =>
-    `${req.method} ${req.url} → ${res.statusCode}`,
-  customErrorMessage: (_req, _res, err) =>
-    `Request failed: ${err.message}`,
+  customSuccessMessage: (req, res) => `${req.method} ${req.url} → ${res.statusCode}`,
+  customErrorMessage: (_req, _res, err) => `Request failed: ${err.message}`,
   // Silence health checks to avoid log noise
   autoLogging: {
     ignore: (req) => req.url === '/health',

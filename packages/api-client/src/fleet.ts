@@ -19,7 +19,7 @@ export const fleetApi = {
    */
   getNearbyBikes: async (lat: number, lng: number, radiusKm: number = 2): Promise<Bike[]> => {
     const { data } = await apiClient.get<Bike[]>('/api/fleet/nearby', {
-      params: { lat, lng, radius: radiusKm }
+      params: { lat, lng, radius: radiusKm },
     });
     return data;
   },
@@ -28,15 +28,15 @@ export const fleetApi = {
    * Fetches the complete fleet snapshot (operator dashboard)
    */
   getAllBikes: async (): Promise<Bike[]> => {
-    const { data } = await apiClient.get<{ success: boolean, data: Bike[] }>('/api/fleet/bikes');
+    const { data } = await apiClient.get<{ success: boolean; data: Bike[] }>('/api/fleet/bikes');
     return data.data;
   },
 
   /**
    * Unlocks a specific bike to start a ride
    */
-  unlockBike: async (bikeId: string): Promise<{ rideId: string, status: string }> => {
+  unlockBike: async (bikeId: string): Promise<{ rideId: string; status: string }> => {
     const { data } = await apiClient.post('/api/ride/unlock', { bikeId });
     return data;
-  }
+  },
 };

@@ -100,6 +100,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         user: state.user,
       }),
-    }
-  )
+    },
+  ),
 );

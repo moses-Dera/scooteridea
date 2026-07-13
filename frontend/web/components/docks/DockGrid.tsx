@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 
@@ -32,7 +32,7 @@ export function DockGridComponent() {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const token = localStorage.getItem('token') || '';
         const res = await fetch(`${baseUrl}/api/proxy/fleet/docks`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
 
         if (!res.ok) throw new Error(`Failed to fetch docks: ${res.statusText}`);
@@ -62,7 +62,8 @@ export function DockGridComponent() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {docks.map((dock) => {
           const capacityPct = (dock.available_slots / dock.total_slots) * 100;
-          const capacityColor = capacityPct > 50 ? 'bg-green-600' : capacityPct > 20 ? 'bg-yellow-600' : 'bg-red-600';
+          const capacityColor =
+            capacityPct > 50 ? 'bg-green-600' : capacityPct > 20 ? 'bg-yellow-600' : 'bg-red-600';
 
           return (
             <div

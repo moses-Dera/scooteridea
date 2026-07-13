@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create } from 'zustand';
 
 interface RideState {
   activeRide: null | {
@@ -15,20 +15,22 @@ interface RideState {
 
 export const useRideStore = create<RideState>((set) => ({
   activeRide: null,
-  
-  startRide: (bikeId, surge) => set({
-    activeRide: { 
-      id: `ride-${Date.now()}`, 
-      bikeId, 
-      startTime: Date.now(), 
-      cost: 0, 
-      surge 
-    }
-  }),
-  
+
+  startRide: (bikeId, surge) =>
+    set({
+      activeRide: {
+        id: `ride-${Date.now()}`,
+        bikeId,
+        startTime: Date.now(),
+        cost: 0,
+        surge,
+      },
+    }),
+
   endRide: () => set({ activeRide: null }),
-  
-  updateCost: (cost) => set((state) => ({
-    activeRide: state.activeRide ? { ...state.activeRide, cost } : null
-  }))
-}))
+
+  updateCost: (cost) =>
+    set((state) => ({
+      activeRide: state.activeRide ? { ...state.activeRide, cost } : null,
+    })),
+}));

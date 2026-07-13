@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
-    console.error("Missing GOOGLE_MAPS_API_KEY in environment variables.");
+    console.error('Missing GOOGLE_MAPS_API_KEY in environment variables.');
     return NextResponse.json({ error: 'Missing API Key' }, { status: 500 });
   }
 
@@ -20,15 +20,18 @@ export async function GET(request: Request) {
     const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${encodeURIComponent(mode)}&key=${apiKey}`;
     const res = await fetch(url);
     const data = await res.json();
-    
+
     if (data.status !== 'OK') {
-      console.error("Google Directions API Error:", data.status, data.error_message);
-      return NextResponse.json({ error: data.error_message || 'Failed to fetch directions', status: data.status }, { status: 400 });
+      console.error('Google Directions API Error:', data.status, data.error_message);
+      return NextResponse.json(
+        { error: data.error_message || 'Failed to fetch directions', status: data.status },
+        { status: 400 },
+      );
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Failed to fetch directions:", error);
+    console.error('Failed to fetch directions:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

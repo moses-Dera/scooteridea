@@ -121,7 +121,7 @@ export function useRideHistory(): UseRideHistory {
       const response = await rideApi.getHistory(pageNum, 20);
 
       const responseData = response.data as any;
-      setRides(Array.isArray(responseData) ? responseData : (responseData?.items || []));
+      setRides(Array.isArray(responseData) ? responseData : responseData?.items || []);
       setHasMore(response.pagination?.hasMore ?? false);
       setPage(pageNum);
     } catch (err) {
@@ -212,7 +212,7 @@ export function useWallet(): UseWallet {
       setError(null);
 
       const response = await userApi.getWallet();
-      setBalance(((response.data as any)?.balance) || 0);
+      setBalance((response.data as any)?.balance || 0);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch wallet';
       setError(message);

@@ -12,14 +12,14 @@ import type {
 
 // ── Topic Registry ────────────────────────────────────────────────────────────
 export const TOPICS = {
-  FLEET_TELEMETRY:  'fleet.telemetry',
-  DOCK_STATUS:      'dock.status',
-  RIDE_STARTED:     'ride.started',
-  RIDE_ENDED:       'ride.ended',
-  PAYMENT_CHARGE:   'payment.charge',
-  PAYMENT_RESULT:   'payment.result',
-  OPS_ALERT:        'ops.alert',
-  FLEET_COMMAND:    'fleet.command',
+  FLEET_TELEMETRY: 'fleet.telemetry',
+  DOCK_STATUS: 'dock.status',
+  RIDE_STARTED: 'ride.started',
+  RIDE_ENDED: 'ride.ended',
+  PAYMENT_CHARGE: 'payment.charge',
+  PAYMENT_RESULT: 'payment.result',
+  OPS_ALERT: 'ops.alert',
+  FLEET_COMMAND: 'fleet.command',
 } as const;
 
 // ── Redis instance (singleton) ────────────────────────────────────────────────
@@ -50,12 +50,12 @@ export async function publish<T extends object>(
 
 // ── Typed publishers ──────────────────────────────────────────────────────────
 export const kafka = {
-  fleetTelemetry:  (e: KafkaFleetTelemetryEvent)  => publish(TOPICS.FLEET_TELEMETRY,  e, e.bikeId),
-  dockStatus:      (e: KafkaDockStatusEvent)       => publish(TOPICS.DOCK_STATUS,      e, e.dockId),
-  rideStarted:     (e: KafkaRideStartedEvent)      => publish(TOPICS.RIDE_STARTED,     e, e.rideId),
-  rideEnded:       (e: KafkaRideEndedEvent)        => publish(TOPICS.RIDE_ENDED,       e, e.rideId),
-  paymentCharge:   (e: KafkaPaymentChargeEvent)    => publish(TOPICS.PAYMENT_CHARGE,   e, e.rideId),
-  paymentResult:   (e: KafkaPaymentResultEvent)    => publish(TOPICS.PAYMENT_RESULT,   e, e.rideId),
-  opsAlert:        (e: KafkaOpsAlertEvent)         => publish(TOPICS.OPS_ALERT,        e),
-  fleetCommand:    (e: KafkaFleetCommandEvent)     => publish(TOPICS.FLEET_COMMAND,    e, e.bikeId),
+  fleetTelemetry: (e: KafkaFleetTelemetryEvent) => publish(TOPICS.FLEET_TELEMETRY, e, e.bikeId),
+  dockStatus: (e: KafkaDockStatusEvent) => publish(TOPICS.DOCK_STATUS, e, e.dockId),
+  rideStarted: (e: KafkaRideStartedEvent) => publish(TOPICS.RIDE_STARTED, e, e.rideId),
+  rideEnded: (e: KafkaRideEndedEvent) => publish(TOPICS.RIDE_ENDED, e, e.rideId),
+  paymentCharge: (e: KafkaPaymentChargeEvent) => publish(TOPICS.PAYMENT_CHARGE, e, e.rideId),
+  paymentResult: (e: KafkaPaymentResultEvent) => publish(TOPICS.PAYMENT_RESULT, e, e.rideId),
+  opsAlert: (e: KafkaOpsAlertEvent) => publish(TOPICS.OPS_ALERT, e),
+  fleetCommand: (e: KafkaFleetCommandEvent) => publish(TOPICS.FLEET_COMMAND, e, e.bikeId),
 };

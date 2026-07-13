@@ -31,11 +31,11 @@ export class AppError extends Error {
   constructor(message: string, options: AppErrorOptions = {}) {
     super(message);
     Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain
-    this.name         = this.constructor.name;
-    this.statusCode   = options.statusCode   ?? 500;
-    this.code         = options.code         ?? 'INTERNAL_ERROR';
+    this.name = this.constructor.name;
+    this.statusCode = options.statusCode ?? 500;
+    this.code = options.code ?? 'INTERNAL_ERROR';
     this.isOperational = options.isOperational ?? true;
-    this.context      = options.context      ?? {};
+    this.context = options.context ?? {};
 
     if (options.cause) this.cause = options.cause;
     Error.captureStackTrace(this, this.constructor);
@@ -94,8 +94,8 @@ export class RateLimitError extends AppError {
 export class InternalError extends AppError {
   constructor(message = 'Internal server error', cause?: Error, context?: Record<string, unknown>) {
     super(message, {
-      statusCode:    500,
-      code:          'INTERNAL_ERROR',
+      statusCode: 500,
+      code: 'INTERNAL_ERROR',
       isOperational: false,
       cause,
       context,
@@ -107,8 +107,8 @@ export class ServiceUnavailableError extends AppError {
   constructor(dependency: string) {
     super(`Service unavailable: ${dependency}`, {
       statusCode: 503,
-      code:       'SERVICE_UNAVAILABLE',
-      context:    { dependency },
+      code: 'SERVICE_UNAVAILABLE',
+      context: { dependency },
     });
   }
 }
@@ -117,8 +117,8 @@ export class GatewayTimeoutError extends AppError {
   constructor(dependency: string) {
     super(`Timeout waiting for: ${dependency}`, {
       statusCode: 504,
-      code:       'GATEWAY_TIMEOUT',
-      context:    { dependency },
+      code: 'GATEWAY_TIMEOUT',
+      context: { dependency },
     });
   }
 }

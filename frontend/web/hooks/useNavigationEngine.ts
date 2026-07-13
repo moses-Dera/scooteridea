@@ -34,7 +34,7 @@ export interface NavigationState {
 export function useNavigationEngine(
   startLocation: { lat: number; lng: number } | null,
   destination: { lat: number; lng: number } | null,
-  profile: NavigationProfile = 'walking'
+  profile: NavigationProfile = 'walking',
 ) {
   const [navState, setNavState] = useState<NavigationState>({
     isActive: false,
@@ -52,7 +52,7 @@ export function useNavigationEngine(
 
   useEffect(() => {
     if (!startLocation || !destination) {
-      setNavState(prev => ({ ...prev, isActive: false, routeGeoJSON: null }));
+      setNavState((prev) => ({ ...prev, isActive: false, routeGeoJSON: null }));
       return;
     }
 
@@ -64,14 +64,14 @@ export function useNavigationEngine(
         // We request overview=full to get a smooth polyline
         // We allow ferries because crossing the Lagos harbour via bridge is a 17km detour!
         const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startLocation.lng},${startLocation.lat};${destination.lng},${destination.lat}?geometries=geojson&steps=true&overview=full&access_token=${MAPBOX_TOKEN}`;
-        
+
         const res = await fetch(url);
         const data = await res.json();
-        
+
         if (data.routes && data.routes.length > 0) {
           const route = data.routes[0];
           const leg = route.legs[0]; // assuming single destination
-          
+
           setNavState({
             isActive: true,
             routeGeoJSON: route.geometry,

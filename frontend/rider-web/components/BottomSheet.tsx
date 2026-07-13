@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import React, { useEffect } from 'react'
+import React, { useEffect } from 'react';
 
 interface BottomSheetProps {
-  isOpen: boolean
-  onClose: () => void
-  title?: string
-  children: React.ReactNode
-  snapPoints?: number[]
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+  snapPoints?: number[];
 }
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -19,17 +19,17 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 }) => {
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = 'unset';
     }
 
     return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen])
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <>
@@ -62,12 +62,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               onClick={onClose}
               className="text-neutral-400 hover:text-white transition-colors"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -80,8 +75,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         )}
 
         {/* Content */}
-        <div className="px-6 py-6 pb-20">{children}</div>
+        <div className="px-6 py-6 pb-28">{children}</div>
       </div>
     </>
-  )
-}
+  );
+};

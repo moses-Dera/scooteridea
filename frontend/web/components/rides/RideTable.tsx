@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { FaClockRotateLeft, FaMapLocation, FaCoins } from 'react-icons/fa6';
@@ -91,19 +91,24 @@ export function RideTableComponent() {
             <tbody className="divide-y divide-slate-700">
               {rides.map((ride) => {
                 const statusColor = {
-                  'in_progress': 'bg-blue-900 text-blue-200',
-                  'completed': 'bg-green-900 text-green-200',
-                  'disputed': 'bg-red-900 text-red-200',
+                  in_progress: 'bg-blue-900 text-blue-200',
+                  completed: 'bg-green-900 text-green-200',
+                  disputed: 'bg-red-900 text-red-200',
                 }[ride.status];
 
                 return (
                   <tbody key={ride.id}>
-                    <tr className="hover:bg-slate-700 transition-colors cursor-pointer" onClick={() => setExpandedRide(expandedRide === ride.id ? null : ride.id)}>
+                    <tr
+                      className="hover:bg-slate-700 transition-colors cursor-pointer"
+                      onClick={() => setExpandedRide(expandedRide === ride.id ? null : ride.id)}
+                    >
                       <td className="px-4 py-3 text-white font-medium">{ride.rider_id}</td>
                       <td className="px-4 py-3 text-white">{ride.bike_id}</td>
                       <td className="px-4 py-3 text-slate-300">{ride.duration_minutes}m</td>
                       <td className="px-4 py-3 text-slate-300">{ride.distance_km.toFixed(1)} km</td>
-                      <td className="px-4 py-3 text-right text-white font-bold">₦{ride.fare_amount.toFixed(0)}</td>
+                      <td className="px-4 py-3 text-right text-white font-bold">
+                        ₦{ride.fare_amount.toFixed(0)}
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
                           {ride.status}
@@ -128,7 +133,9 @@ export function RideTableComponent() {
                                 <FaClockRotateLeft size={16} />
                                 <div>
                                   <p className="text-xs text-slate-400">Duration</p>
-                                  <p className="text-white font-bold">{ride.duration_minutes} minutes</p>
+                                  <p className="text-white font-bold">
+                                    {ride.duration_minutes} minutes
+                                  </p>
                                 </div>
                               </div>
 
@@ -136,7 +143,9 @@ export function RideTableComponent() {
                                 <FaMapLocation size={16} />
                                 <div>
                                   <p className="text-xs text-slate-400">Distance</p>
-                                  <p className="text-white font-bold">{ride.distance_km.toFixed(2)} km</p>
+                                  <p className="text-white font-bold">
+                                    {ride.distance_km.toFixed(2)} km
+                                  </p>
                                 </div>
                               </div>
 
@@ -144,7 +153,9 @@ export function RideTableComponent() {
                                 <FaCoins size={16} />
                                 <div>
                                   <p className="text-xs text-slate-400">Fare</p>
-                                  <p className="text-white font-bold">₦{ride.fare_amount.toFixed(0)}</p>
+                                  <p className="text-white font-bold">
+                                    ₦{ride.fare_amount.toFixed(0)}
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -180,7 +191,8 @@ export function RideTableComponent() {
                           {ride.status === 'disputed' && (
                             <div className="mt-4 p-3 bg-red-900 rounded-lg">
                               <p className="text-red-200 text-sm">
-                                ⚠️ This ride has been disputed. Review flagged for further investigation.
+                                ⚠️ This ride has been disputed. Review flagged for further
+                                investigation.
                               </p>
                               <button className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-bold">
                                 View Dispute Details

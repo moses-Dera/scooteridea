@@ -7,12 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ZodSchema, ZodError } from 'zod';
 import rateLimit from 'express-rate-limit';
 import * as Sentry from '@sentry/node';
-import {
-  AppError,
-  ValidationError,
-  isAppError,
-  isOperationalError,
-} from '../errors/AppError';
+import { AppError, ValidationError, isAppError, isOperationalError } from '../errors/AppError';
 import { logger } from '../logger';
 
 // ── 1. Request ID ─────────────────────────────────────────────────────────────
@@ -34,17 +29,17 @@ export function requestId(req: Request, res: Response, next: NextFunction): void
 //  Throws ValidationError (400) with full Zod issue list on failure.
 
 type ValidateSchemas = {
-  body?:   ZodSchema;
+  body?: ZodSchema;
   params?: ZodSchema;
-  query?:  ZodSchema;
+  query?: ZodSchema;
 };
 
 export function validate(schemas: ValidateSchemas) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
-      if (schemas.body)   req.body   = schemas.body.parse(req.body);
+      if (schemas.body) req.body = schemas.body.parse(req.body);
       if (schemas.params) req.params = schemas.params.parse(req.params);
-      if (schemas.query)  req.query  = schemas.query.parse(req.query);
+      if (schemas.query) req.query = schemas.query.parse(req.query);
       next();
     } catch (err) {
       if (err instanceof ZodError) {
@@ -60,11 +55,7 @@ export function validate(schemas: ValidateSchemas) {
 //  Eliminates the need for try/catch in every controller method.
 //  Usage:  router.get('/', asyncHandler(async (req, res) => { ... }))
 
-type AsyncRequestHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => Promise<void>;
+type AsyncRequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<void>;
 
 export function asyncHandler(fn: AsyncRequestHandler) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -76,10 +67,12 @@ export function asyncHandler(fn: AsyncRequestHandler) {
 //  Mount AFTER all routes to catch unmatched paths.
 
 export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
-  next(new AppError(`Route not found: ${req.method} ${req.url}`, {
-    statusCode: 404,
-    code:       'ROUTE_NOT_FOUND',
-  }));
+  next(
+    new AppError(`Route not found: ${req.method} ${req.url}`, {
+      statusCode: 404,
+      code: 'ROUTE_NOT_FOUND',
+    }),
+  );
 }
 
 // ── 5. Global Error Handler ───────────────────────────────────────────────────
@@ -92,14 +85,9 @@ export function notFoundHandler(req: Request, _res: Response, next: NextFunction
 //    - Prisma errors             → map known codes to AppError
 //    - Unknown Error             → log error, return 500 (never leak stack in prod)
 
-export function errorHandler(
-  err: unknown,
-  req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction): void {
   const requestId = req.headers['x-request-id'] as string;
-  const userId    = req.headers['x-user-id']    as string | undefined;
+  const userId = req.headers['x-user-id'] as string | undefined;
 
   // ── Normalise ──────────────────────────────────────────────────────────────
   let appErr: AppError;
@@ -112,15 +100,15 @@ export function errorHandler(
     appErr = mapPrismaError(err);
   } else if (err instanceof Error) {
     appErr = new AppError(err.message, {
-      statusCode:    500,
-      code:          'INTERNAL_ERROR',
+      statusCode: 500,
+      code: 'INTERNAL_ERROR',
       isOperational: false,
-      cause:         err,
+      cause: err,
     });
   } else {
     appErr = new AppError('An unexpected error occurred', {
-      statusCode:    500,
-      code:          'INTERNAL_ERROR',
+      statusCode: 500,
+      code: 'INTERNAL_ERROR',
       isOperational: false,
     });
   }
@@ -130,11 +118,11 @@ export function errorHandler(
     requestId,
     userId,
     err: {
-      name:    appErr.name,
-      code:    appErr.code,
+      name: appErr.name,
+      code: appErr.code,
       message: appErr.message,
       context: appErr.context,
-      stack:   appErr.stack,
+      stack: appErr.stack,
     },
   };
 
@@ -144,7 +132,7 @@ export function errorHandler(
     logger.error(logPayload, `[UNHANDLED] ${appErr.message}`);
     // Beam non-operational (500) crashes directly to Sentry
     Sentry.captureException(err instanceof Error ? err : appErr, {
-      tags: { requestId, userId, errorCode: appErr.code }
+      tags: { requestId, userId, errorCode: appErr.code },
     });
   }
 
@@ -153,9 +141,9 @@ export function errorHandler(
   const isProduction = process.env.NODE_ENV === 'production';
 
   const body: Record<string, unknown> = {
-    success:   false,
-    error:     appErr.code,
-    message:   isOperationalError(appErr) ? appErr.message : 'An unexpected error occurred',
+    success: false,
+    error: appErr.code,
+    message: isOperationalError(appErr) ? appErr.message : 'An unexpected error occurred',
     requestId,
   };
 
@@ -176,29 +164,37 @@ export function errorHandler(
 
 /** Standard API rate limiter (per IP). */
 export const standardRateLimiter = rateLimit({
-  windowMs:         60 * 1000,       // 1 minute
-  max:              100,
-  standardHeaders:  true,
-  legacyHeaders:    false,
-  message:          { success: false, error: 'RATE_LIMITED', message: 'Too many requests, please try again shortly.' },
-  skip:             (req) => req.path === '/health',
+  windowMs: 60 * 1000, // 1 minute
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'RATE_LIMITED',
+    message: 'Too many requests, please try again shortly.',
+  },
+  skip: (req) => req.path === '/health',
 });
 
 /** Authenticated user rate limiter (per X-User-ID header). */
 export const userRateLimiter = rateLimit({
-  windowMs:         60 * 1000,
-  max:              500,
-  keyGenerator:     (req) => (req.headers['x-user-id'] as string) ?? req.ip ?? 'unknown',
-  standardHeaders:  true,
-  legacyHeaders:    false,
-  message:          { success: false, error: 'RATE_LIMITED', message: 'Request limit reached.' },
+  windowMs: 60 * 1000,
+  max: 500,
+  keyGenerator: (req) => (req.headers['x-user-id'] as string) ?? req.ip ?? 'unknown',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'RATE_LIMITED', message: 'Request limit reached.' },
 });
 
 /** Strict limiter for sensitive auth endpoints. */
 export const authRateLimiter = rateLimit({
-  windowMs:         15 * 60 * 1000,  // 15 minutes
-  max:              10,
-  message:          { success: false, error: 'AUTH_RATE_LIMITED', message: 'Too many auth attempts. Please wait 15 minutes.' },
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: {
+    success: false,
+    error: 'AUTH_RATE_LIMITED',
+    message: 'Too many auth attempts. Please wait 15 minutes.',
+  },
 });
 
 // ── Prisma Error Mapping ──────────────────────────────────────────────────────
@@ -209,11 +205,7 @@ interface PrismaClientKnownRequestError extends Error {
 }
 
 function isPrismaError(err: unknown): err is PrismaClientKnownRequestError {
-  if (
-    typeof err !== 'object' ||
-    err === null ||
-    !('code' in err)
-  ) return false;
+  if (typeof err !== 'object' || err === null || !('code' in err)) return false;
   const code = (err as Record<string, unknown>).code;
   return typeof code === 'string' && code.startsWith('P');
 }
@@ -221,29 +213,30 @@ function isPrismaError(err: unknown): err is PrismaClientKnownRequestError {
 function mapPrismaError(err: PrismaClientKnownRequestError): AppError {
   switch (err.code) {
     case 'P2002':
-      return new AppError(
-        `Unique constraint violation: ${JSON.stringify(err.meta?.target)}`,
-        { statusCode: 409, code: 'CONFLICT', context: { prismaCode: err.code, meta: err.meta } },
-      );
+      return new AppError(`Unique constraint violation: ${JSON.stringify(err.meta?.target)}`, {
+        statusCode: 409,
+        code: 'CONFLICT',
+        context: { prismaCode: err.code, meta: err.meta },
+      });
     case 'P2025':
       return new AppError('Record not found', {
         statusCode: 404,
-        code:       'NOT_FOUND',
-        context:    { prismaCode: err.code, meta: err.meta },
+        code: 'NOT_FOUND',
+        context: { prismaCode: err.code, meta: err.meta },
       });
     case 'P2003':
       return new AppError('Foreign key constraint failed', {
         statusCode: 409,
-        code:       'CONFLICT',
-        context:    { prismaCode: err.code, meta: err.meta },
+        code: 'CONFLICT',
+        context: { prismaCode: err.code, meta: err.meta },
       });
     default:
       return new AppError('Database operation failed', {
-        statusCode:    500,
-        code:          'DB_ERROR',
+        statusCode: 500,
+        code: 'DB_ERROR',
         isOperational: false,
-        context:       { prismaCode: err.code },
-        cause:         err,
+        context: { prismaCode: err.code },
+        cause: err,
       });
   }
 }

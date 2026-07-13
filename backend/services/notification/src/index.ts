@@ -11,7 +11,7 @@
 
 import 'dotenv/config';
 import express from 'express';
-import http    from 'http';
+import http from 'http';
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 
 import {
@@ -29,7 +29,7 @@ import { createConsumer, TOPICS } from '@ebike/events';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
 
 // ── App (health endpoint only) ────────────────────────────────────────────────
-const app  = express();
+const app = express();
 const PORT = Number(process.env.NOTIFICATION_PORT ?? process.env.PORT ?? 3007);
 
 process.env.SERVICE_NAME = 'notification-service';
@@ -103,15 +103,15 @@ async function sendPushNotification(
   }
 
   const message: ExpoPushMessage = {
-    to:    token,
+    to: token,
     sound: 'default',
     title,
     body,
-    data:  data ?? {},
+    data: data ?? {},
   };
 
   try {
-    const chunks  = expo.chunkPushNotifications([message]);
+    const chunks = expo.chunkPushNotifications([message]);
     const tickets: ExpoPushTicket[] = [];
 
     for (const chunk of chunks) {
@@ -125,7 +125,10 @@ async function sendPushNotification(
         if (ticket.details?.error === 'DeviceNotRegistered') {
           await deletePushToken(userId);
         } else {
-          logger.warn({ userId, error: ticket.details?.error, message: ticket.message }, '[Notification] Expo push error');
+          logger.warn(
+            { userId, error: ticket.details?.error, message: ticket.message },
+            '[Notification] Expo push error',
+          );
         }
       }
     }
@@ -213,11 +216,15 @@ async function startConsumer() {
 
 // ── Health Probes ─────────────────────────────────────────────────────────────
 registerProbe('redis_events', async () => ({ status: 'ok' }), { critical: false });
-registerProbe('redis', async () => {
-  const redis = await getRedisClient();
-  await redis.ping();
-  return { status: 'ok' };
-}, { critical: false }); // non-critical: push delivery degrades gracefully without Redis
+registerProbe(
+  'redis',
+  async () => {
+    const redis = await getRedisClient();
+    await redis.ping();
+    return { status: 'ok' };
+  },
+  { critical: false },
+); // non-critical: push delivery degrades gracefully without Redis
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
@@ -240,7 +247,7 @@ async function bootstrap(): Promise<void> {
   }
 
   registerCleanup('Events Consumer', () => consumer.disconnect());
-  registerCleanup('Redis',          () => disconnectRedis());
+  registerCleanup('Redis', () => disconnectRedis());
 
   const server = http.createServer(app);
   setupGracefulShutdown(server, 10_000);

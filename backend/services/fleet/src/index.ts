@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
-import helmet  from 'helmet';
-import cors    from 'cors';
-import http    from 'http';
+import helmet from 'helmet';
+import cors from 'cors';
+import http from 'http';
 
 import {
   httpLogger,
@@ -25,8 +25,8 @@ import { fleetRouter } from './routes/fleet.routes';
 import { FleetService } from './services/fleet.service';
 import { calculateBatteryEfficiency } from './services/efficiency.cron';
 
-const app    = express();
-const PORT   = Number(process.env.PORT ?? 3002);
+const app = express();
+const PORT = Number(process.env.PORT ?? 3002);
 process.env.SERVICE_NAME = 'fleet-service';
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
@@ -45,21 +45,36 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // ── Health Probes ─────────────────────────────────────────────────────────────
-registerProbe('postgres', async () => {
-  await prisma.$queryRaw`SELECT 1`;
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'postgres',
+  async () => {
+    await prisma.$queryRaw`SELECT 1`;
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
-registerProbe('redis', async () => {
-  const r = await getRedisClient();
-  await r.ping();
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'redis',
+  async () => {
+    const r = await getRedisClient();
+    await r.ping();
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
-registerProbe('mqtt', async () => {
-  const client = getMqttClient();
-  return { status: client.connected ? 'ok' : 'down', detail: client.connected ? undefined : 'MQTT broker disconnected' };
-}, { critical: false }); // non-critical: service can still serve REST while reconnecting
+registerProbe(
+  'mqtt',
+  async () => {
+    const client = getMqttClient();
+    return {
+      status: client.connected ? 'ok' : 'down',
+      detail: client.connected ? undefined : 'MQTT broker disconnected',
+    };
+  },
+  { critical: false },
+); // non-critical: service can still serve REST while reconnecting
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
@@ -82,17 +97,21 @@ async function bootstrap(): Promise<void> {
   calculateBatteryEfficiency().catch((err) =>
     logger.warn({ err }, '[Fleet] Initial efficiency calculation failed'),
   );
-  const efficiencyInterval = setInterval(() =>
-    calculateBatteryEfficiency().catch((err) =>
-      logger.warn({ err }, '[Fleet] Efficiency cron failed'),
-    ),
+  const efficiencyInterval = setInterval(
+    () =>
+      calculateBatteryEfficiency().catch((err) =>
+        logger.warn({ err }, '[Fleet] Efficiency cron failed'),
+      ),
     24 * 60 * 60_000, // 24 hours
   );
 
-  registerCleanup('Postgres',       () => prisma.$disconnect());
-  registerCleanup('Redis',          () => disconnectRedis());
+  registerCleanup('Postgres', () => prisma.$disconnect());
+  registerCleanup('Redis', () => disconnectRedis());
   registerCleanup('Events Producer', () => disconnectProducer());
-  registerCleanup('EfficiencyCron', () => { clearInterval(efficiencyInterval); return Promise.resolve(); });
+  registerCleanup('EfficiencyCron', () => {
+    clearInterval(efficiencyInterval);
+    return Promise.resolve();
+  });
 
   const server = http.createServer(app);
   setupGracefulShutdown(server, 10_000);

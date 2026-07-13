@@ -5,10 +5,11 @@
 //  The global error handler maps these to HTTP responses automatically.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import bcrypt        from 'bcryptjs';
-import jwt           from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { OAuth2Client } from 'google-auth-library';
+import sgMail from '@sendgrid/mail';
 import {
   ConflictError,
   UnauthorizedError,
@@ -22,14 +23,35 @@ import { getRedisClient } from '@ebike/redis';
 import { UserRepository } from '../repositories/user.repository';
 import type { LoginDto, RegisterDto, TokenPair, User, JwtPayload, UserRole } from '@ebike/types';
 
-const ACCESS_SECRET   = process.env.JWT_ACCESS_SECRET!;
-const REFRESH_SECRET  = process.env.JWT_REFRESH_SECRET ?? process.env.JWT_ACCESS_SECRET!;
-const ACCESS_EXPIRY   = process.env.JWT_ACCESS_EXPIRY  ?? '15m';
-const REFRESH_EXPIRY  = process.env.JWT_REFRESH_EXPIRY ?? '30d';
-const REFRESH_TTL_S   = 30 * 24 * 60 * 60; // 30 days
-const BCRYPT_ROUNDS   = 12;
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? process.env.JWT_ACCESS_SECRET!;
+const ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY ?? '15m';
+const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY ?? '30d';
+const REFRESH_TTL_S = 30 * 24 * 60 * 60; // 30 days
+const BCRYPT_ROUNDS = 12;
 
 export class AuthService {
+  // ── Email Helpers ─────────────────────────────────────────────────────────────
+  private static async sendWelcomeEmail(email: string, name: string): Promise<void> {
+    if (!process.env.SENDGRID_API_KEY) return;
+
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+      to: email,
+      from: 'support@scooteridea.com',
+      subject: 'Welcome to Scooterfy! 🛴',
+      text: `Hi ${name},\n\nWelcome to Scooterfy! We're thrilled to have you on board. Start exploring the city with your first ride.\n\nThe Scooterfy Team`,
+      html: `<strong>Hi ${name},</strong><br><br>Welcome to Scooterfy! We're thrilled to have you on board. Start exploring the city with your first ride.<br><br>The Scooterfy Team`,
+    };
+
+    try {
+      await sgMail.send(msg);
+      logger.info({ email }, '[Auth] Welcome email sent successfully');
+    } catch (err) {
+      logger.error({ err }, '[Auth] Failed to send welcome email');
+    }
+  }
+
   // ── Register ─────────────────────────────────────────────────────────────────
   static async register(dto: RegisterDto): Promise<Omit<User, 'walletCents'>> {
     const existing = await UserRepository.findByEmail(dto.email);
@@ -38,7 +60,10 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-    const user         = await UserRepository.create({ ...dto, passwordHash });
+    const user = await UserRepository.create({ ...dto, passwordHash });
+
+    // Send welcome email asynchronously
+    AuthService.sendWelcomeEmail(user.email, user.name).catch(() => {});
 
     // Omit sensitive / internal fields before returning
     const { ...safeUser } = user;
@@ -51,7 +76,7 @@ export class AuthService {
 
     // Use constant-time compare even when user doesn't exist (prevents enumeration)
     const hashToCompare = user?.passwordHash ?? '$2a$12$invalidhashpadding000000000000000';
-    const match         = await bcrypt.compare(dto.password, hashToCompare);
+    const match = await bcrypt.compare(dto.password, hashToCompare);
 
     if (!user || !match) {
       // Deliberately vague — don't hint whether email exists
@@ -71,7 +96,7 @@ export class AuthService {
       throw new UnauthorizedError('Refresh token is invalid or expired');
     }
 
-    const redis  = await getRedisClient();
+    const redis = await getRedisClient();
     const stored = await redis.get(`refresh:${payload.sub}`);
 
     if (stored !== refreshToken) {
@@ -107,24 +132,29 @@ export class AuthService {
       throw new InternalError('GOOGLE_CLIENT_ID is not configured');
     }
 
-    const client  = new OAuth2Client(clientId);
+    const client = new OAuth2Client(clientId);
     let email: string;
     let name: string;
 
     try {
-      const ticket  = await client.verifyIdToken({ idToken, audience: clientId });
+      const ticket = await client.verifyIdToken({ idToken, audience: clientId });
       const payload = ticket.getPayload();
       if (!payload?.email) {
         throw new ValidationError('Google token payload missing email');
       }
       email = payload.email;
-      name  = payload.name ?? payload.email.split('@')[0];
+      name = payload.name ?? payload.email.split('@')[0];
     } catch (err: any) {
       if (err.name === 'ValidationError') throw err;
       throw new UnauthorizedError('Invalid Google ID token');
     }
 
-    const user = await UserRepository.findOrCreateOAuth(email, name);
+    const { user, isNew } = await UserRepository.findOrCreateOAuth(email, name);
+
+    if (isNew) {
+      AuthService.sendWelcomeEmail(user.email, user.name).catch(() => {});
+    }
+
     return AuthService.issueTokenPair(user);
   }
 
@@ -134,19 +164,27 @@ export class AuthService {
       throw new InternalError('JWT_ACCESS_SECRET is not configured');
     }
 
-    const jti     = uuidv4();
-    const role    = user.role as UserRole;
+    const jti = uuidv4();
+    const role = user.role as UserRole;
 
     const accessToken = jwt.sign(
       { sub: user.id, role, jti } satisfies Omit<JwtPayload, 'iat' | 'exp'>,
       ACCESS_SECRET,
-      { expiresIn: ACCESS_EXPIRY as Parameters<typeof jwt.sign>[2] extends { expiresIn?: infer E } ? E : never },
+      {
+        expiresIn: ACCESS_EXPIRY as Parameters<typeof jwt.sign>[2] extends { expiresIn?: infer E }
+          ? E
+          : never,
+      },
     );
 
     const refreshToken = jwt.sign(
       { sub: user.id, role, jti: uuidv4() } satisfies Omit<JwtPayload, 'iat' | 'exp'>,
       REFRESH_SECRET,
-      { expiresIn: REFRESH_EXPIRY as Parameters<typeof jwt.sign>[2] extends { expiresIn?: infer E } ? E : never },
+      {
+        expiresIn: REFRESH_EXPIRY as Parameters<typeof jwt.sign>[2] extends { expiresIn?: infer E }
+          ? E
+          : never,
+      },
     );
 
     // Persist refresh token with retry (Redis flap resilience)
@@ -162,9 +200,11 @@ export class AuthService {
   }
 
   // ── Password Reset (Unified) ────────────────────────────────────────────────
-  static async forgotPassword(email: string): Promise<{ message: string, tokenForDev?: string, redirectType?: string }> {
+  static async forgotPassword(
+    email: string,
+  ): Promise<{ message: string; tokenForDev?: string; redirectType?: string }> {
     const user = await UserRepository.findByEmail(email);
-    
+
     if (!user) {
       // Return generic message to prevent email enumeration.
       return { message: 'If an account exists for that email, a reset link has been sent.' };
@@ -172,31 +212,56 @@ export class AuthService {
 
     const resetToken = uuidv4();
     const redis = await getRedisClient();
-    
+
     // Store token in Redis, expires in 15 minutes
     await redis.setEx(`reset:${resetToken}`, 15 * 60, user.id);
-    
+
     let redirectType = 'WEB_DASHBOARD';
-    let mockEmailLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
+    let resetLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
 
     if (user.role === 'RIDER') {
       redirectType = 'MOBILE_APP_DEEP_LINK';
-      mockEmailLink = `scooterapp://reset-password?token=${resetToken}`;
+      resetLink = `scooterapp://reset-password?token=${resetToken}`;
     }
-    
-    logger.info({ 
-      userId: user.id, 
-      role: user.role, 
-      resetToken, 
-      mockEmailLink 
-    }, '[Auth] Generated Password Reset Token (Simulating Email Send)');
 
-    // TODO: Integrate SES / SendGrid here to send real email based on role.
-    
-    return { 
+    logger.info(
+      {
+        userId: user.id,
+        role: user.role,
+        resetToken,
+      },
+      '[Auth] Generated Password Reset Token',
+    );
+
+    if (process.env.SENDGRID_API_KEY) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+      const msg = {
+        to: email,
+        from: 'support@scooteridea.com',
+        subject: 'Scooterfy Password Reset Request',
+        text: `You requested a password reset. Please click this link to reset your password: ${resetLink}. This link expires in 15 minutes.`,
+        html: `<strong>You requested a password reset.</strong><br><br>Please click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`,
+      };
+
+      try {
+        await sgMail.send(msg);
+        logger.info({ email }, '[Auth] SendGrid password reset email sent successfully');
+      } catch (error) {
+        logger.error({ err: error }, '[Auth] SendGrid failed to send password reset email');
+        // We don't throw an error here to prevent email enumeration attacks
+      }
+    } else {
+      logger.warn(
+        { resetLink },
+        '[Auth] SENDGRID_API_KEY missing. Mocking email delivery in logs.',
+      );
+    }
+
+    return {
       message: 'If an account exists for that email, a reset link has been sent.',
       tokenForDev: process.env.NODE_ENV !== 'production' ? resetToken : undefined,
-      redirectType: process.env.NODE_ENV !== 'production' ? redirectType : undefined
+      redirectType: process.env.NODE_ENV !== 'production' ? redirectType : undefined,
     };
   }
 
@@ -209,7 +274,7 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-    
+
     // Update user in DB
     await UserRepository.updatePassword(userId, passwordHash);
 
@@ -221,9 +286,13 @@ export class AuthService {
   }
 
   // ── Wallet Top-up (Paystack) ────────────────────────────────────────────────
-  static async verifyAndTopUpWallet(userId: string, reference: string): Promise<Omit<User, 'passwordHash'>> {
+  static async verifyAndTopUpWallet(
+    userId: string,
+    reference: string,
+  ): Promise<Omit<User, 'passwordHash'>> {
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock';
     let amountCents = 0;
+    let authCode: string | undefined = undefined;
 
     // Call Paystack API to verify transaction
     try {
@@ -235,11 +304,13 @@ export class AuthService {
         },
       });
 
-      const data = await response.json() as any;
-      
+      const data = (await response.json()) as any;
+
       // Paystack returns 200 even for some failed checks, but status boolean indicates true success
       if (!response.ok || data.status === false) {
-        throw new ValidationError(`Paystack Error: ${data.message || 'Transaction verification failed'}`);
+        throw new ValidationError(
+          `Paystack Error: ${data.message || 'Transaction verification failed'}`,
+        );
       }
 
       if (data.data?.status !== 'success') {
@@ -249,9 +320,14 @@ export class AuthService {
 
       // Paystack amount is in Kobo (which maps perfectly to our cents architecture for NGN)
       amountCents = data.data.amount;
+
+      // Extract the authorization code for future auto-deductions (Tokenization)
+      if (data.data.authorization?.authorization_code) {
+        authCode = data.data.authorization.authorization_code;
+      }
     } catch (err: any) {
       logger.error({ err, reference }, 'Paystack verification failed');
-      
+
       // If it's a ValidationError (thrown by our logic above), we want to preserve its message
       if (err instanceof ValidationError) {
         throw err;
@@ -267,18 +343,19 @@ export class AuthService {
     }
 
     // Since auth.service.ts doesn't have prisma imported directly for writes, we can use the repository
-    // Let's import Prisma locally for this, or use UserRepository. 
+    // Let's import Prisma locally for this, or use UserRepository.
     // Wait, UserRepository doesn't have an updateWallet method. Let's use the exported prisma from @ebike/db.
     const { prisma } = await import('@ebike/db');
-    
+
     // Prevent double crediting: check if payment reference already processed
     // In a full production system, we'd log this transaction to a `Payment` table first.
     // For now, we update the user's wallet directly.
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
-        walletCents: { increment: amountCents }
-      }
+        walletCents: { increment: amountCents },
+        ...(authCode ? { paystackAuthCode: authCode } : {}),
+      },
     });
 
     const { passwordHash, ...safeUser } = user;

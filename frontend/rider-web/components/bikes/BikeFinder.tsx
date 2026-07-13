@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Battery, BatteryMedium, BatteryLow, BatteryWarning } from 'lucide-react';
@@ -17,7 +17,7 @@ export function BikeFinder() {
   const [bikes, setBikes] = useState<AvailableBike[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // 1. Get real user location once
   useEffect(() => {
@@ -26,14 +26,14 @@ export function BikeFinder() {
         (position) => {
           setUserCoords({
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           });
         },
         (err) => {
           console.warn('Geolocation denied, using fallback.');
           // Fallback to simulator center if denied
           setUserCoords({ lat: 6.4541, lng: 3.3792 });
-        }
+        },
       );
     } else {
       setUserCoords({ lat: 6.4541, lng: 3.3792 });
@@ -56,13 +56,13 @@ export function BikeFinder() {
               const dx = bike.lat - lat;
               const dy = bike.lng - lng;
               const distKm = Math.sqrt(dx * dx + dy * dy) * 111;
-              
+
               return {
                 id: bike.bikeId,
                 lat: bike.lat,
                 lng: bike.lng,
                 battery_pct: bike.battery_pct,
-                distance_km: Math.max(0.1, distKm).toFixed(1)
+                distance_km: Math.max(0.1, distKm).toFixed(1),
               };
             });
             setBikes(bikesWithDistance);
@@ -87,7 +87,7 @@ export function BikeFinder() {
   };
 
   const filteredBikes = bikes.filter((bike) =>
-    bike.id.toLowerCase().includes(searchTerm.toLowerCase())
+    bike.id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (loading) return <div className="text-center text-slate-400">Finding bikes near you...</div>;
@@ -150,13 +150,19 @@ export function BikeFinder() {
           <div>
             <p className="text-slate-400 text-sm">Avg Battery</p>
             <p className="text-2xl font-bold text-blue-400">
-              {bikes.length > 0 ? Math.round(bikes.reduce((a, b) => a + b.battery_pct, 0) / bikes.length) : 0}%
+              {bikes.length > 0
+                ? Math.round(bikes.reduce((a, b) => a + b.battery_pct, 0) / bikes.length)
+                : 0}
+              %
             </p>
           </div>
           <div>
             <p className="text-slate-400 text-sm">Nearest</p>
             <p className="text-2xl font-bold text-purple-400">
-              {bikes.length > 0 ? Math.min(...bikes.map((b) => parseFloat(b.distance_km as any))).toFixed(1) : 0} km
+              {bikes.length > 0
+                ? Math.min(...bikes.map((b) => parseFloat(b.distance_km as any))).toFixed(1)
+                : 0}{' '}
+              km
             </p>
           </div>
         </div>

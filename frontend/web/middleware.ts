@@ -1,6 +1,6 @@
-import { withAuth } from "next-auth/middleware";
+import { withAuth } from 'next-auth/middleware';
 
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
@@ -9,7 +9,7 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ req, token }) => {
-        // Since we use a custom cookie name, we must check it manually 
+        // Since we use a custom cookie name, we must check it manually
         // if withAuth's getToken fails to find the default cookie.
         const secureCookie = req.cookies.get('__Secure-scooter-session-token');
         const standardCookie = req.cookies.get('scooter-session-token');
@@ -17,9 +17,9 @@ export default withAuth(
       },
     },
     pages: {
-      signIn: "/login",
+      signIn: '/login',
     },
-  }
+  },
 );
 
 export const config = {
@@ -32,6 +32,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api/auth|login|_next/static|_next/image|favicon.ico).*)",
+    '/((?!api/auth|login|_next/static|_next/image|favicon.ico).*)',
   ],
 };

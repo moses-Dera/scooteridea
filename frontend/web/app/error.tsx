@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { FiAlertTriangle } from "react-icons/fi";
+import { useEffect } from 'react';
+import { FiAlertTriangle } from 'react-icons/fi';
 
 export default function GlobalError({
   error,
@@ -12,7 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error("Ops Dashboard Global Error:", error);
+    console.error('Ops Dashboard Global Error:', error);
   }, [error]);
 
   return (

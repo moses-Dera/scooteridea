@@ -18,10 +18,10 @@ pricingRouter.get('/surge', async (req: Request, res: Response) => {
 // GET /pricing/estimate?bikeId=&destLat=&destLng=
 pricingRouter.get('/estimate', async (req: Request, res: Response) => {
   try {
-    const lat  = parseFloat(req.query.lat as string  || '0');
-    const lng  = parseFloat(req.query.lng as string  || '0');
-    const distKm  = parseFloat(req.query.distKm  as string || '1');
-    const durMin  = parseFloat(req.query.durMin  as string || '5');
+    const lat = parseFloat((req.query.lat as string) || '0');
+    const lng = parseFloat((req.query.lng as string) || '0');
+    const distKm = parseFloat((req.query.distKm as string) || '1');
+    const durMin = parseFloat((req.query.durMin as string) || '5');
     const estimate = await PricingService.estimateFare(lat, lng, distKm, durMin);
     res.json({ success: true, data: estimate });
   } catch (err) {
@@ -33,7 +33,7 @@ pricingRouter.get('/estimate', async (req: Request, res: Response) => {
 pricingRouter.post('/trip-estimate', async (req: Request, res: Response) => {
   try {
     const { userLat, userLng, destLat, destLng } = req.body;
-    
+
     if (!userLat || !userLng || !destLat || !destLng) {
       return res.status(400).json({ success: false, error: 'Missing coordinates' });
     }

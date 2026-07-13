@@ -23,49 +23,49 @@ jest.mock('@ebike/redis', () => ({
   getRedisClient: jest.fn(),
 }));
 
-jest.mock('../src/repositories/user.repository', () => ({
+jest.mock('../repositories/user.repository', () => ({
   UserRepository: {
-    findByEmail:       jest.fn(),
-    findById:          jest.fn(),
-    create:            jest.fn(),
+    findByEmail: jest.fn(),
+    findById: jest.fn(),
+    create: jest.fn(),
     findOrCreateOAuth: jest.fn(),
   },
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { AuthService }     from '../src/services/auth.service';
-import { UserRepository }  from '../src/repositories/user.repository';
-import { getRedisClient }  from '@ebike/redis';
-import { OAuth2Client }    from 'google-auth-library';
+import { AuthService } from './auth.service';
+import { UserRepository } from '../repositories/user.repository';
+import { getRedisClient } from '@ebike/redis';
+import { OAuth2Client } from 'google-auth-library';
 
 // ── Shared fixtures ───────────────────────────────────────────────────────────
 
 const mockUser = {
-  id:          'user-uuid-001',
-  email:       'rider@test.com',
-  name:        'Test Rider',
-  role:        'RIDER' as const,
+  id: 'user-uuid-001',
+  email: 'rider@test.com',
+  name: 'Test Rider',
+  role: 'RIDER' as const,
   walletCents: 0,
-  createdAt:   new Date(),
+  createdAt: new Date(),
   passwordHash: '$2a$12$hashhashhashhashhashhaskjfasdjflksadjflksajf',
 };
 
 function makeMockRedis(overrides: Record<string, jest.Mock> = {}) {
   return {
-    get:    jest.fn().mockResolvedValue(null),
-    set:    jest.fn().mockResolvedValue('OK'),
-    setEx:  jest.fn().mockResolvedValue('OK'),
-    del:    jest.fn().mockResolvedValue(1),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue('OK'),
+    setEx: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1),
     ...overrides,
   };
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
-  process.env.JWT_ACCESS_SECRET  = 'test-access-secret-1234567890abcdef';
+  process.env.JWT_ACCESS_SECRET = 'test-access-secret-1234567890abcdef';
   process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-abcdef1234567890';
-  process.env.JWT_ACCESS_EXPIRY  = '15m';
+  process.env.JWT_ACCESS_EXPIRY = '15m';
   process.env.JWT_REFRESH_EXPIRY = '30d';
 });
 
@@ -86,7 +86,9 @@ describe('AuthService.register', () => {
     (getRedisClient as jest.Mock).mockResolvedValue(makeMockRedis());
 
     const result = await AuthService.register({
-      email: 'new@test.com', password: 'secure123', name: 'New User',
+      email: 'new@test.com',
+      password: 'secure123',
+      name: 'New User',
     });
 
     expect(result).not.toHaveProperty('passwordHash');
@@ -142,22 +144,22 @@ describe('AuthService.oauthGoogle', () => {
   test('throws InternalError if GOOGLE_CLIENT_ID is not set', async () => {
     delete process.env.GOOGLE_CLIENT_ID;
 
-    await expect(
-      AuthService.oauthGoogle('any-id-token'),
-    ).rejects.toMatchObject({ name: 'InternalError' });
+    await expect(AuthService.oauthGoogle('any-id-token')).rejects.toMatchObject({
+      name: 'InternalError',
+    });
   });
 
   test('throws UnauthorizedError for invalid Google token', async () => {
     process.env.GOOGLE_CLIENT_ID = 'test-client-id.apps.googleusercontent.com';
 
     const mockVerifyIdToken = jest.fn().mockRejectedValue(new Error('Token verification failed'));
-    (OAuth2Client as jest.Mock).mockImplementation(() => ({
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
       verifyIdToken: mockVerifyIdToken,
     }));
 
-    await expect(
-      AuthService.oauthGoogle('invalid-token'),
-    ).rejects.toMatchObject({ name: 'UnauthorizedError' });
+    await expect(AuthService.oauthGoogle('invalid-token')).rejects.toMatchObject({
+      name: 'UnauthorizedError',
+    });
   });
 
   test('returns token pair for valid Google token — upserts user', async () => {
@@ -166,17 +168,20 @@ describe('AuthService.oauthGoogle', () => {
     const mockTicket = {
       getPayload: () => ({
         email: 'google-user@gmail.com',
-        name:  'Google User',
-        sub:   'google-sub-123',
+        name: 'Google User',
+        sub: 'google-sub-123',
       }),
     };
     const mockVerifyIdToken = jest.fn().mockResolvedValue(mockTicket);
-    (OAuth2Client as jest.Mock).mockImplementation(() => ({
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
       verifyIdToken: mockVerifyIdToken,
     }));
 
     const oauthUser = { ...mockUser, email: 'google-user@gmail.com', name: 'Google User' };
-    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue(oauthUser);
+    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue({
+      user: oauthUser,
+      isNew: false,
+    });
     (getRedisClient as jest.Mock).mockResolvedValue(makeMockRedis());
 
     const tokens = await AuthService.oauthGoogle('valid-google-id-token');
@@ -195,16 +200,19 @@ describe('AuthService.oauthGoogle', () => {
     const mockTicket = {
       getPayload: () => ({
         email: 'noname@gmail.com',
-        name:  undefined,   // Google didn't provide name
-        sub:   'sub-no-name',
+        name: undefined, // Google didn't provide name
+        sub: 'sub-no-name',
       }),
     };
-    (OAuth2Client as jest.Mock).mockImplementation(() => ({
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
       verifyIdToken: jest.fn().mockResolvedValue(mockTicket),
     }));
 
     const oauthUser = { ...mockUser, email: 'noname@gmail.com', name: 'noname' };
-    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue(oauthUser);
+    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue({
+      user: oauthUser,
+      isNew: false,
+    });
     (getRedisClient as jest.Mock).mockResolvedValue(makeMockRedis());
 
     await AuthService.oauthGoogle('valid-token');
@@ -220,7 +228,7 @@ describe('AuthService.logout', () => {
     const mockRedis = makeMockRedis();
     (getRedisClient as jest.Mock).mockResolvedValue(mockRedis);
 
-    const JTI     = 'jti-abc-123';
+    const JTI = 'jti-abc-123';
     const USER_ID = 'user-uuid-logout';
 
     await AuthService.logout(JTI, USER_ID);

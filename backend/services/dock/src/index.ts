@@ -7,9 +7,9 @@
 
 import 'dotenv/config';
 import express from 'express';
-import helmet  from 'helmet';
-import cors    from 'cors';
-import http    from 'http';
+import helmet from 'helmet';
+import cors from 'cors';
+import http from 'http';
 import { prisma } from '@ebike/db';
 
 import {
@@ -29,12 +29,12 @@ import { connectProducer, disconnectProducer } from '@ebike/events';
 import { getMqttClient } from '@ebike/mqtt';
 
 import { DockService } from './services/dock.service';
-import { dockRouter }  from './routes/dock.routes';
+import { dockRouter } from './routes/dock.routes';
 
 // ── Prisma (shared singleton from @ebike/db) ────────────────────────────────
 
 // ── App ───────────────────────────────────────────────────────────────────────
-const app  = express();
+const app = express();
 const PORT = Number(process.env.DOCK_PORT ?? process.env.PORT ?? 3009);
 
 process.env.SERVICE_NAME = 'dock-service';
@@ -42,10 +42,12 @@ app.set('trust proxy', 1);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin:      process.env.CORS_ORIGINS?.split(',') ?? '*',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGINS?.split(',') ?? '*',
+    credentials: true,
+  }),
+);
 
 // ── Request Lifecycle ─────────────────────────────────────────────────────────
 app.use(requestId);
@@ -64,24 +66,36 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // ── Health Probes ─────────────────────────────────────────────────────────────
-registerProbe('postgres', async () => {
-  await prisma.$queryRaw`SELECT 1`;
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'postgres',
+  async () => {
+    await prisma.$queryRaw`SELECT 1`;
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
-registerProbe('redis', async () => {
-  const redis = await getRedisClient();
-  await redis.ping();
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'redis',
+  async () => {
+    const redis = await getRedisClient();
+    await redis.ping();
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
-registerProbe('mqtt', async () => {
-  const client = getMqttClient();
-  return {
-    status: client.connected ? 'ok' : 'down',
-    detail: client.connected ? undefined : 'MQTT broker disconnected',
-  };
-}, { critical: false }); // non-critical: service still handles REST while reconnecting
+registerProbe(
+  'mqtt',
+  async () => {
+    const client = getMqttClient();
+    return {
+      status: client.connected ? 'ok' : 'down',
+      detail: client.connected ? undefined : 'MQTT broker disconnected',
+    };
+  },
+  { critical: false },
+); // non-critical: service still handles REST while reconnecting
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
@@ -102,8 +116,8 @@ async function bootstrap(): Promise<void> {
   // MQTT ingestion — non-blocking; broker reconnects automatically
   await DockService.startMqttIngestion();
 
-  registerCleanup('Postgres',       () => prisma.$disconnect());
-  registerCleanup('Redis',          () => disconnectRedis());
+  registerCleanup('Postgres', () => prisma.$disconnect());
+  registerCleanup('Redis', () => disconnectRedis());
   registerCleanup('Events Producer', () => disconnectProducer());
 
   const server = http.createServer(app);

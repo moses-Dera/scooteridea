@@ -11,7 +11,7 @@ export const colors = {
     200: '#BBF7D0',
     300: '#86EFAC',
     400: '#4ADE80',
-    500: '#22C55E',  // Emerald (main brand)
+    500: '#22C55E', // Emerald (main brand)
     600: '#16A34A',
     700: '#15803D',
     800: '#166534',
@@ -57,7 +57,7 @@ export const colors = {
   surface: '#111827',
   surfaceLight: '#1A2235',
   surfaceHover: '#242E45',
-} as const
+} as const;
 
 export const typography = {
   // Font Families
@@ -104,7 +104,7 @@ export const typography = {
     wide: '0.02em',
     wider: '0.05em',
   },
-} as const
+} as const;
 
 export const spacing = {
   xs: '4px',
@@ -114,7 +114,7 @@ export const spacing = {
   xl: '32px',
   '2xl': '48px',
   '3xl': '64px',
-} as const
+} as const;
 
 export const borderRadius = {
   none: '0',
@@ -123,7 +123,7 @@ export const borderRadius = {
   lg: '12px',
   xl: '16px',
   full: '9999px',
-} as const
+} as const;
 
 export const shadows = {
   none: 'none',
@@ -135,13 +135,13 @@ export const shadows = {
   elevation: '0 10px 25px rgba(0, 0, 0, 0.2)',
   'glow-primary': '0 0 20px rgba(34, 197, 94, 0.3)',
   'glow-error': '0 0 20px rgba(239, 68, 68, 0.3)',
-} as const
+} as const;
 
 export const transitions = {
   fast: '200ms ease-out',
   normal: '300ms ease-out',
   slow: '400ms ease-out',
-} as const
+} as const;
 
 export const zIndex = {
   dropdown: 1000,
@@ -151,7 +151,7 @@ export const zIndex = {
   modal: 1400,
   popover: 1500,
   tooltip: 1600,
-} as const
+} as const;
 
 // Typography Presets
 export const textStyles = {
@@ -199,4 +199,4 @@ export const textStyles = {
     lineHeight: 1.2,
     fontFamily: '"JetBrains Mono", monospace',
   },
-} as const
+} as const;

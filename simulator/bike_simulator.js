@@ -33,7 +33,7 @@ class BikeSimulator {
       lock_status: this.lockStatus,
       docked_at: this.dockedAt,
       charging: this.charging,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -87,10 +87,10 @@ class BikeSimulator {
 
 function startBikeFleet() {
   console.log(chalk.cyan.bold('\n🚲 E-Bike Fleet Simulator Starting...\n'));
-  
+
   const client = mqtt.connect(MQTT_BROKER, {
     username: process.env.MQTT_USERNAME,
-    password: process.env.MQTT_PASSWORD
+    password: process.env.MQTT_PASSWORD,
   });
 
   const bikes = [];
@@ -110,28 +110,31 @@ function startBikeFleet() {
       // Subscribe to commands for this bike
       client.subscribe(`bikes/${bikeId}/commands`, (err) => {
         if (!err) {
-          console.log(chalk.gray(`  ✓ ${bikeId} spawned at (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`));
+          console.log(
+            chalk.gray(`  ✓ ${bikeId} spawned at (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`),
+          );
         }
       });
     }
 
     console.log(chalk.green(`\n✓ ${NUM_BIKES} bikes ready\n`));
-    
+
     // Subscribe to dynamic demo spawns!
     client.subscribe('system/demo/spawn');
     console.log(chalk.magenta('✓ Listening for Dynamic Demo Spawns (system/demo/spawn)'));
 
     // Start telemetry loop
     setInterval(() => {
-      bikes.forEach(bike => {
+      bikes.forEach((bike) => {
         bike.updatePosition();
         const telemetry = bike.generateTelemetry();
-        client.publish(
-          `bikes/${bike.bikeId}/telemetry`,
-          JSON.stringify(telemetry)
-        );
+        client.publish(`bikes/${bike.bikeId}/telemetry`, JSON.stringify(telemetry));
       });
-      process.stdout.write(chalk.gray(`📡 Telemetry sent from ${NUM_BIKES} bikes | ${new Date().toLocaleTimeString()}\r`));
+      process.stdout.write(
+        chalk.gray(
+          `📡 Telemetry sent from ${NUM_BIKES} bikes | ${new Date().toLocaleTimeString()}\r`,
+        ),
+      );
     }, TELEMETRY_INTERVAL);
   });
 
@@ -140,8 +143,12 @@ function startBikeFleet() {
     if (topic === 'system/demo/spawn') {
       try {
         const { lat, lng, count = 10, radius = 2 } = JSON.parse(message.toString());
-        console.log(chalk.magenta.bold(`\n🌍 DEMO MODE ACTIVATED: Spawning ${count} bikes at (${lat.toFixed(4)}, ${lng.toFixed(4)})`));
-        
+        console.log(
+          chalk.magenta.bold(
+            `\n🌍 DEMO MODE ACTIVATED: Spawning ${count} bikes at (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+          ),
+        );
+
         const startingId = bikes.length + 1;
         for (let i = 0; i < count; i++) {
           const bikeId = `BK-${String(startingId + i).padStart(5, '0')}`;
@@ -151,7 +158,11 @@ function startBikeFleet() {
 
           client.subscribe(`bikes/${bikeId}/commands`, (err) => {
             if (!err) {
-              console.log(chalk.gray(`  ✓ Demo ${bikeId} spawned at (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`));
+              console.log(
+                chalk.gray(
+                  `  ✓ Demo ${bikeId} spawned at (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`,
+                ),
+              );
             }
           });
         }
@@ -164,8 +175,8 @@ function startBikeFleet() {
     const parts = topic.split('/');
     const bikeId = parts[1];
     const command = message.toString();
-    
-    const bike = bikes.find(b => b.bikeId === bikeId);
+
+    const bike = bikes.find((b) => b.bikeId === bikeId);
     if (bike) {
       bike.handleCommand(command);
     }

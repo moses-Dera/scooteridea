@@ -7,9 +7,9 @@
 
 import 'dotenv/config';
 import express from 'express';
-import helmet  from 'helmet';
-import cors    from 'cors';
-import http    from 'http';
+import helmet from 'helmet';
+import cors from 'cors';
+import http from 'http';
 
 import {
   httpLogger,
@@ -25,11 +25,11 @@ import {
 } from '@ebike/core';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
 
-import { pricingRouter }  from './routes/pricing.routes';
+import { pricingRouter } from './routes/pricing.routes';
 import { PricingService } from './services/pricing.service';
 
 // ── App ───────────────────────────────────────────────────────────────────────
-const app  = express();
+const app = express();
 const PORT = Number(process.env.PRICING_PORT ?? process.env.PORT ?? 3005);
 
 process.env.SERVICE_NAME = 'pricing-service';
@@ -37,10 +37,12 @@ app.set('trust proxy', 1);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin:      process.env.CORS_ORIGINS?.split(',') ?? '*',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGINS?.split(',') ?? '*',
+    credentials: true,
+  }),
+);
 
 // ── Request Lifecycle ─────────────────────────────────────────────────────────
 app.use(requestId);
@@ -59,11 +61,15 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // ── Health Probes ─────────────────────────────────────────────────────────────
-registerProbe('redis', async () => {
-  const redis = await getRedisClient();
-  await redis.ping();
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'redis',
+  async () => {
+    const redis = await getRedisClient();
+    await redis.ping();
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
@@ -79,15 +85,19 @@ async function bootstrap(): Promise<void> {
   await PricingService.recalculateSurge().catch((err) =>
     logger.warn({ err }, '[Pricing] Initial surge recalculation failed'),
   );
-  const surgeInterval = setInterval(() =>
-    PricingService.recalculateSurge().catch((err) =>
-      logger.warn({ err }, '[Pricing] Surge recalculation failed'),
-    ),
+  const surgeInterval = setInterval(
+    () =>
+      PricingService.recalculateSurge().catch((err) =>
+        logger.warn({ err }, '[Pricing] Surge recalculation failed'),
+      ),
     60_000,
   );
 
-  registerCleanup('Redis',           () => disconnectRedis());
-  registerCleanup('SurgeInterval',   () => { clearInterval(surgeInterval); return Promise.resolve(); });
+  registerCleanup('Redis', () => disconnectRedis());
+  registerCleanup('SurgeInterval', () => {
+    clearInterval(surgeInterval);
+    return Promise.resolve();
+  });
 
   const server = http.createServer(app);
   setupGracefulShutdown(server, 10_000);

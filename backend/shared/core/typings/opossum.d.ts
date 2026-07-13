@@ -28,7 +28,11 @@ declare module 'opossum' {
     fire(...args: TArgs): Promise<TResult>;
     fallback(fn: (...args: unknown[]) => unknown): this;
 
-    on(event: 'open' | 'close' | 'halfOpen' | 'reject' | 'timeout' | 'fallback' | 'success' | 'failure', listener: (...args: unknown[]) => void): this;
+    on(
+      event:
+        'open' | 'close' | 'halfOpen' | 'reject' | 'timeout' | 'fallback' | 'success' | 'failure',
+      listener: (...args: unknown[]) => void,
+    ): this;
 
     readonly opened: boolean;
     readonly closed: boolean;
