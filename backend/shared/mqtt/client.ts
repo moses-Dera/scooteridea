@@ -19,7 +19,7 @@ export function getMqttClient(): MqttClient {
       keepalive: 60,
       rejectUnauthorized: false,
     };
-    
+
     console.log(`[MQTT] Connecting to broker: ${brokerUrl}`);
     client = mqtt.connect(brokerUrl, options);
 
@@ -27,16 +27,18 @@ export function getMqttClient(): MqttClient {
       console.log('[MQTT] ✅ Connected to broker');
       connectionAttempts = 0;
     });
-    
+
     client.on('error', (err) => {
       console.error('[MQTT] ❌ Error:', err.message);
     });
-    
+
     client.on('reconnect', () => {
       connectionAttempts++;
-      console.log(`[MQTT] 🔄 Reconnecting... (attempt ${connectionAttempts}/${MAX_RETRY_ATTEMPTS})`);
+      console.log(
+        `[MQTT] 🔄 Reconnecting... (attempt ${connectionAttempts}/${MAX_RETRY_ATTEMPTS})`,
+      );
     });
-    
+
     client.on('offline', () => {
       console.warn('[MQTT] ⚠️  Broker offline - will reconnect automatically');
     });
@@ -93,18 +95,15 @@ export const bikeCommander = {
   unlock: (bikeId: string, rideId: string) =>
     publishBikeCommand(bikeId, { command: 'UNLOCK', rideId }),
 
-  lock: (bikeId: string) =>
-    publishBikeCommand(bikeId, { command: 'LOCK' }),
+  lock: (bikeId: string) => publishBikeCommand(bikeId, { command: 'LOCK' }),
 
-  alarm: (bikeId: string) =>
-    publishBikeCommand(bikeId, { command: 'ALARM' }),
+  alarm: (bikeId: string) => publishBikeCommand(bikeId, { command: 'ALARM' }),
 
   disable: (bikeId: string, reason: string) =>
     publishBikeCommand(bikeId, { command: 'DISABLE', reason }),
 
   speedLimit: (bikeId: string, kmh: number) =>
     publishBikeCommand(bikeId, { command: 'SPEED_LIMIT', value: kmh }),
-    
-  setPin: (bikeId: string, pin: string) =>
-    publishBikeCommand(bikeId, { command: 'SET_PIN', pin }),
+
+  setPin: (bikeId: string, pin: string) => publishBikeCommand(bikeId, { command: 'SET_PIN', pin }),
 };

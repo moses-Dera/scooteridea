@@ -13,15 +13,18 @@ export const apiClient = axios.create({
 
 // Configure Interceptors for JWT Injection
 export const setupAuthInterceptor = (getToken: () => string | null) => {
-  apiClient.interceptors.request.use((config) => {
-    const token = getToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  }, (error) => {
-    return Promise.reject(error);
-  });
+  apiClient.interceptors.request.use(
+    (config) => {
+      const token = getToken();
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    },
+  );
 };
 
 export default apiClient;

@@ -7,8 +7,8 @@ export async function getRedisClient(): Promise<RedisClientType> {
     client = createClient({ url: process.env.REDIS_URL }) as RedisClientType;
 
     // Use stderr directly — @ebike/redis must not depend on @ebike/core (avoid circular dep)
-    client.on('error',       (err) => process.stderr.write(`[Redis] Error: ${String(err)}\n`));
-    client.on('reconnecting', ()   => process.stderr.write('[Redis] Reconnecting…\n'));
+    client.on('error', (err) => process.stderr.write(`[Redis] Error: ${String(err)}\n`));
+    client.on('reconnecting', () => process.stderr.write('[Redis] Reconnecting…\n'));
 
     await client.connect();
   }
@@ -85,12 +85,8 @@ export async function geoSearch(
  * Key: `ride:${rideId}:waypoints`  — type: Redis LIST of JSON strings.
  * TTL is refreshed to 2 h on every push (ride can't last longer than that).
  */
-export async function redisPushWaypoint(
-  rideId: string,
-  lat: number,
-  lng: number,
-): Promise<void> {
-  const r   = await getRedisClient();
+export async function redisPushWaypoint(rideId: string, lat: number, lng: number): Promise<void> {
+  const r = await getRedisClient();
   const key = `ride:${rideId}:waypoints`;
   await r.rPush(key, JSON.stringify({ lat, lng }));
   await r.expire(key, 7_200); // 2 h
@@ -103,8 +99,8 @@ export async function redisPushWaypoint(
 export async function redisGetWaypoints(
   rideId: string,
 ): Promise<Array<{ lat: number; lng: number }>> {
-  const r    = await getRedisClient();
-  const raw  = await r.lRange(`ride:${rideId}:waypoints`, 0, -1);
+  const r = await getRedisClient();
+  const raw = await r.lRange(`ride:${rideId}:waypoints`, 0, -1);
   return raw.map((s) => JSON.parse(s) as { lat: number; lng: number });
 }
 

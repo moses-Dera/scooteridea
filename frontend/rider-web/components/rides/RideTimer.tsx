@@ -33,9 +33,7 @@ export function RideTimer({ surgeMultiplier = 1, baseRate = 50 }: RideTimerProps
       <div className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-1">
         Active Ride
       </div>
-      <div className="text-3xl font-black font-mono tracking-tight text-white">
-        {formattedTime}
-      </div>
+      <div className="text-3xl font-black font-mono tracking-tight text-white">{formattedTime}</div>
       <div className="text-slate-400 text-sm mt-2">
         Cost: <span className="text-white font-bold">₦ {state.cost.toFixed(2)}</span>
       </div>

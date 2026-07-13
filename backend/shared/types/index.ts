@@ -7,19 +7,9 @@
 
 export type UserRole = 'RIDER' | 'OPERATOR' | 'ADMIN';
 
-export type BikeStatus =
-  | 'available'
-  | 'in_use'
-  | 'charging'
-  | 'maintenance'
-  | 'offline';
+export type BikeStatus = 'available' | 'in_use' | 'charging' | 'maintenance' | 'offline';
 
-export type RideStatus =
-  | 'RESERVED'
-  | 'ACTIVE'
-  | 'COMPLETING'
-  | 'COMPLETED'
-  | 'CANCELLED';
+export type RideStatus = 'RESERVED' | 'ACTIVE' | 'COMPLETING' | 'COMPLETED' | 'CANCELLED';
 
 export type PaymentStatus = 'pending' | 'success' | 'failed' | 'refunded';
 
@@ -27,13 +17,7 @@ export type PaymentProvider = 'stripe' | 'paystack';
 
 export type ZoneType = 'operational' | 'slow' | 'no_ride' | 'dock';
 
-export type BikeCommand =
-  | 'LOCK'
-  | 'UNLOCK'
-  | 'ALARM'
-  | 'DISABLE'
-  | 'SPEED_LIMIT'
-  | 'SET_PIN';
+export type BikeCommand = 'LOCK' | 'UNLOCK' | 'ALARM' | 'DISABLE' | 'SPEED_LIMIT' | 'SET_PIN';
 
 export type UnlockMethod = 'remote' | 'qr' | 'nfc' | 'otp';
 
@@ -47,7 +31,7 @@ export interface LatLng {
 // ── Auth ─────────────────────────────────────
 
 export interface JwtPayload {
-  sub: string;   // user id
+  sub: string; // user id
   role: UserRole;
   jti: string;
   iat: number;
@@ -107,8 +91,8 @@ export interface BikeCommandPayload {
   command: BikeCommand;
   rideId?: string;
   reason?: string;
-  value?: number;   // for SPEED_LIMIT
-  pin?: string;     // for SET_PIN
+  value?: number; // for SPEED_LIMIT
+  pin?: string; // for SET_PIN
   ts: number;
 }
 
@@ -182,7 +166,7 @@ export interface MatchResult {
   distanceKm: number;
   batteryPct: number;
   score: number;
-  rideId: string;   // pre-reserved ride record
+  rideId: string; // pre-reserved ride record
 }
 
 // ── Pricing ──────────────────────────────────
@@ -229,7 +213,7 @@ export interface Geofence {
   name: string;
   type: ZoneType;
   boundary: GeoJSON.Polygon;
-  speedCap?: number;   // km/h, only for 'slow' zones
+  speedCap?: number; // km/h, only for 'slow' zones
 }
 
 // ── Kafka Events ─────────────────────────────
@@ -304,7 +288,7 @@ export interface KafkaFleetCommandEvent {
 // ── WebSocket Messages ────────────────────────
 
 export interface WsSubscribeMessage {
-  subscribe: string[];   // e.g. ['bike:BK-001', 'fleet:all', 'dock:DOCK-007']
+  subscribe: string[]; // e.g. ['bike:BK-001', 'fleet:all', 'dock:DOCK-007']
 }
 
 export interface WsBikeLocationUpdate {
@@ -330,17 +314,14 @@ export interface WsSurgeUpdate {
 }
 
 export interface WsRideEndedEvent {
-  event:     'ride_ended';
-  rideId:    string;
-  userId:    string;
+  event: 'ride_ended';
+  rideId: string;
+  userId: string;
   fareCents: number;
 }
 
 export type WsServerEvent =
-  | WsBikeLocationUpdate
-  | WsDockStatusUpdate
-  | WsSurgeUpdate
-  | WsRideEndedEvent;
+  WsBikeLocationUpdate | WsDockStatusUpdate | WsSurgeUpdate | WsRideEndedEvent;
 
 // ── API Responses ────────────────────────────
 

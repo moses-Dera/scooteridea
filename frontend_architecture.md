@@ -11,18 +11,18 @@
 
 ### Stack
 
-| Concern | Choice | Why |
-|---------|--------|-----|
-| Framework | Next.js 15 (App Router) | SSR for auth pages, RSC for data-heavy views |
-| Styling | Tailwind CSS + shadcn/ui | Rapid, consistent design system |
-| Maps | Mapbox GL JS | Real-time fleet map, geofence editor |
-| Charts | Recharts | Fleet analytics, revenue graphs |
-| State | Zustand | Lightweight global store (map state, filters) |
-| Server state | TanStack Query | API caching, background refetch |
-| WebSocket | native WebSocket / socket.io-client | Live fleet updates |
-| Auth | NextAuth.js (JWT strategy) | Session management |
-| Forms | React Hook Form + Zod | Type-safe form validation |
-| Tables | TanStack Table | Sortable/filterable fleet & ride tables |
+| Concern      | Choice                              | Why                                           |
+| ------------ | ----------------------------------- | --------------------------------------------- |
+| Framework    | Next.js 15 (App Router)             | SSR for auth pages, RSC for data-heavy views  |
+| Styling      | Tailwind CSS + shadcn/ui            | Rapid, consistent design system               |
+| Maps         | Mapbox GL JS                        | Real-time fleet map, geofence editor          |
+| Charts       | Recharts                            | Fleet analytics, revenue graphs               |
+| State        | Zustand                             | Lightweight global store (map state, filters) |
+| Server state | TanStack Query                      | API caching, background refetch               |
+| WebSocket    | native WebSocket / socket.io-client | Live fleet updates                            |
+| Auth         | NextAuth.js (JWT strategy)          | Session management                            |
+| Forms        | React Hook Form + Zod               | Type-safe form validation                     |
+| Tables       | TanStack Table                      | Sortable/filterable fleet & ride tables       |
 
 ---
 
@@ -100,6 +100,7 @@ frontend/web/
 ### Key Pages
 
 #### Live Fleet Map (`/fleet`)
+
 ```typescript
 // FleetMap.tsx — core logic
 export function FleetMap() {
@@ -122,8 +123,8 @@ export function FleetMap() {
 ```typescript
 // useFleetSocket.ts
 export function useFleetSocket() {
-  const updateBike = useFleetStore(s => s.updateBike);
-  const updateDock = useFleetStore(s => s.updateDock);
+  const updateBike = useFleetStore((s) => s.updateBike);
+  const updateDock = useFleetStore((s) => s.updateDock);
 
   useEffect(() => {
     const ws = new WebSocket(`wss://${API_HOST}/live?token=${getToken()}`);
@@ -131,7 +132,7 @@ export function useFleetSocket() {
     ws.onmessage = ({ data }) => {
       const msg = JSON.parse(data);
       if (msg.event === 'bike_location_update') updateBike(msg);
-      if (msg.event === 'dock_status_update')   updateDock(msg);
+      if (msg.event === 'dock_status_update') updateDock(msg);
     };
     return () => ws.close();
   }, []);
@@ -139,21 +140,25 @@ export function useFleetSocket() {
 ```
 
 #### Dock Grid (`/docks`)
+
 - Card per dock: name, capacity bar (green/amber/red), slot grid, charging count
 - Click → `/docks/[id]`: full slot matrix, per-slot bike + battery
 
 #### Ride Detail (`/rides/[rideId]`)
+
 - Trip metadata: duration, distance, fare, surge multiplier
 - Route replay: Mapbox `flyTo` animating GPS history points
 - Dispute actions: refund, flag, operator note
 
 #### Geofence Editor (`/zones`)
+
 - Draw polygons on map (Mapbox `draw` plugin)
 - Set zone type: Operational / Slow / No-Ride / Dock
 - Set speed cap for Slow zones
 - Save → `POST /api/zones`
 
 #### Command Dialog (global)
+
 ```typescript
 // Triggered from BikeCard or BikeDetail
 <CommandDialog bikeId="BK-00123">
@@ -180,12 +185,14 @@ interface FleetStore {
 export const useFleetStore = create<FleetStore>((set) => ({
   bikes: {},
   docks: {},
-  updateBike: (u) => set(s => ({
-    bikes: { ...s.bikes, [u.bikeId]: { ...s.bikes[u.bikeId], ...u } }
-  })),
-  updateDock: (u) => set(s => ({
-    docks: { ...s.docks, [u.dockId]: { ...s.docks[u.dockId], ...u } }
-  })),
+  updateBike: (u) =>
+    set((s) => ({
+      bikes: { ...s.bikes, [u.bikeId]: { ...s.bikes[u.bikeId], ...u } },
+    })),
+  updateDock: (u) =>
+    set((s) => ({
+      docks: { ...s.docks, [u.dockId]: { ...s.docks[u.dockId], ...u } },
+    })),
 }));
 ```
 
@@ -197,7 +204,7 @@ export const useFleetStore = create<FleetStore>((set) => ({
 // lib/api.ts
 const api = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL });
 
-api.interceptors.request.use(config => {
+api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -206,22 +213,22 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(null, async (err) => {
   if (err.response?.status === 401) {
     await refreshTokens();
-    return api(err.config);   // retry original request
+    return api(err.config); // retry original request
   }
   return Promise.reject(err);
 });
 
 export const fleetApi = {
-  getBikes:       ()         => api.get<Bike[]>('/fleet/bikes'),
-  getBike:        (id)       => api.get<Bike>(`/fleet/bikes/${id}`),
-  sendCommand:    (id, cmd)  => api.post(`/fleet/bikes/${id}/command`, cmd),
-  getDocks:       ()         => api.get<Dock[]>('/docks'),
+  getBikes: () => api.get<Bike[]>('/fleet/bikes'),
+  getBike: (id) => api.get<Bike>(`/fleet/bikes/${id}`),
+  sendCommand: (id, cmd) => api.post(`/fleet/bikes/${id}/command`, cmd),
+  getDocks: () => api.get<Dock[]>('/docks'),
 };
 
 export const rideApi = {
-  list:     (params) => api.get<RidePage>('/rides', { params }),
-  getById:  (id)     => api.get<Ride>(`/rides/${id}`),
-  dispute:  (id, d)  => api.post(`/rides/${id}/dispute`, d),
+  list: (params) => api.get<RidePage>('/rides', { params }),
+  getById: (id) => api.get<Ride>(`/rides/${id}`),
+  dispute: (id, d) => api.post(`/rides/${id}/dispute`, d),
 };
 ```
 
@@ -240,18 +247,18 @@ Once the web version is stable, we will migrate to React Native + Expo for iOS/A
 
 ### Stack (React Native - Planned)
 
-| Concern | Choice |
-|---------|--------|
-| Framework | React Native + Expo (SDK 51) |
-| Navigation | Expo Router (file-based) |
-| Maps | Mapbox RN (`@rnmapbox/maps`) |
-| State | Zustand |
-| Server state | TanStack Query |
-| Auth storage | Expo SecureStore |
-| Push notifications | Expo Notifications + FCM |
-| Payments | Stripe React Native SDK |
-| Animations | React Native Reanimated 3 |
-| Icons | Expo Vector Icons |
+| Concern            | Choice                       |
+| ------------------ | ---------------------------- |
+| Framework          | React Native + Expo (SDK 51) |
+| Navigation         | Expo Router (file-based)     |
+| Maps               | Mapbox RN (`@rnmapbox/maps`) |
+| State              | Zustand                      |
+| Server state       | TanStack Query               |
+| Auth storage       | Expo SecureStore             |
+| Push notifications | Expo Notifications + FCM     |
+| Payments           | Stripe React Native SDK      |
+| Animations         | React Native Reanimated 3    |
+| Icons              | Expo Vector Icons            |
 
 ---
 
@@ -313,6 +320,7 @@ frontend/mobile/
 ### Key Screens
 
 #### Map Home (`app/(tabs)/index.tsx`)
+
 ```typescript
 export default function MapHome() {
   const { location } = useUserLocation();
@@ -333,6 +341,7 @@ export default function MapHome() {
 ```
 
 #### Bike Detail Sheet (`app/bike/[id].tsx`)
+
 ```typescript
 // Bottom sheet — slides up when user taps bike pin
 export default function BikeDetail() {
@@ -355,6 +364,7 @@ export default function BikeDetail() {
 ```
 
 #### Unlock Flow (`app/unlock/[bikeId].tsx`)
+
 ```typescript
 // Three-step: confirm → method select → executing
 type UnlockStep = 'confirm' | 'method' | 'executing' | 'done';
@@ -382,6 +392,7 @@ export default function UnlockScreen() {
 ```
 
 #### Active Ride (`app/ride/active.tsx`)
+
 ```typescript
 export default function ActiveRide() {
   const ride = useRideStore(s => s.activeRide);
@@ -407,6 +418,7 @@ export default function ActiveRide() {
 ```
 
 #### End Ride / Dock Finder (`app/ride/end.tsx`)
+
 ```typescript
 export default function EndRide() {
   const { location } = useUserLocation();
@@ -441,17 +453,20 @@ export default function EndRide() {
 ```typescript
 // hooks/useLiveRide.ts
 export function useLiveRide(rideId: string) {
-  const updateBikePos = useRideStore(s => s.updateBikePosition);
+  const updateBikePos = useRideStore((s) => s.updateBikePosition);
 
   useEffect(() => {
     const ws = new WebSocket(`wss://${API_HOST}/live?token=${getToken()}`);
-    ws.onopen = () => ws.send(JSON.stringify({
-      subscribe: [`ride:${rideId}`, `bike:${getBikeId()}`]
-    }));
+    ws.onopen = () =>
+      ws.send(
+        JSON.stringify({
+          subscribe: [`ride:${rideId}`, `bike:${getBikeId()}`],
+        }),
+      );
     ws.onmessage = ({ data }) => {
       const msg = JSON.parse(data);
       if (msg.event === 'bike_location_update') updateBikePos(msg);
-      if (msg.event === 'ride_ended')           router.replace(`/ride/${rideId}`);
+      if (msg.event === 'ride_ended') router.replace(`/ride/${rideId}`);
     };
     return () => ws.close();
   }, [rideId]);
@@ -464,15 +479,25 @@ export function useLiveRide(rideId: string) {
 
 ```typescript
 // Handled in app/_layout.tsx
-Notifications.addNotificationResponseReceivedListener(response => {
+Notifications.addNotificationResponseReceivedListener((response) => {
   const { type, payload } = response.notification.request.content.data;
 
   switch (type) {
-    case 'LOW_BATTERY':      router.push(`/ride/end`);                    break;
-    case 'DOCK_NEARBY':      showToast(`Dock nearby: ${payload.dockName}`); break;
-    case 'RIDE_RECEIPT':     router.push(`/ride/${payload.rideId}`);      break;
-    case 'ZONE_VIOLATION':   showAlert('You\'ve entered a restricted zone'); break;
-    case 'PAYMENT_FAILED':   router.push('/wallet');                      break;
+    case 'LOW_BATTERY':
+      router.push(`/ride/end`);
+      break;
+    case 'DOCK_NEARBY':
+      showToast(`Dock nearby: ${payload.dockName}`);
+      break;
+    case 'RIDE_RECEIPT':
+      router.push(`/ride/${payload.rideId}`);
+      break;
+    case 'ZONE_VIOLATION':
+      showAlert("You've entered a restricted zone");
+      break;
+    case 'PAYMENT_FAILED':
+      router.push('/wallet');
+      break;
   }
 });
 ```
@@ -486,17 +511,17 @@ Notifications.addNotificationResponseReceivedListener(response => {
 // packages/api-client/src/index.ts
 
 export const authClient = {
-  login:    (body: LoginDto)    => post<TokenPair>('/auth/login', body),
+  login: (body: LoginDto) => post<TokenPair>('/auth/login', body),
   register: (body: RegisterDto) => post<User>('/auth/register', body),
-  refresh:  ()                  => post<TokenPair>('/auth/refresh'),
-  me:       ()                  => get<User>('/auth/me'),
+  refresh: () => post<TokenPair>('/auth/refresh'),
+  me: () => get<User>('/auth/me'),
 };
 
 export const rideClient = {
-  match:    (loc: LatLng)     => post<Match>('/match/request', loc),
-  start:    (rideId: string)  => post<Ride>(`/rides/${rideId}/start`),
-  end:      (rideId, dockId)  => post<Ride>(`/rides/${rideId}/end`, { dockId }),
-  history:  (page = 1)        => get<RidePage>(`/rides/history?page=${page}`),
+  match: (loc: LatLng) => post<Match>('/match/request', loc),
+  start: (rideId: string) => post<Ride>(`/rides/${rideId}/start`),
+  end: (rideId, dockId) => post<Ride>(`/rides/${rideId}/end`, { dockId }),
+  history: (page = 1) => get<RidePage>(`/rides/history?page=${page}`),
 };
 
 export const dockClient = {
@@ -505,8 +530,9 @@ export const dockClient = {
 };
 
 export const pricingClient = {
-  surge:    (loc: LatLng)           => get<Surge>(`/pricing/surge?lat=${loc.lat}&lng=${loc.lng}`),
-  estimate: (bikeId, dest: LatLng)  => get<Estimate>(`/pricing/estimate?bikeId=${bikeId}&destLat=${dest.lat}&destLng=${dest.lng}`),
+  surge: (loc: LatLng) => get<Surge>(`/pricing/surge?lat=${loc.lat}&lng=${loc.lng}`),
+  estimate: (bikeId, dest: LatLng) =>
+    get<Estimate>(`/pricing/estimate?bikeId=${bikeId}&destLat=${dest.lat}&destLng=${dest.lng}`),
 };
 ```
 
@@ -529,6 +555,7 @@ scooteridea/
 ```
 
 **`package.json` (root):**
+
 ```json
 {
   "name": "ebike-platform",
@@ -546,50 +573,53 @@ scooteridea/
 ## Part 5 — Screen Inventory
 
 ### Web (Operator Dashboard)
-| Route | Screen | Key Components |
-|-------|--------|----------------|
-| `/` | Overview | KPI cards, alert feed, mini map |
-| `/fleet` | Live Fleet Map | Mapbox, bike/dock markers, surge overlay |
-| `/fleet/[id]` | Bike Detail | Status, history, command dialog |
-| `/docks` | Dock Grid | Capacity cards (green/amber/red) |
-| `/docks/[id]` | Dock Detail | Slot matrix, charging status |
-| `/rides` | Ride Table | Filterable, sortable, export CSV |
-| `/rides/[id]` | Ride Detail | Route replay, receipt, dispute |
-| `/zones` | Geofence Editor | Draw polygons, zone type picker |
-| `/pricing` | Surge Config | Heatmap, multiplier bands editor |
-| `/analytics` | Analytics | Revenue, utilisation, fleet KPIs |
-| `/alerts` | Ops Alerts | Real-time alert feed, ack actions |
+
+| Route         | Screen          | Key Components                           |
+| ------------- | --------------- | ---------------------------------------- |
+| `/`           | Overview        | KPI cards, alert feed, mini map          |
+| `/fleet`      | Live Fleet Map  | Mapbox, bike/dock markers, surge overlay |
+| `/fleet/[id]` | Bike Detail     | Status, history, command dialog          |
+| `/docks`      | Dock Grid       | Capacity cards (green/amber/red)         |
+| `/docks/[id]` | Dock Detail     | Slot matrix, charging status             |
+| `/rides`      | Ride Table      | Filterable, sortable, export CSV         |
+| `/rides/[id]` | Ride Detail     | Route replay, receipt, dispute           |
+| `/zones`      | Geofence Editor | Draw polygons, zone type picker          |
+| `/pricing`    | Surge Config    | Heatmap, multiplier bands editor         |
+| `/analytics`  | Analytics       | Revenue, utilisation, fleet KPIs         |
+| `/alerts`     | Ops Alerts      | Real-time alert feed, ack actions        |
 
 ### Mobile (Rider App)
-| Route | Screen | Key Components |
-|-------|--------|----------------|
-| `/welcome` | Onboarding | Slides, CTA |
-| `/login` | Login | Email/phone + social |
-| `/register` | Register | Multi-step form |
-| `/(tabs)/` | Map Home | Live map, search, surge badge |
-| `/bike/[id]` | Bike Sheet | Battery, ETA, fare estimate, unlock |
-| `/unlock/[id]` | Unlock Flow | Method picker, OTP/QR/NFC |
-| `/ride/active` | Active Ride | Full-screen map, HUD, dock arrow |
-| `/ride/end` | End Ride | Dock finder, slot availability |
-| `/ride/[id]` | Receipt | Route, fare breakdown, rating |
-| `/(tabs)/rides` | Ride History | Paginated list + search |
-| `/(tabs)/wallet` | Wallet | Balance, top-up, payment methods |
-| `/(tabs)/profile` | Profile | Settings, safety, help |
+
+| Route             | Screen       | Key Components                      |
+| ----------------- | ------------ | ----------------------------------- |
+| `/welcome`        | Onboarding   | Slides, CTA                         |
+| `/login`          | Login        | Email/phone + social                |
+| `/register`       | Register     | Multi-step form                     |
+| `/(tabs)/`        | Map Home     | Live map, search, surge badge       |
+| `/bike/[id]`      | Bike Sheet   | Battery, ETA, fare estimate, unlock |
+| `/unlock/[id]`    | Unlock Flow  | Method picker, OTP/QR/NFC           |
+| `/ride/active`    | Active Ride  | Full-screen map, HUD, dock arrow    |
+| `/ride/end`       | End Ride     | Dock finder, slot availability      |
+| `/ride/[id]`      | Receipt      | Route, fare breakdown, rating       |
+| `/(tabs)/rides`   | Ride History | Paginated list + search             |
+| `/(tabs)/wallet`  | Wallet       | Balance, top-up, payment methods    |
+| `/(tabs)/profile` | Profile      | Settings, safety, help              |
 
 ### Web (Rider App)
-| Route | Screen | Key Components |
-|-------|--------|----------------|
-| `/` | Map Home | Full-screen map, floating bike cards, surge badge, search |
-| `/bike/:id` | Bike Detail | Right-panel drawer, battery, fare estimate, nearest docks, unlock CTA |
-| `/unlock/:bikeId` | Unlock Flow | 3-step modal — Confirm → Method picker → Done |
-| `/ride/active` | Active Ride | Full-screen map HUD, live timer, running cost, dock navigator |
-| `/ride/end` | End Ride | Dock finder, slot availability, confirm return |
-| `/ride/:id` | Ride Receipt | Route summary, fare breakdown, star rating |
-| `/rides` | Ride History | Paginated list + search |
-| `/wallet` | Wallet | Balance card, top-up, transactions, payment methods |
-| `/profile` | Profile | Settings, safety, help |
-| `/login` | Login | Email/phone + social auth |
-| `/register` | Register | Multi-step onboarding form |
+
+| Route             | Screen       | Key Components                                                        |
+| ----------------- | ------------ | --------------------------------------------------------------------- |
+| `/`               | Map Home     | Full-screen map, floating bike cards, surge badge, search             |
+| `/bike/:id`       | Bike Detail  | Right-panel drawer, battery, fare estimate, nearest docks, unlock CTA |
+| `/unlock/:bikeId` | Unlock Flow  | 3-step modal — Confirm → Method picker → Done                         |
+| `/ride/active`    | Active Ride  | Full-screen map HUD, live timer, running cost, dock navigator         |
+| `/ride/end`       | End Ride     | Dock finder, slot availability, confirm return                        |
+| `/ride/:id`       | Ride Receipt | Route summary, fare breakdown, star rating                            |
+| `/rides`          | Ride History | Paginated list + search                                               |
+| `/wallet`         | Wallet       | Balance card, top-up, transactions, payment methods                   |
+| `/profile`        | Profile      | Settings, safety, help                                                |
+| `/login`          | Login        | Email/phone + social auth                                             |
+| `/register`       | Register     | Multi-step onboarding form                                            |
 
 ---
 
@@ -599,36 +629,36 @@ scooteridea/
 
 ### Design System
 
-| Token | Value |
-|-------|-------|
-| Background | `#0A0F1E` (deep navy black) |
-| Surface | `#111827` / `#1A2235` |
-| Accent Green | `#00FF87` (electric green) |
-| Accent Cyan | `#00D4FF` |
-| Warning | `#F59E0B` (amber — surge zones) |
-| Danger | `#EF4444` (red — end ride) |
-| Text Primary | `#FFFFFF` |
-| Text Secondary | `#94A3B8` |
-| Glassmorphism | `rgba(255,255,255,0.05)` + `backdrop-filter: blur(20px)` |
-| Border | `rgba(255,255,255,0.1)` |
-| Font | **Inter** (Google Fonts) |
+| Token          | Value                                                    |
+| -------------- | -------------------------------------------------------- |
+| Background     | `#0A0F1E` (deep navy black)                              |
+| Surface        | `#111827` / `#1A2235`                                    |
+| Accent Green   | `#00FF87` (electric green)                               |
+| Accent Cyan    | `#00D4FF`                                                |
+| Warning        | `#F59E0B` (amber — surge zones)                          |
+| Danger         | `#EF4444` (red — end ride)                               |
+| Text Primary   | `#FFFFFF`                                                |
+| Text Secondary | `#94A3B8`                                                |
+| Glassmorphism  | `rgba(255,255,255,0.05)` + `backdrop-filter: blur(20px)` |
+| Border         | `rgba(255,255,255,0.1)`                                  |
+| Font           | **Inter** (Google Fonts)                                 |
 
 ---
 
 ### Stack
 
-| Concern | Choice | Why |
-|---------|--------|-----|
-| Framework | Next.js 15 (App Router) | SSR for auth pages, RSC for data-heavy views |
-| Maps | Mapbox GL JS | Dark-style map, custom bike/dock markers |
-| Styling | Tailwind CSS + custom CSS vars | Design token control, glassmorphism utilities |
-| Animations | Framer Motion | Side-panel slide-in, modal transitions, ride HUD |
-| State | Zustand | Map state, active ride, auth |
-| Server state | TanStack Query | API caching, background refetch |
-| WebSocket | native WebSocket / socket.io-client | Live ride timer, bike position, dock updates |
-| Auth | NextAuth.js (JWT) | Session management, OTP phone login |
-| Payments | Paystack / Stripe Web SDK | Wallet top-up, ride payment |
-| Forms | React Hook Form + Zod | Type-safe unlock PIN, registration forms |
+| Concern      | Choice                              | Why                                              |
+| ------------ | ----------------------------------- | ------------------------------------------------ |
+| Framework    | Next.js 15 (App Router)             | SSR for auth pages, RSC for data-heavy views     |
+| Maps         | Mapbox GL JS                        | Dark-style map, custom bike/dock markers         |
+| Styling      | Tailwind CSS + custom CSS vars      | Design token control, glassmorphism utilities    |
+| Animations   | Framer Motion                       | Side-panel slide-in, modal transitions, ride HUD |
+| State        | Zustand                             | Map state, active ride, auth                     |
+| Server state | TanStack Query                      | API caching, background refetch                  |
+| WebSocket    | native WebSocket / socket.io-client | Live ride timer, bike position, dock updates     |
+| Auth         | NextAuth.js (JWT)                   | Session management, OTP phone login              |
+| Payments     | Paystack / Stripe Web SDK           | Wallet top-up, ride payment                      |
+| Forms        | React Hook Form + Zod               | Type-safe unlock PIN, registration forms         |
 
 ---
 
@@ -866,11 +896,11 @@ export default function WalletPage() {
 
 ### Responsive Strategy
 
-| Breakpoint | Layout Behaviour |
-|------------|-----------------|
-| Desktop `≥ 1280px` | Map fills screen · Bike drawer is right side panel (40%) · All panels floating |
-| Tablet `768–1279px` | Map fills screen · Bike detail becomes **bottom sheet** (80% height) · Panels shrink |
-| Mobile `< 768px` | Full mobile-web layout · Bottom sheets · Bike cards scroll vertically · Matches native app feel |
+| Breakpoint          | Layout Behaviour                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| Desktop `≥ 1280px`  | Map fills screen · Bike drawer is right side panel (40%) · All panels floating                  |
+| Tablet `768–1279px` | Map fills screen · Bike detail becomes **bottom sheet** (80% height) · Panels shrink            |
+| Mobile `< 768px`    | Full mobile-web layout · Bottom sheets · Bike cards scroll vertically · Matches native app feel |
 
 ```css
 /* GlassCard responsive example */
@@ -901,18 +931,21 @@ export default function WalletPage() {
 ```typescript
 // hooks/useLiveRide.ts
 export function useLiveRide(rideId: string) {
-  const updateBikePos = useRideStore(s => s.updateBikePosition);
+  const updateBikePos = useRideStore((s) => s.updateBikePosition);
   const router = useRouter();
 
   useEffect(() => {
     const ws = new WebSocket(`wss://${API_HOST}/live?token=${getToken()}`);
-    ws.onopen = () => ws.send(JSON.stringify({
-      subscribe: [`ride:${rideId}`, `bike:${getBikeId()}`]
-    }));
+    ws.onopen = () =>
+      ws.send(
+        JSON.stringify({
+          subscribe: [`ride:${rideId}`, `bike:${getBikeId()}`],
+        }),
+      );
     ws.onmessage = ({ data }) => {
       const msg = JSON.parse(data);
       if (msg.event === 'bike_location_update') updateBikePos(msg);
-      if (msg.event === 'ride_ended')           router.replace(`/ride/${rideId}`);
+      if (msg.event === 'ride_ended') router.replace(`/ride/${rideId}`);
     };
     return () => ws.close();
   }, [rideId]);

@@ -15,47 +15,47 @@ jest.mock('@ebike/db', () => ({
   prisma: {
     ride: {
       findUnique: jest.fn(),
-      update:     jest.fn(),
-      create:     jest.fn(),
-      findMany:   jest.fn(),
-      count:      jest.fn(),
-      findFirst:  jest.fn(),
+      update: jest.fn(),
+      create: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
+      findFirst: jest.fn(),
     },
     $transaction: jest.fn(),
   },
 }));
 
 jest.mock('@ebike/redis', () => ({
-  getRedisClient:       jest.fn(),
-  redisGetJson:         jest.fn(),
-  redisGetWaypoints:    jest.fn(),
+  getRedisClient: jest.fn(),
+  redisGetJson: jest.fn(),
+  redisGetWaypoints: jest.fn(),
   redisDeleteWaypoints: jest.fn(),
 }));
 
 jest.mock('@ebike/events', () => ({
   kafka: {
     paymentCharge: jest.fn().mockResolvedValue(undefined),
-    rideEnded:     jest.fn().mockResolvedValue(undefined),
-    rideStarted:   jest.fn().mockResolvedValue(undefined),
+    rideEnded: jest.fn().mockResolvedValue(undefined),
+    rideStarted: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
 jest.mock('@ebike/mqtt', () => ({
   bikeCommander: {
-    lock:   jest.fn().mockResolvedValue(undefined),
+    lock: jest.fn().mockResolvedValue(undefined),
     unlock: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
 jest.mock('ngeohash', () => ({
   default: { encode: jest.fn().mockReturnValue('u1hcz') },
-  encode:  jest.fn().mockReturnValue('u1hcz'),
+  encode: jest.fn().mockReturnValue('u1hcz'),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { RideService } from './ride.service';
-import { prisma }       from '@ebike/db';
+import { prisma } from '@ebike/db';
 import {
   getRedisClient,
   redisGetJson,
@@ -68,10 +68,10 @@ import {
 /** Build a minimal mock Redis client. */
 function makeMockRedis(overrides: Record<string, jest.Mock> = {}) {
   return {
-    get:    jest.fn().mockResolvedValue(null),
-    set:    jest.fn().mockResolvedValue('OK'),
-    del:    jest.fn().mockResolvedValue(1),
-    ping:   jest.fn().mockResolvedValue('PONG'),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1),
+    ping: jest.fn().mockResolvedValue('PONG'),
     ...overrides,
   };
 }
@@ -90,18 +90,18 @@ describe('Distance calculation (Haversine)', () => {
    * and checking that fareCents reflects distanceKm > 0.
    */
 
-  const RIDE_ID  = 'ride-001';
-  const BIKE_ID  = 'BK-001';
-  const USER_ID  = 'user-001';
-  const DOCK_ID  = 'dock-001';
+  const RIDE_ID = 'ride-001';
+  const BIKE_ID = 'BK-001';
+  const USER_ID = 'user-001';
+  const DOCK_ID = 'dock-001';
 
   const startedAt = new Date(Date.now() - 10 * 60 * 1000); // 10 min ago
 
   const mockRide = {
-    id:        RIDE_ID,
-    bikeId:    BIKE_ID,
-    userId:    USER_ID,
-    status:    'ACTIVE',
+    id: RIDE_ID,
+    bikeId: BIKE_ID,
+    userId: USER_ID,
+    status: 'ACTIVE',
     startedAt,
     fareCents: null,
   };
@@ -118,7 +118,7 @@ describe('Distance calculation (Haversine)', () => {
 
   test('endRide computes fare with zero distance when no waypoints recorded', async () => {
     (redisGetWaypoints as jest.Mock).mockResolvedValue([]);
-    (redisGetJson as jest.Mock).mockResolvedValue(null);          // no location → surge 1.0
+    (redisGetJson as jest.Mock).mockResolvedValue(null); // no location → surge 1.0
     (redisDeleteWaypoints as jest.Mock).mockResolvedValue(undefined);
 
     const result = await RideService.endRide(RIDE_ID, DOCK_ID);
@@ -131,8 +131,8 @@ describe('Distance calculation (Haversine)', () => {
   test('endRide computes higher fare when waypoints produce non-zero distance', async () => {
     // Lagos Island → Victoria Island: ~3.8 km apart
     const waypoints = [
-      { lat: 6.4541,  lng: 3.3947 },   // Lagos Island
-      { lat: 6.4281,  lng: 3.4219 },   // Victoria Island
+      { lat: 6.4541, lng: 3.3947 }, // Lagos Island
+      { lat: 6.4281, lng: 3.4219 }, // Victoria Island
     ];
     (redisGetWaypoints as jest.Mock).mockResolvedValue(waypoints);
     (redisGetJson as jest.Mock).mockResolvedValue({ lat: 6.4281, lng: 3.4219 });
@@ -221,7 +221,10 @@ describe('RideService.startRide', () => {
 
   test('writes bike:bikeId:ride key on start (enables waypoint recording)', async () => {
     (prisma.ride.findUnique as jest.Mock).mockResolvedValue({
-      id: RIDE_ID, bikeId: BIKE_ID, userId: USER_ID, status: 'RESERVED',
+      id: RIDE_ID,
+      bikeId: BIKE_ID,
+      userId: USER_ID,
+      status: 'RESERVED',
     });
     (prisma.ride.update as jest.Mock).mockResolvedValue({});
 
@@ -238,7 +241,10 @@ describe('RideService.startRide', () => {
 
   test('writes session:userId key on start', async () => {
     (prisma.ride.findUnique as jest.Mock).mockResolvedValue({
-      id: RIDE_ID, bikeId: BIKE_ID, userId: USER_ID, status: 'RESERVED',
+      id: RIDE_ID,
+      bikeId: BIKE_ID,
+      userId: USER_ID,
+      status: 'RESERVED',
     });
     (prisma.ride.update as jest.Mock).mockResolvedValue({});
 

@@ -15,6 +15,15 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["typings/**/*", "index.ts", "errors/**/*", "logger/**/*", "middleware/**/*", "shutdown/**/*", "health/**/*", "resilience/**/*"],
+  "include": [
+    "typings/**/*",
+    "index.ts",
+    "errors/**/*",
+    "logger/**/*",
+    "middleware/**/*",
+    "shutdown/**/*",
+    "health/**/*",
+    "resilience/**/*"
+  ],
   "exclude": ["node_modules", "dist"]
 }

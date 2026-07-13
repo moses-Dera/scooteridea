@@ -3,8 +3,8 @@ services:
   postgres:
     image: postgis/postgis:16-3.4
     environment:
-      POSTGRES_DB:       ebike
-      POSTGRES_USER:     ebike
+      POSTGRES_DB: ebike
+      POSTGRES_USER: ebike
       POSTGRES_PASSWORD: secret
     ports:
       - '5440:5432'
@@ -37,7 +37,7 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     healthcheck:
-      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/#' -C 1 -W 3 || exit 1"]
+      test: ['CMD-SHELL', "mosquitto_sub -t '$$SYS/#' -C 1 -W 3 || exit 1"]
       interval: 10s
       retries: 5
 
@@ -45,11 +45,11 @@ services:
   nginx:
     image: nginx:1.27-alpine
     ports:
-      - '80:80'       # single public ingress point
+      - '80:80' # single public ingress point
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - 'host.docker.internal:host-gateway'
     restart: unless-stopped
 
   # ── Backend Services ──────────────────────────────────────────────────────────
@@ -58,13 +58,13 @@ services:
     expose:
       - '3001'
     environment:
-      PORT:                3001
-      DATABASE_URL:        postgresql://ebike:secret@postgres:5432/ebike
-      REDIS_URL:           redis://redis:6379
-      JWT_ACCESS_SECRET:   ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_EXPIRY:  30d
-      JWT_ACCESS_EXPIRY:   15m
-      GOOGLE_CLIENT_ID:    ${GOOGLE_CLIENT_ID}
+      PORT: 3001
+      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_EXPIRY: 30d
+      JWT_ACCESS_EXPIRY: 15m
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     depends_on:
       - postgres
       - redis
@@ -74,12 +74,12 @@ services:
     expose:
       - '3002'
     environment:
-      PORT:             3002
-      DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
-      REDIS_URL:        redis://redis:6379
-      MQTT_BROKER_URL:  mqtt://mosquitto:1883
-      MQTT_USERNAME:    ${MQTT_USERNAME}
-      MQTT_PASSWORD:    ${MQTT_PASSWORD}
+      PORT: 3002
+      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - postgres
@@ -90,10 +90,10 @@ services:
     expose:
       - '3003'
     environment:
-      PORT:             3003
-      DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
-      REDIS_URL:        redis://redis:6379
-      MQTT_BROKER_URL:  mqtt://mosquitto:1883
+      PORT: 3003
+      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - postgres
@@ -104,8 +104,8 @@ services:
     expose:
       - '3005'
     environment:
-      PORT:       3005
-      REDIS_URL:  redis://redis:6379
+      PORT: 3005
+      REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
@@ -115,12 +115,12 @@ services:
     expose:
       - '3006'
     environment:
-      PORT:                  3006
-      DATABASE_URL:          postgresql://ebike:secret@postgres:5432/ebike
-      REDIS_URL:             redis://redis:6379
-      STRIPE_SECRET_KEY:     ${STRIPE_SECRET_KEY}
-      PAYSTACK_SECRET_KEY:   ${PAYSTACK_SECRET_KEY}
-      JWT_ACCESS_SECRET:     ${JWT_ACCESS_SECRET}
+      PORT: 3006
+      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      REDIS_URL: redis://redis:6379
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - postgres
 
@@ -129,10 +129,10 @@ services:
     expose:
       - '3007'
     environment:
-      PORT:               3007
-      REDIS_URL:          redis://redis:6379
-      EXPO_ACCESS_TOKEN:  ${EXPO_ACCESS_TOKEN}
-      JWT_ACCESS_SECRET:  ${JWT_ACCESS_SECRET}
+      PORT: 3007
+      REDIS_URL: redis://redis:6379
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
 
@@ -141,9 +141,9 @@ services:
     expose:
       - '3008'
     environment:
-      PORT:               3008
-      REDIS_URL:          redis://redis:6379
-      JWT_ACCESS_SECRET:  ${JWT_ACCESS_SECRET}
+      PORT: 3008
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
 
@@ -152,10 +152,10 @@ services:
     expose:
       - '3009'
     environment:
-      PORT:             3009
-      DATABASE_URL:     postgresql://ebike:secret@postgres:5432/ebike
-      REDIS_URL:        redis://redis:6379
-      MQTT_BROKER_URL:  mqtt://mosquitto:1883
+      PORT: 3009
+      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - postgres
@@ -165,9 +165,9 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-hardware-simulator:latest
     environment:
       MQTT_BROKER: mqtt://mosquitto:1883
-      MQTT_USERNAME:   ${MQTT_USERNAME}
-      MQTT_PASSWORD:   ${MQTT_PASSWORD}
-      API_URL:         http://nginx:80
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      API_URL: http://nginx:80
     depends_on:
       - mosquitto
       - nginx
@@ -176,7 +176,7 @@ services:
   loki:
     image: grafana/loki:2.9.0
     ports:
-      - "3100:3100"
+      - '3100:3100'
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml
@@ -195,7 +195,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:

@@ -289,7 +289,7 @@ export class ApiError extends Error {
     public status: number,
     public code: string,
     message: string,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
     this.name = 'ApiError';

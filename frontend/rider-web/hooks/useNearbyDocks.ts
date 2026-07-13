@@ -34,7 +34,7 @@ export function useNearbyDocks(lat?: number, lng?: number) {
     };
 
     fetchDocks();
-    
+
     // Poll every 30 seconds since dock availability changes
     const interval = setInterval(fetchDocks, 30000);
     return () => clearInterval(interval);

@@ -25,16 +25,13 @@ export class PricingService {
 
     for (const key of keys) {
       const geohash = key.split(':')[2];
-      const demand  = parseInt((await redis.get(key)) ?? '0', 10);
+      const demand = parseInt((await redis.get(key)) ?? '0', 10);
 
       // Count available bikes in cell (simplified: use total for now)
-      const supply  = await redis.zCard('fleet:available');
+      const supply = await redis.zCard('fleet:available');
 
       const ratio = supply / Math.max(demand, 1);
-      const multiplier =
-        ratio > 2.0 ? 1.0 :
-        ratio > 1.0 ? 1.2 :
-        ratio > 0.5 ? 1.5 : 2.0;
+      const multiplier = ratio > 2.0 ? 1.0 : ratio > 1.0 ? 1.2 : ratio > 0.5 ? 1.5 : 2.0;
 
       await redis.setEx(`geohash:surge:${geohash}`, 120, multiplier.toString());
     }
@@ -43,15 +40,15 @@ export class PricingService {
   /** Get the surge multiplier for a given lat/lng. */
   static async getSurgeMultiplier(lat: number, lng: number): Promise<number> {
     const geohash = Geohash.encode(lat, lng, 5); // precision-5 ≈ 4.9km cell
-    const redis   = await getRedisClient();
-    const raw     = await redis.get(`geohash:surge:${geohash}`);
+    const redis = await getRedisClient();
+    const raw = await redis.get(`geohash:surge:${geohash}`);
     return raw ? parseFloat(raw) : 1.0;
   }
 
   /** Increment demand counter for a geohash cell (call when rider opens map). */
   static async recordDemand(lat: number, lng: number): Promise<void> {
     const geohash = Geohash.encode(lat, lng, 5);
-    const redis   = await getRedisClient();
+    const redis = await getRedisClient();
     await redis.incr(`geohash:demand:${geohash}`);
     await redis.expire(`geohash:demand:${geohash}`, 120);
   }
@@ -72,7 +69,9 @@ export class PricingService {
     const config = await PricingService.getConfig();
     const surgeMult = await PricingService.getSurgeMultiplier(lat, lng);
     const estimatedFareCents = Math.round(
-      (config.baseFare + config.perMinute * estimatedDurationMin + config.perKm * estimatedDistanceKm) *
+      (config.baseFare +
+        config.perMinute * estimatedDurationMin +
+        config.perKm * estimatedDistanceKm) *
         surgeMult *
         100,
     );
@@ -88,13 +87,16 @@ export class PricingService {
 
   /** Simple Haversine distance helper (returns km) */
   private static getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371; 
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 
@@ -116,9 +118,15 @@ export class PricingService {
     let perKm = (config?.perKmCents || 3000) / 100;
 
     // 2. Intersect Destination with PostGIS Geofences
-    const intersectingZones = await prisma.$queryRaw<Array<{
-      id: string, name: string, type: string, base_fare_override: number | null, per_minute_override: number | null
-    }>>`
+    const intersectingZones = await prisma.$queryRaw<
+      Array<{
+        id: string;
+        name: string;
+        type: string;
+        base_fare_override: number | null;
+        per_minute_override: number | null;
+      }>
+    >`
       SELECT id, name, type, "base_fare_override", "per_minute_override"
       FROM geofences
       WHERE ST_Contains(
@@ -143,7 +151,7 @@ export class PricingService {
 
     // 3. Dock Proximity Check (200 meter radius)
     // If no docks within 200m, apply the Out-of-Dock Convenience Fee
-    const nearbyDocks = await prisma.$queryRaw<Array<{id: string}>>`
+    const nearbyDocks = await prisma.$queryRaw<Array<{ id: string }>>`
       SELECT id FROM docks
       WHERE ST_DWithin(
         ST_SetSRID(ST_Point("location_lng", "location_lat"), 4326)::geography,
@@ -158,12 +166,12 @@ export class PricingService {
     }
 
     // 4. Resource validation (Requires 1.5% battery per km + 5% buffer)
-    const requiredBatteryPct = Math.ceil((estimatedDistanceKm * 1.5) + 5);
+    const requiredBatteryPct = Math.ceil(estimatedDistanceKm * 1.5 + 5);
 
     // 5. Final Upfront Fare Calculation
     const surgeMult = await PricingService.getSurgeMultiplier(userLat, userLng);
     const rideCostCents = Math.round(
-      (baseFare + (perMinute * estimatedDurationMin) + (perKm * estimatedDistanceKm)) * surgeMult * 100
+      (baseFare + perMinute * estimatedDurationMin + perKm * estimatedDistanceKm) * surgeMult * 100,
     );
 
     const totalEstimatedFareCents = rideCostCents + convenienceFeeCents;
@@ -177,7 +185,7 @@ export class PricingService {
       rideCostCents,
       convenienceFeeCents,
       totalEstimatedFareCents,
-      warnings
+      warnings,
     };
   }
 }

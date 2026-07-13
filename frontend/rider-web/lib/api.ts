@@ -53,7 +53,7 @@ function createApiClient(): AxiosInstance {
         if (typeof window !== 'undefined') {
           let feature = 'your account';
           const url = error.config?.url || '';
-          
+
           if (url.includes('wallet') || url.includes('payment')) feature = 'your Wallet';
           else if (url.includes('history') || url.includes('rides')) feature = 'your Ride History';
           else if (url.includes('profile') || url.includes('auth/me')) feature = 'your Profile';
@@ -65,7 +65,7 @@ function createApiClient(): AxiosInstance {
       }
 
       return Promise.reject(handleApiError(error));
-    }
+    },
   );
 
   return client;
@@ -192,8 +192,7 @@ export const authApi = {
   register: (email: string, password: string, name: string, phone?: string) =>
     api.post<AuthTokens>('/auth/register', { email, password, name, phone }),
 
-  refresh: (refreshToken: string) =>
-    api.post<AuthTokens>('/auth/refresh', { refreshToken }),
+  refresh: (refreshToken: string) => api.post<AuthTokens>('/auth/refresh', { refreshToken }),
 
   logout: () => api.post('/auth/logout'),
 };
@@ -219,8 +218,7 @@ export const bikeApi = {
 };
 
 export const rideApi = {
-  reserve: (bikeId: string, startDockId?: string) =>
-    api.post('/rides', { bikeId, startDockId }),
+  reserve: (bikeId: string, startDockId?: string) => api.post('/rides', { bikeId, startDockId }),
 
   start: (rideId: string) => api.post(`/rides/${rideId}/start`, {}),
 
@@ -232,8 +230,7 @@ export const rideApi = {
 
   getById: (id: string) => api.get(`/rides/${id}`),
 
-  dispute: (id: string, reason: string) =>
-    api.post(`/rides/${id}/dispute`, { reason }),
+  dispute: (id: string, reason: string) => api.post(`/rides/${id}/dispute`, { reason }),
 };
 
 export const userApi = {
@@ -241,10 +238,11 @@ export const userApi = {
 
   updateProfile: (data: any) => api.put('/auth/me', data),
 
-  getWallet: () => api.get('/auth/me').then((res: any) => {
-    // Adapter: convert walletCents from backend to NGN balance on frontend
-    return { data: { balance: (res.data?.data?.walletCents || 0) / 100 } };
-  }),
+  getWallet: () =>
+    api.get('/auth/me').then((res: any) => {
+      // Adapter: convert walletCents from backend to NGN balance on frontend
+      return { data: { balance: (res.data?.data?.walletCents || 0) / 100 } };
+    }),
   topUpWallet: (reference: string) => {
     return api.post('/auth/wallet/topup', { reference }).then((res: any) => {
       // Return updated balance converted from cents
@@ -252,8 +250,7 @@ export const userApi = {
     });
   },
 
-  topUp: (amount: number, paymentMethodId: string) =>
-    Promise.resolve({ data: { success: true } }),
+  topUp: (amount: number, paymentMethodId: string) => Promise.resolve({ data: { success: true } }),
 
   getTransactions: (page = 1, limit = 20) =>
     Promise.resolve({ data: [], pagination: { hasMore: false } }),
@@ -267,9 +264,7 @@ export const pricingApi = {
       perKm: number;
       surgeMult: number;
       estimatedFareCents: number;
-    }>(
-      `/pricing/estimate?lat=${lat}&lng=${lng}&distKm=${distKm}&durMin=${durMin}`
-    ),
+    }>(`/pricing/estimate?lat=${lat}&lng=${lng}&distKm=${distKm}&durMin=${durMin}`),
 
   getSurge: (latitude: number, longitude: number) =>
     api.get(`/pricing/surge?lat=${latitude}&lng=${longitude}`),

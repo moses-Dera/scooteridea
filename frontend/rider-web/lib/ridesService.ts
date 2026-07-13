@@ -44,9 +44,14 @@ export const ridesService = {
     rideId: string,
     endDockId: string,
     latitude: number,
-    longitude: number
+    longitude: number,
   ): Promise<Ride> {
-    const response = (await rideApi.end(rideId, endDockId, latitude, longitude)) as ApiResponse<Ride>;
+    const response = (await rideApi.end(
+      rideId,
+      endDockId,
+      latitude,
+      longitude,
+    )) as ApiResponse<Ride>;
     if (!response.success || !response.data) {
       throw new Error(response.error || 'Failed to end ride');
     }
@@ -104,7 +109,7 @@ export const ridesService = {
   calculateCost(
     durationSeconds: number,
     ratePerMinute: number = 50,
-    surgeMultiplier: number = 1
+    surgeMultiplier: number = 1,
   ): number {
     const minutes = durationSeconds / 60;
     return parseFloat((minutes * ratePerMinute * surgeMultiplier).toFixed(2));

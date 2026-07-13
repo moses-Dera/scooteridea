@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { BikeFinder } from '@/components/bikes/BikeFinder';
 

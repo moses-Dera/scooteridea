@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const placeId = searchParams.get('place_id');
-  
+
   if (!placeId) {
     return NextResponse.json({ error: 'Missing place_id' }, { status: 400 });
   }

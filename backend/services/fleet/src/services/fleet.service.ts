@@ -1,12 +1,15 @@
 import { getMqttClient, subscribeToTopic, bikeCommander } from '@ebike/mqtt';
-import { getRedisClient, geoAdd, redisGetJson, redisSetJson, redisPushWaypoint } from '@ebike/redis';
+import {
+  getRedisClient,
+  geoAdd,
+  redisGetJson,
+  redisSetJson,
+  redisPushWaypoint,
+} from '@ebike/redis';
 import { kafka } from '@ebike/events';
 import { prisma } from '@ebike/db';
 import { logger } from '@ebike/core';
-import type {
-  BikeTelemetryPayload,
-  BikeStatus,
-} from '@ebike/types';
+import type { BikeTelemetryPayload, BikeStatus } from '@ebike/types';
 
 export class FleetService {
   /** Subscribe to all MQTT bike/dock topics. */
@@ -30,18 +33,11 @@ export class FleetService {
   /**
    * Core telemetry handler — follows exact spec from backend_architecture.md §3.2
    */
-  static async handleBikeTelemetry(
-    bikeId: string,
-    payload: BikeTelemetryPayload,
-  ): Promise<void> {
+  static async handleBikeTelemetry(bikeId: string, payload: BikeTelemetryPayload): Promise<void> {
     const { lat, lng, battery_pct, speed_kmh, lock_status, docked_at } = payload;
 
     // 1. Write live location to Redis (TTL 30s — stale auto-purge)
-    await redisSetJson(
-      `bike:${bikeId}:location`,
-      { lat, lng, battery_pct, speed_kmh },
-      30,
-    );
+    await redisSetJson(`bike:${bikeId}:location`, { lat, lng, battery_pct, speed_kmh }, 30);
 
     // 2. Update geospatial index
     await geoAdd('fleet:available', lng, lat, bikeId);
@@ -67,7 +63,9 @@ export class FleetService {
       const sessionRaw = await redis.get(`bike:${bikeId}:ride`);
       if (sessionRaw) {
         const { rideId } = JSON.parse(sessionRaw) as { rideId: string };
-        await redisPushWaypoint(rideId, lat, lng).catch(() => { /* non-critical */ });
+        await redisPushWaypoint(rideId, lat, lng).catch(() => {
+          /* non-critical */
+        });
       }
     }
 
@@ -115,7 +113,7 @@ export class FleetService {
       )
     `;
 
-    const currentZoneIds = zones.map(z => z.id);
+    const currentZoneIds = zones.map((z) => z.id);
     const redis = await getRedisClient();
     const prevZonesRaw = await redis.get(`bike:${bikeId}:zones`);
     const prevZoneIds: string[] = prevZonesRaw ? JSON.parse(prevZonesRaw) : [];
@@ -124,22 +122,22 @@ export class FleetService {
     for (const zone of zones) {
       if (!prevZoneIds.includes(zone.id)) {
         logger.info(`Bike ${bikeId} entered zone ${zone.name}`);
-        
+
         await prisma.zoneTransition.create({
           data: {
             bikeId,
             zoneId: zone.id,
             type: 'ENTER',
             lat,
-            lng
-          }
+            lng,
+          },
         });
 
-        await kafka.opsAlert({ 
-          type: 'ZONE_TRANSITION', 
-          bikeId, 
+        await kafka.opsAlert({
+          type: 'ZONE_TRANSITION',
+          bikeId,
           message: `Bike ${bikeId} entered zone: ${zone.name}`,
-          ts: Date.now() 
+          ts: Date.now(),
         });
       }
 
@@ -156,29 +154,29 @@ export class FleetService {
     for (const prevZoneId of prevZoneIds) {
       if (!currentZoneIds.includes(prevZoneId)) {
         logger.info(`Bike ${bikeId} left zone ${prevZoneId}`);
-        
+
         await prisma.zoneTransition.create({
           data: {
             bikeId,
             zoneId: prevZoneId,
             type: 'EXIT',
             lat,
-            lng
-          }
+            lng,
+          },
         });
 
-        await kafka.opsAlert({ 
-          type: 'ZONE_TRANSITION', 
-          bikeId, 
+        await kafka.opsAlert({
+          type: 'ZONE_TRANSITION',
+          bikeId,
           message: `Bike ${bikeId} left zone`,
-          ts: Date.now() 
+          ts: Date.now(),
         });
       }
     }
 
     // Save current state for next tick
     await redis.set(`bike:${bikeId}:zones`, JSON.stringify(currentZoneIds));
-    
+
     return currentZoneIds;
   }
 
@@ -194,13 +192,13 @@ export class FleetService {
           redisGetJson<{ lat: number; lng: number; battery_pct: number; speed_kmh: number }>(
             `bike:${bikeId}:location`,
           ),
-          redis.get(`bike:${bikeId}:zones`)
+          redis.get(`bike:${bikeId}:zones`),
         ]);
-        return { 
-          bikeId, 
-          status, 
+        return {
+          bikeId,
+          status,
           ...location,
-          zoneIds: zonesRaw ? JSON.parse(zonesRaw) : []
+          zoneIds: zonesRaw ? JSON.parse(zonesRaw) : [],
         };
       }),
     );
@@ -211,16 +209,26 @@ export class FleetService {
   static async getNearbyBikes(lat: number, lng: number, radiusKm: number = 2) {
     const redis = await getRedisClient();
     // GEORADIUS returns closest bikes first.
-    const bikes = await redis.geoSearch('fleet:available', { longitude: lng, latitude: lat }, { radius: radiusKm, unit: 'km' }, { SORT: 'ASC' });
-    
+    const bikes = await redis.geoSearch(
+      'fleet:available',
+      { longitude: lng, latitude: lat },
+      { radius: radiusKm, unit: 'km' },
+      { SORT: 'ASC' },
+    );
+
     const availableBikes = [];
     for (const bikeId of bikes as string[]) {
       const status = await redis.get(`bike:${bikeId}:status`);
       if (status === 'available') {
-        const location = await redisGetJson<{ lat: number; lng: number; battery_pct: number; speed_kmh: number }>(`bike:${bikeId}:location`);
+        const location = await redisGetJson<{
+          lat: number;
+          lng: number;
+          battery_pct: number;
+          speed_kmh: number;
+        }>(`bike:${bikeId}:location`);
         // Only show bikes to riders if battery > 15%
         if (location && location.battery_pct > 15) {
-           availableBikes.push({ bikeId, ...location });
+          availableBikes.push({ bikeId, ...location });
         }
       }
     }
@@ -229,10 +237,17 @@ export class FleetService {
 
   /** Find nearby docks using PostGIS from Postgres database */
   static async getNearbyDocks(lat: number, lng: number, radiusKm: number = 5) {
-    // We use ST_DWithin on the raw coordinates. 
+    // We use ST_DWithin on the raw coordinates.
     // radiusKm * 1000 converts km to meters which ST_DWithin expects for geography.
     const docks = await prisma.$queryRaw<
-      { id: string; name: string; available_slots: number; distance: number; lat: number; lng: number }[]
+      {
+        id: string;
+        name: string;
+        available_slots: number;
+        distance: number;
+        lat: number;
+        lng: number;
+      }[]
     >`
       SELECT 
         id, 
@@ -252,14 +267,14 @@ export class FleetService {
       )
       ORDER BY distance ASC
     `;
-    
-    return docks.map(d => ({
+
+    return docks.map((d) => ({
       id: d.id,
       name: d.name,
       availableSlots: d.available_slots,
       lat: d.lat,
       lng: d.lng,
-      distanceKm: Number(d.distance).toFixed(2)
+      distanceKm: Number(d.distance).toFixed(2),
     }));
   }
 
@@ -268,12 +283,12 @@ export class FleetService {
     const docks = await prisma.dock.findMany({
       include: {
         bikes: {
-          select: { id: true, status: true, batteryPct: true }
-        }
-      }
+          select: { id: true, status: true, batteryPct: true },
+        },
+      },
     });
 
-    return docks.map(d => ({
+    return docks.map((d) => ({
       id: d.id,
       name: d.name,
       location: `${d.locationLat.toFixed(4)}, ${d.locationLng.toFixed(4)}`,
@@ -285,12 +300,12 @@ export class FleetService {
       slots: Array.from({ length: d.totalSlots }).map((_, i) => {
         const bike = d.bikes[i];
         return {
-          id: `${d.id}-s${i+1}`,
+          id: `${d.id}-s${i + 1}`,
           bike_id: bike?.id || null,
           charging: !!bike && bike.batteryPct < 90, // mock charging status
-          available: !bike
+          available: !bike,
         };
-      })
+      }),
     }));
   }
 

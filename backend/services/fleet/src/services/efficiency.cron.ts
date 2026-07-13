@@ -21,38 +21,37 @@ export async function calculateBatteryEfficiency() {
     try {
       // Find completed rides that have both distance and battery data
       const rides = await prisma.ride.findMany({
-        where: { 
-          bikeId: bike.id, 
+        where: {
+          bikeId: bike.id,
           status: 'COMPLETED',
           endedAt: { gte: oneWeekAgo },
           distanceKm: { not: null },
-          batteryUsedPct: { not: null } // We just added this to schema!
+          batteryUsedPct: { not: null }, // We just added this to schema!
         },
-        select: { 
+        select: {
           distanceKm: true,
-          batteryUsedPct: true 
-        }
+          batteryUsedPct: true,
+        },
       });
 
-      let efficiencyKmPerPct = 0.40; // Default baseline (e.g. 40km total range = 0.4km per 1%)
+      let efficiencyKmPerPct = 0.4; // Default baseline (e.g. 40km total range = 0.4km per 1%)
 
       // If we have actual historical ride data, we calculate the real average for this exact bike
       if (rides.length > 0) {
         const totalDistance = rides.reduce((sum, r) => sum + Number(r.distanceKm), 0);
         const totalBatteryDrop = rides.reduce((sum, r) => sum + (r.batteryUsedPct || 0), 0);
-        
+
         if (totalBatteryDrop > 0) {
           efficiencyKmPerPct = totalDistance / totalBatteryDrop;
         }
       }
-      
+
       // Save the calculated efficiency to Redis so the matching system can use it instantly
       await redis.set(`bike:${bike.id}:efficiency`, efficiencyKmPerPct.toFixed(3));
-      
     } catch (err) {
       logger.error({ err, bikeId: bike.id }, '[EfficiencyCron] Failed to process bike');
     }
   }
-  
+
   logger.info('[EfficiencyCron] Battery efficiency analysis complete. All bikes updated.');
 }

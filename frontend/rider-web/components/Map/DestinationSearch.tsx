@@ -18,7 +18,7 @@ export function DestinationSearch() {
   const [recentSearches, setRecentSearches] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const pathname = usePathname();
 
@@ -28,7 +28,7 @@ export function DestinationSearch() {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => console.warn('Could not get location for search bias', err),
-        { enableHighAccuracy: false, maximumAge: 300000 } // cached for 5 mins is fine
+        { enableHighAccuracy: false, maximumAge: 300000 }, // cached for 5 mins is fine
       );
     }
   }, []);
@@ -49,7 +49,7 @@ export function DestinationSearch() {
     try {
       setRecentSearches((prev) => {
         // Remove duplicate if exists, then prepend
-        const filtered = prev.filter(r => r.id !== result.id);
+        const filtered = prev.filter((r) => r.id !== result.id);
         const newRecent = [result, ...filtered].slice(0, 5); // Keep last 5
         localStorage.setItem('scooteridea_recent_searches', JSON.stringify(newRecent));
         return newRecent;
@@ -62,7 +62,7 @@ export function DestinationSearch() {
   const removeRecentSearch = (e: React.MouseEvent, id: string) => {
     e.stopPropagation(); // prevent clicking the item
     setRecentSearches((prev) => {
-      const newRecent = prev.filter(r => r.id !== id);
+      const newRecent = prev.filter((r) => r.id !== id);
       localStorage.setItem('scooteridea_recent_searches', JSON.stringify(newRecent));
       return newRecent;
     });
@@ -88,11 +88,11 @@ export function DestinationSearch() {
         }
         const res = await fetch(url);
         const data = await res.json();
-        
+
         if (data.predictions) {
           const formattedResults = data.predictions.map((p: any) => ({
             id: p.place_id,
-            place_name: p.description
+            place_name: p.description,
           }));
           setResults(formattedResults);
         } else {
@@ -114,20 +114,22 @@ export function DestinationSearch() {
       // Fetch the exact coordinates for the selected place
       const res = await fetch(`/api/places/details?place_id=${result.id}`);
       const data = await res.json();
-      
+
       if (data.result?.geometry?.location) {
         saveRecentSearch(result); // Save to history when successfully clicked
-        
+
         const { lat, lng } = data.result.geometry.location;
         // Show destination preview instead of instantly navigating
-        router.push(`?destination=true&lat=${lat}&lng=${lng}&name=${encodeURIComponent(result.place_name.split(',')[0])}`);
+        router.push(
+          `?destination=true&lat=${lat}&lng=${lng}&name=${encodeURIComponent(result.place_name.split(',')[0])}`,
+        );
         setIsExpanded(false);
         setQuery('');
       } else {
-        console.error("No geometry found for place");
+        console.error('No geometry found for place');
       }
     } catch (e) {
-      console.error("Failed to get location details", e);
+      console.error('Failed to get location details', e);
     } finally {
       setIsSearching(false);
     }
@@ -141,7 +143,7 @@ export function DestinationSearch() {
 
   if (!isExpanded) {
     return (
-      <button 
+      <button
         onClick={() => setIsExpanded(true)}
         className="glass-panel flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-300 hover:text-white transition-all shadow-xl hover:shadow-primary/10 border border-white/5 w-full md:w-80"
       >
@@ -180,8 +182,12 @@ export function DestinationSearch() {
                 <MapPin className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-white text-sm font-semibold truncate">{result.place_name.split(',')[0]}</div>
-                <div className="text-slate-400 text-xs truncate mt-0.5">{result.place_name.split(',').slice(1).join(',')}</div>
+                <div className="text-white text-sm font-semibold truncate">
+                  {result.place_name.split(',')[0]}
+                </div>
+                <div className="text-slate-400 text-xs truncate mt-0.5">
+                  {result.place_name.split(',').slice(1).join(',')}
+                </div>
               </div>
             </button>
           ))}
@@ -192,8 +198,13 @@ export function DestinationSearch() {
       {!query && recentSearches.length > 0 && (
         <div className="flex flex-col gap-1 mt-2">
           <div className="flex items-center justify-between px-2 mb-1">
-            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Recent Searches</span>
-            <button onClick={clearAllHistory} className="text-slate-500 hover:text-red-400 text-xs font-medium transition-colors">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+              Recent Searches
+            </span>
+            <button
+              onClick={clearAllHistory}
+              className="text-slate-500 hover:text-red-400 text-xs font-medium transition-colors"
+            >
               Clear All
             </button>
           </div>
@@ -206,14 +217,30 @@ export function DestinationSearch() {
               >
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-[#111622] flex items-center justify-center shrink-0 border border-white/5 group-hover:border-slate-500/50 transition-colors">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <svg
+                      className="w-4 h-4 text-slate-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-slate-200 text-sm font-medium truncate">{result.place_name.split(',')[0]}</div>
-                    <div className="text-slate-500 text-xs truncate mt-0.5">{result.place_name.split(',').slice(1).join(',')}</div>
+                    <div className="text-slate-200 text-sm font-medium truncate">
+                      {result.place_name.split(',')[0]}
+                    </div>
+                    <div className="text-slate-500 text-xs truncate mt-0.5">
+                      {result.place_name.split(',').slice(1).join(',')}
+                    </div>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={(e) => removeRecentSearch(e, result.id)}
                   className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
                 >
@@ -224,7 +251,7 @@ export function DestinationSearch() {
           </div>
         </div>
       )}
-      
+
       {isSearching && query && (
         <div className="text-center text-slate-400 text-sm py-4 animate-pulse">Searching...</div>
       )}

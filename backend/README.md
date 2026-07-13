@@ -7,6 +7,7 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ and npm 10+
 - Docker & Docker Compose
 - Git
@@ -48,18 +49,18 @@ All should return `200 OK`.
 
 ## 📁 Service Directory
 
-| Service | Port | Responsibility |
-|---------|------|-----------------|
-| **Auth Service** | 3001 | JWT issuance, OAuth, RBAC |
-| **Fleet Service** | 3002 | MQTT ingestion, Redis updates, telemetry fan-out |
-| **Ride Service** | 3003 | Ride lifecycle, billing |
-| **Matching Service** | 3004 | Bike-rider matching, geospatial queries |
-| **Pricing Service** | 3005 | Surge pricing calculations |
-| **Payment Service** | 3006 | Stripe/Paystack integration |
-| **Notification Service** | 3007 | Push, SMS, email |
-| **WebSocket Hub** | 3008 | Real-time client updates |
-| **Dock Service** | 3009 | Dock telemetry, slot state |
-| **API Gateway** | 443 | Auth, rate-limiting, routing (Kong/Nginx) |
+| Service                  | Port | Responsibility                                   |
+| ------------------------ | ---- | ------------------------------------------------ |
+| **Auth Service**         | 3001 | JWT issuance, OAuth, RBAC                        |
+| **Fleet Service**        | 3002 | MQTT ingestion, Redis updates, telemetry fan-out |
+| **Ride Service**         | 3003 | Ride lifecycle, billing                          |
+| **Matching Service**     | 3004 | Bike-rider matching, geospatial queries          |
+| **Pricing Service**      | 3005 | Surge pricing calculations                       |
+| **Payment Service**      | 3006 | Stripe/Paystack integration                      |
+| **Notification Service** | 3007 | Push, SMS, email                                 |
+| **WebSocket Hub**        | 3008 | Real-time client updates                         |
+| **Dock Service**         | 3009 | Dock telemetry, slot state                       |
+| **API Gateway**          | 443  | Auth, rate-limiting, routing (Kong/Nginx)        |
 
 ---
 
@@ -103,6 +104,7 @@ npm run docker:up
 ```
 
 Starts:
+
 - **PostgreSQL** (port 5432) — Transactional data, user profiles, ride history
 - **Redis** (port 6379) — Live locations, sessions, cache
 - **MQTT Broker** (port 1883) — Bike telemetry ingestion
@@ -223,6 +225,7 @@ S3_BUCKET=ebike-platform-rides
 All services use shared utilities from `backend/shared/`:
 
 ### `@ebike/kafka`
+
 Event streaming between services.
 
 ```javascript
@@ -238,6 +241,7 @@ kafka.consume('fleet.telemetry', async (msg) => {
 ```
 
 ### `@ebike/redis`
+
 Caching, sessions, geospatial queries.
 
 ```javascript
@@ -249,11 +253,15 @@ const location = await redis.get('bike:BK-001:location');
 
 // Geospatial (find nearby)
 const nearby = await redis.geoSearch('fleet:available', {
-  longitude: 3.37, latitude: 6.52, radius: 2, unit: 'km'
+  longitude: 3.37,
+  latitude: 6.52,
+  radius: 2,
+  unit: 'km',
 });
 ```
 
 ### `@ebike/mqtt`
+
 IoT device communication.
 
 ```javascript
@@ -269,6 +277,7 @@ mqtt.publish(`bikes/BK-001/commands`, { command: 'UNLOCK', ts: Date.now() });
 ```
 
 ### `@ebike/db`
+
 Prisma ORM + migrations.
 
 ```javascript
@@ -279,6 +288,7 @@ const rides = await prisma.ride.findMany({ where: { userId: 'U-123' } });
 ```
 
 ### `@ebike/types`
+
 Shared TypeScript interfaces.
 
 ```typescript
@@ -337,6 +347,7 @@ npm run dev
 ### Deploy to Production
 
 See `backend/infra/` for:
+
 - Terraform scripts (GCP infrastructure)
 - Kubernetes manifests (GKE deployment)
 - Docker Compose for development

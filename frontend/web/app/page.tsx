@@ -1,9 +1,29 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
-import { BarChart, AlertTriangle, AlertCircle, Info, Wrench, ClipboardList, TrendingUp, BatteryWarning, Activity, Users, CheckCircle } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import {
+  BarChart,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  Wrench,
+  ClipboardList,
+  TrendingUp,
+  BatteryWarning,
+  Activity,
+  Users,
+  CheckCircle,
+} from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from 'recharts';
 
 interface BikeModel {
   id: string;
@@ -53,28 +73,28 @@ export default function DashboardOverview() {
       try {
         setLoading(true);
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        
+
         // Fetch fleet data
         const fleetRes = await fetch(`${baseUrl}/api/proxy/fleet/bikes`).catch(() => null);
         if (fleetRes?.ok) {
           const json = await fleetRes.json();
           if (json.success && json.data) setBikes(json.data);
         }
-        
+
         // Fetch top riders
         const ridersRes = await fetch(`${baseUrl}/api/proxy/rides/riders/top`).catch(() => null);
         if (ridersRes?.ok) {
           const json = await ridersRes.json();
           if (json.success && json.data) setRiders(json.data);
         }
-        
+
         // Fetch system alerts
         const alertsRes = await fetch(`${baseUrl}/api/proxy/fleet/alerts`).catch(() => null);
         if (alertsRes?.ok) {
           const json = await alertsRes.json();
           if (json.success && json.data) setAlerts(json.data);
         }
-        
+
         // Fetch maintenance issues
         const maintRes = await fetch(`${baseUrl}/api/proxy/fleet/maintenance`).catch(() => null);
         if (maintRes?.ok) {
@@ -93,19 +113,22 @@ export default function DashboardOverview() {
     return () => clearInterval(interval);
   }, []);
 
-  const activeRides = bikes.filter(b => b.status === 'IN_USE' || b.status === 'in_use').length;
-  const availableBikes = bikes.filter(b => b.status === 'AVAILABLE' || b.status === 'available').length;
-  const lowBatteryCount = bikes.filter(b => b.battery_pct < 20).length;
+  const activeRides = bikes.filter((b) => b.status === 'IN_USE' || b.status === 'in_use').length;
+  const availableBikes = bikes.filter(
+    (b) => b.status === 'AVAILABLE' || b.status === 'available',
+  ).length;
+  const lowBatteryCount = bikes.filter((b) => b.battery_pct < 20).length;
   const totalFleet = bikes.length;
 
   return (
     <div className="w-full p-4 sm:p-6 space-y-6 animate-in fade-in duration-500 font-sans bg-black min-h-screen text-slate-200">
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-6 border-b border-white/5">
         <div>
           <div className="text-3xl font-black text-white tracking-tight">Fleet Command</div>
-          <p className="text-sm text-slate-400 mt-1 font-medium">Real-time system telemetry and operational status</p>
+          <p className="text-sm text-slate-400 mt-1 font-medium">
+            Real-time system telemetry and operational status
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button className="w-full sm:w-auto px-4 py-2.5 bg-surfaceLight hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10 flex items-center justify-center gap-2 shadow-lg">
@@ -125,7 +148,9 @@ export default function DashboardOverview() {
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Activity className="w-16 h-16 text-primary" />
           </div>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Active Rides</p>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">
+            Active Rides
+          </p>
           <div className="text-4xl font-black text-white">{loading ? '-' : activeRides}</div>
           <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" /> +12% from last hour
@@ -136,7 +161,9 @@ export default function DashboardOverview() {
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <BarChart className="w-16 h-16 text-blue-500" />
           </div>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Available</p>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">
+            Available
+          </p>
           <div className="text-4xl font-black text-white">{loading ? '-' : availableBikes}</div>
           <p className="text-xs text-slate-500 font-medium mt-2">Ready for deployment</p>
         </div>
@@ -145,7 +172,9 @@ export default function DashboardOverview() {
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <BatteryWarning className="w-16 h-16 text-warning" />
           </div>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Low Battery</p>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">
+            Low Battery
+          </p>
           <div className="text-4xl font-black text-white">{loading ? '-' : lowBatteryCount}</div>
           <p className="text-xs text-warning font-medium mt-2 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" /> Needs attention
@@ -156,7 +185,9 @@ export default function DashboardOverview() {
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
             <Users className="w-16 h-16 text-purple-500" />
           </div>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Total Fleet</p>
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">
+            Total Fleet
+          </p>
           <div className="text-4xl font-black text-white">{loading ? '-' : totalFleet}</div>
           <p className="text-xs text-slate-500 font-medium mt-2">Registered assets</p>
         </div>
@@ -168,7 +199,7 @@ export default function DashboardOverview() {
         <div className="lg:col-span-2 bg-surface border border-white/5 rounded-2xl p-6 h-[460px] flex flex-col shadow-2xl relative overflow-hidden">
           {/* Subtle gradient background for the chart container */}
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
-          
+
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-8 relative z-10">
             <div>
               <div className="text-xl font-bold text-white">Fleet Utilisation</div>
@@ -180,29 +211,56 @@ export default function DashboardOverview() {
               <option>Last 30 Days</option>
             </select>
           </div>
-          
+
           <div className="flex-1 w-full h-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1ED760" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#1ED760" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#1ED760" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#1ED760" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorAvailable" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="time" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="time"
+                  stroke="#475569"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
                 <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1E293B', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0F172A',
+                    borderColor: '#1E293B',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                  }}
                   itemStyle={{ color: '#E2E8F0', fontWeight: 'bold' }}
                 />
-                <Area type="monotone" dataKey="available" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorAvailable)" name="Available" />
-                <Area type="monotone" dataKey="active" stroke="#1ED760" strokeWidth={3} fillOpacity={1} fill="url(#colorActive)" name="Active Rides" />
+                <Area
+                  type="monotone"
+                  dataKey="available"
+                  stroke="#3B82F6"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorAvailable)"
+                  name="Available"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="active"
+                  stroke="#1ED760"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorActive)"
+                  name="Active Rides"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -219,7 +277,7 @@ export default function DashboardOverview() {
               <AlertTriangle className="w-3 h-3" /> {alerts.length} Active
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             {loading ? (
               <div className="flex justify-center py-12">
@@ -228,13 +286,13 @@ export default function DashboardOverview() {
             ) : alerts.length > 0 ? (
               alerts.map((alert) => {
                 const iconMap: Record<string, React.ReactNode> = {
-                  'error': <AlertCircle className="w-5 h-5 text-danger" />,
-                  'warning': <AlertTriangle className="w-5 h-5 text-warning" />,
-                  'info': <Info className="w-5 h-5 text-blue-500" />
+                  error: <AlertCircle className="w-5 h-5 text-danger" />,
+                  warning: <AlertTriangle className="w-5 h-5 text-warning" />,
+                  info: <Info className="w-5 h-5 text-blue-500" />,
                 };
-                
+
                 return (
-                  <div 
+                  <div
                     key={alert.id}
                     className="p-4 rounded-xl bg-surfaceLight border border-white/5 hover:border-white/10 transition-all cursor-pointer group"
                   >
@@ -271,7 +329,7 @@ export default function DashboardOverview() {
             <div className="text-xl font-bold text-white">Top Riders Today</div>
             <p className="text-sm text-slate-400">Highest volume users</p>
           </div>
-          
+
           <div className="space-y-3">
             {loading ? (
               <div className="flex justify-center py-8">
@@ -279,18 +337,25 @@ export default function DashboardOverview() {
               </div>
             ) : riders.length > 0 ? (
               riders.map((rider, i) => (
-                <div key={rider.id} className="flex items-center justify-between p-4 rounded-xl bg-surfaceLight border border-white/5 hover:border-primary/20 transition-colors">
+                <div
+                  key={rider.id}
+                  className="flex items-center justify-between p-4 rounded-xl bg-surfaceLight border border-white/5 hover:border-primary/20 transition-colors"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center text-lg">
                       #{i + 1}
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">{rider.name}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{rider.rides_count} total rides</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {rider.rides_count} total rides
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-primary font-black text-lg">{(rider.total_distance / 1000).toFixed(1)} km</p>
+                    <p className="text-primary font-black text-lg">
+                      {(rider.total_distance / 1000).toFixed(1)} km
+                    </p>
                   </div>
                 </div>
               ))
@@ -313,7 +378,7 @@ export default function DashboardOverview() {
               {maintenance.length} Tickets
             </span>
           </div>
-          
+
           <div className="space-y-3">
             {loading ? (
               <div className="flex justify-center py-8">
@@ -321,7 +386,10 @@ export default function DashboardOverview() {
               </div>
             ) : maintenance.length > 0 ? (
               maintenance.map((bike) => (
-                <div key={bike.id} className="flex items-center justify-between p-4 rounded-xl bg-surfaceLight border-l-4 border-l-danger border-y border-r border-white/5 hover:bg-white/5 transition-colors">
+                <div
+                  key={bike.id}
+                  className="flex items-center justify-between p-4 rounded-xl bg-surfaceLight border-l-4 border-l-danger border-y border-r border-white/5 hover:bg-white/5 transition-colors"
+                >
                   <div>
                     <p className="text-white font-bold text-sm flex items-center gap-2">
                       {bike.bike_id}
@@ -332,7 +400,9 @@ export default function DashboardOverview() {
                     <div className="flex items-center gap-1 text-danger bg-danger/10 px-2 py-1 rounded text-xs font-bold mb-1">
                       <ClipboardList className="w-3 h-3" /> {bike.report_count} Reports
                     </div>
-                    <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{bike.status}</span>
+                    <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                      {bike.status}
+                    </span>
                   </div>
                 </div>
               ))
@@ -343,6 +413,5 @@ export default function DashboardOverview() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

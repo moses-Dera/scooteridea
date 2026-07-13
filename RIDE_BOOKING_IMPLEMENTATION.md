@@ -7,6 +7,7 @@ This document describes the complete ride booking system that has been implement
 ## Architecture
 
 ### Technology Stack
+
 - **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
 - **Authentication**: NextAuth.js with HTTPOnly cookies + BFF proxy
 - **State Management**: React Context + useReducer
@@ -36,7 +37,7 @@ This document describes the complete ride booking system that has been implement
    └─ Shows 3-step unlock modal
    └─ Step 1: Confirm ride details and cost
    └─ Step 2: Choose unlock method (app, QR, NFC)
-   └─ Click "Unlock via App" 
+   └─ Click "Unlock via App"
    └─ Calls ridesService.startRide(rideId)
    └─ Backend starts ride tracking
    └─ Navigate to `/ride/active`
@@ -72,9 +73,11 @@ This document describes the complete ride booking system that has been implement
 ## Core Components
 
 ### 1. RideContext (`context/RideContext.tsx`)
+
 **Purpose**: Global state management for active rides
 
 **State Properties**:
+
 - `activeRide: Ride | null` - Currently active ride object
 - `isLoading: boolean` - API call in progress
 - `error: string | null` - Error messages
@@ -83,6 +86,7 @@ This document describes the complete ride booking system that has been implement
 - `nearestDock: {id, name, distance} | null` - Closest dock info
 
 **Actions**:
+
 - `setActiveRide(ride)` - Start tracking a new ride
 - `clearActiveRide()` - Clear active ride after completion
 - `setLoading(bool)` - Toggle loading state
@@ -92,9 +96,11 @@ This document describes the complete ride booking system that has been implement
 - `updateNearestDock(dock)` - Update nearest dock
 
 ### 2. RideTimer Component (`components/rides/RideTimer.tsx`)
+
 **Purpose**: Display real-time ride tracking
 
 **Features**:
+
 - Updates every second while ride is active
 - Shows HH:MM:SS format
 - Calculates cost in real-time
@@ -102,17 +108,20 @@ This document describes the complete ride booking system that has been implement
 - Handles errors gracefully
 
 **Props**:
+
 ```typescript
 interface RideTimerProps {
-  surgeMultiplier?: number;  // Pricing multiplier (default 1)
-  baseRate?: number;         // Rate per minute in currency (default 50)
+  surgeMultiplier?: number; // Pricing multiplier (default 1)
+  baseRate?: number; // Rate per minute in currency (default 50)
 }
 ```
 
 ### 3. RideHistoryComponent (`components/bikes/RideHistory.tsx`)
+
 **Purpose**: Display paginated ride history
 
 **Features**:
+
 - Fetches rides from backend with pagination
 - Shows 10 rides per page
 - Displays ride statistics (duration, distance, cost)
@@ -124,6 +133,7 @@ interface RideTimerProps {
 ## Core Services
 
 ### RidesService (`lib/ridesService.ts`)
+
 Wrapper around API endpoints with business logic
 
 ```typescript
@@ -171,6 +181,7 @@ POST   /rides/{id}/dispute       → Submit dispute
 ## User Interface Pages
 
 ### `/bike/[id]` - Bike Detail
+
 - Bike information (battery, model)
 - Fare estimate (base rate + surge)
 - Nearest return docks
@@ -178,6 +189,7 @@ POST   /rides/{id}/dispute       → Submit dispute
 - Loading states on reservation
 
 ### `/unlock/[bikeId]` - Unlock Modal
+
 - 3-step flow (confirm → method → done)
 - Confirm ride cost and balance
 - Choose unlock method (app, QR, NFC)
@@ -185,6 +197,7 @@ POST   /rides/{id}/dispute       → Submit dispute
 - Back button for cancellation
 
 ### `/ride/active` - Active Ride Map
+
 - Full-screen map display
 - Real-time timer and cost
 - Nearest dock navigation
@@ -192,6 +205,7 @@ POST   /rides/{id}/dispute       → Submit dispute
 - Pause and report issue buttons
 
 ### `/ride/receipt/[rideId]` - Receipt
+
 - Ride summary (bike, duration, distance)
 - Cost breakdown (base fare, surge, total)
 - Payment confirmation (deducted from wallet)
@@ -200,6 +214,7 @@ POST   /rides/{id}/dispute       → Submit dispute
 - Dispute option
 
 ### `/ride/history` - History
+
 - Paginated list of rides
 - Ride cards showing key stats
 - View receipt links
@@ -212,7 +227,7 @@ POST   /rides/{id}/dispute       → Submit dispute
 Cost Formula:
   baseCost = duration_in_seconds / 60 * ratePerMinute
   finalCost = baseCost * surgeMultiplier
-  
+
 Example:
   10 minute ride at ₦50/min with 1.2x surge
   = (10 * 50) * 1.2
@@ -224,16 +239,17 @@ Example:
 
 ### Common Scenarios
 
-| Scenario | Error | Handling |
-|----------|-------|----------|
-| No active ride when starting timer | "No active reservation found" | Redirect to home |
-| Geolocation denied | "Permission denied" | Show retry button |
-| Insufficient balance | "Balance too low" | Show top-up prompt |
-| Network timeout | "Request timeout" | Show retry button |
-| Bike unavailable | "Bike already in use" | Show error, back to browser |
-| Backend service error | "Service unavailable" | Show error, back button |
+| Scenario                           | Error                         | Handling                    |
+| ---------------------------------- | ----------------------------- | --------------------------- |
+| No active ride when starting timer | "No active reservation found" | Redirect to home            |
+| Geolocation denied                 | "Permission denied"           | Show retry button           |
+| Insufficient balance               | "Balance too low"             | Show top-up prompt          |
+| Network timeout                    | "Request timeout"             | Show retry button           |
+| Bike unavailable                   | "Bike already in use"         | Show error, back to browser |
+| Backend service error              | "Service unavailable"         | Show error, back button     |
 
 ### Error Display
+
 - Inline error messages in components
 - Toast notifications for user feedback
 - Retry buttons for failed operations
@@ -242,12 +258,14 @@ Example:
 ## State Persistence
 
 ### Session Management
+
 - Active ride stored in RideContext (memory)
 - Survives page navigation within same session
 - Lost on app refresh (intended behavior)
 - Backend stores authoritative ride state
 
 ### Browser Cache
+
 - Ride history cached client-side temporarily
 - Re-fetched on pagination
 - No persistent storage of sensitive data
@@ -255,6 +273,7 @@ Example:
 ## Performance Considerations
 
 ### Optimizations
+
 - Timer interval: 1 second (balances accuracy and performance)
 - Pagination: 10 rides per page
 - Component memoization for expensive renders
@@ -262,6 +281,7 @@ Example:
 - CSS-in-JS compiled to static sheets
 
 ### Potential Bottlenecks
+
 - Geolocation request (user permission required, ~1-3 seconds)
 - Backend API latency
 - Map rendering (full-screen canvas)
@@ -269,6 +289,7 @@ Example:
 ## Testing Checklist
 
 ### Happy Path
+
 - [ ] Reserve bike successfully
 - [ ] Unlock bike transitions to active ride
 - [ ] Timer increments correctly every second
@@ -279,6 +300,7 @@ Example:
 - [ ] Can view receipt from history
 
 ### Error Scenarios
+
 - [ ] No balance → show error on reserve
 - [ ] Bike taken → show error during unlock
 - [ ] Geolocation denied → graceful degradation
@@ -287,6 +309,7 @@ Example:
 - [ ] Missing active ride → redirect home
 
 ### Edge Cases
+
 - [ ] Very short ride (< 1 minute)
 - [ ] Very long ride (> 24 hours)
 - [ ] High surge pricing (5x+)
@@ -297,6 +320,7 @@ Example:
 ## Future Enhancements
 
 ### Phase 2
+
 - [ ] QR code scanning for unlock
 - [ ] NFC tap unlock method
 - [ ] Ride pausing (pause timer, hold cost)
@@ -304,6 +328,7 @@ Example:
 - [ ] In-ride support chat
 
 ### Phase 3
+
 - [ ] Real-time bike tracking on map
 - [ ] Route optimization
 - [ ] Leaderboards and achievements
@@ -311,6 +336,7 @@ Example:
 - [ ] Ride matching (nearby riders)
 
 ### Phase 4
+
 - [ ] Voice commands
 - [ ] AR bike finder
 - [ ] Predictive dock availability
@@ -320,6 +346,7 @@ Example:
 ## Deployment Notes
 
 ### Environment Variables
+
 ```
 NEXTAUTH_URL=https://your-domain.com
 NEXT_PUBLIC_API_URL=https://api.your-domain.com
@@ -329,6 +356,7 @@ GOOGLE_CLIENT_SECRET=<from-google-cloud>
 ```
 
 ### Security Checklist
+
 - [ ] HTTPOnly cookies enabled for session tokens
 - [ ] HTTPS required for production
 - [ ] CORS properly configured for API proxy
@@ -337,6 +365,7 @@ GOOGLE_CLIENT_SECRET=<from-google-cloud>
 - [ ] Payment processing PCI-compliant
 
 ### Monitoring
+
 - [ ] Error rate tracking
 - [ ] API latency monitoring
 - [ ] User session analytics
@@ -346,73 +375,78 @@ GOOGLE_CLIENT_SECRET=<from-google-cloud>
 ## Troubleshooting
 
 ### "No active reservation found"
+
 **Cause**: Refresh browser, RideContext reset
 **Fix**: Re-select bike and reserve again
 
 ### Geolocation permission denied
+
 **Cause**: User clicked "Block" on permission prompt
 **Fix**: Allow geolocation in browser settings, try again
 
 ### "Invalid token" on endRide
+
 **Cause**: Session expired during ride
 **Fix**: Re-login, can still view ride in history
 
 ### Cost doesn't match estimate
+
 **Cause**: Surge pricing changed, backend calculated different rate
 **Fix**: Check receipt shows server-calculated cost (source of truth)
 
 ## Code Examples
 
 ### Reserve a Bike
+
 ```typescript
-const { setActiveRide, setLoading, setError } = useRide()
+const { setActiveRide, setLoading, setError } = useRide();
 
 const handleReserve = async () => {
   try {
-    setLoading(true)
-    const ride = await ridesService.reserve(bikeId, 'dock-001')
-    setActiveRide(ride)
-    router.push(`/unlock/${bikeId}`)
+    setLoading(true);
+    const ride = await ridesService.reserve(bikeId, 'dock-001');
+    setActiveRide(ride);
+    router.push(`/unlock/${bikeId}`);
   } catch (err) {
-    setError(err.message)
+    setError(err.message);
   } finally {
-    setLoading(false)
+    setLoading(false);
   }
-}
+};
 ```
 
 ### Start Ride
+
 ```typescript
 const handleStartRide = async () => {
-  if (!state.activeRide) return
-  
+  if (!state.activeRide) return;
+
   try {
-    setLoading(true)
-    await ridesService.startRide(state.activeRide.id)
-    router.push('/ride/active')
+    setLoading(true);
+    await ridesService.startRide(state.activeRide.id);
+    router.push('/ride/active');
   } catch (err) {
-    setError(err.message)
+    setError(err.message);
   } finally {
-    setLoading(false)
+    setLoading(false);
   }
-}
+};
 ```
 
 ### End Ride with Geolocation
+
 ```typescript
 const handleEndRide = async () => {
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const ride = await ridesService.endRide(
-        state.activeRide!.id,
-        'dock-002',
-        position.coords.latitude,
-        position.coords.longitude
-      )
-      router.push(`/ride/receipt/${ride.id}`)
-    }
-  )
-}
+  navigator.geolocation.getCurrentPosition(async (position) => {
+    const ride = await ridesService.endRide(
+      state.activeRide!.id,
+      'dock-002',
+      position.coords.latitude,
+      position.coords.longitude,
+    );
+    router.push(`/ride/receipt/${ride.id}`);
+  });
+};
 ```
 
 ---

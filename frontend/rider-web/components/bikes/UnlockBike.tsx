@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
       try {
         const token = localStorage.getItem('token') || 'demo-token';
         const res = await fetch(`/api/proxy/fleet/bikes/${bikeId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (res.ok) {
@@ -60,7 +60,7 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ action: 'UNLOCK' }),
       });
@@ -89,7 +89,10 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
     return (
       <div className="text-center text-red-400">
         <p>Bike not found</p>
-        <button onClick={() => router.push('/')} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">
+        <button
+          onClick={() => router.push('/')}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+        >
           Back to Map
         </button>
       </div>
@@ -114,7 +117,9 @@ export function UnlockBikeComponent({ bikeId }: { bikeId: string }) {
           </div>
           <div className="bg-slate-700 rounded-lg p-4 text-center">
             <p className="text-slate-400 text-sm">Location</p>
-            <p className="text-xs text-slate-300">{bike.lat.toFixed(2)}, {bike.lng.toFixed(2)}</p>
+            <p className="text-xs text-slate-300">
+              {bike.lat.toFixed(2)}, {bike.lng.toFixed(2)}
+            </p>
           </div>
           <div className="bg-slate-700 rounded-lg p-4 text-center">
             <p className="text-slate-400 text-sm">Condition</p>

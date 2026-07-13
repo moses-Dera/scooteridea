@@ -10,6 +10,7 @@
     "packages/*"
   ],
   "devDependencies": {
+    "prettier": "^3.0.0",
     "turbo": "^2.0.0",
     "typescript": "^5.4.0"
   },
@@ -21,6 +22,9 @@
     "test": "turbo run test",
     "docker:up": "docker compose -f backend/infra/docker-compose.yml up -d postgres redis mosquitto",
     "docker:down": "docker compose -f backend/infra/docker-compose.yml down",
-    "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v"
+    "docker:clean": "docker compose -f backend/infra/docker-compose.yml down -v",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint"
   }
 }

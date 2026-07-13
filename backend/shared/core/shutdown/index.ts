@@ -37,10 +37,7 @@ export function registerCleanup(name: string, fn: CleanupFn): void {
  * @param server  - The http.Server instance to drain.
  * @param timeoutMs - Max ms to wait before force-killing (default 10s).
  */
-export function setupGracefulShutdown(
-  server: http.Server,
-  timeoutMs = 10_000,
-): void {
+export function setupGracefulShutdown(server: http.Server, timeoutMs = 10_000): void {
   async function shutdown(signal: string): Promise<void> {
     logger.info(`[Shutdown] Received ${signal}. Starting graceful shutdown…`);
 
@@ -72,7 +69,7 @@ export function setupGracefulShutdown(
   }
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT',  () => shutdown('SIGINT'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 
   // ── Unhandled rejection / uncaught exception guardrails ───────────────────
   process.on('unhandledRejection', (reason, promise) => {

@@ -13,9 +13,9 @@
 
 import 'dotenv/config';
 import express from 'express';
-import helmet  from 'helmet';
-import cors    from 'cors';
-import http    from 'http';
+import helmet from 'helmet';
+import cors from 'cors';
+import http from 'http';
 import { prisma } from '@ebike/db';
 
 import {
@@ -38,7 +38,7 @@ import { rideRouter } from './routes/ride.routes';
 // ── Prisma (shared singleton from @ebike/db) ─────────────────────────────────
 
 // ── App ───────────────────────────────────────────────────────────────────────
-const app  = express();
+const app = express();
 const PORT = Number(process.env.RIDE_PORT ?? process.env.PORT ?? 3003);
 
 process.env.SERVICE_NAME = 'ride-service';
@@ -46,10 +46,12 @@ process.env.SERVICE_NAME = 'ride-service';
 // ── Middleware ─────────────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors({
-  origin:      process.env.CORS_ORIGINS?.split(',') ?? '*',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGINS?.split(',') ?? '*',
+    credentials: true,
+  }),
+);
 
 // ── Request Lifecycle ─────────────────────────────────────────────────────────
 app.use(requestId);
@@ -68,16 +70,24 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // ── Health Probes ─────────────────────────────────────────────────────────────
-registerProbe('postgres', async () => {
-  await prisma.$queryRaw`SELECT 1`;
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'postgres',
+  async () => {
+    await prisma.$queryRaw`SELECT 1`;
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
-registerProbe('redis', async () => {
-  const redis = await getRedisClient();
-  await redis.ping();
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'redis',
+  async () => {
+    const redis = await getRedisClient();
+    await redis.ping();
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function bootstrap(): Promise<void> {
@@ -95,8 +105,8 @@ async function bootstrap(): Promise<void> {
     process.exit(1);
   }
 
-  registerCleanup('Postgres',       () => prisma.$disconnect());
-  registerCleanup('Redis',          () => disconnectRedis());
+  registerCleanup('Postgres', () => prisma.$disconnect());
+  registerCleanup('Redis', () => disconnectRedis());
   registerCleanup('Events Producer', () => disconnectProducer());
 
   const server = http.createServer(app);

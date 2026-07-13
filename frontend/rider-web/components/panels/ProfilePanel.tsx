@@ -44,7 +44,9 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'your Profile' } }));
+      window.dispatchEvent(
+        new CustomEvent('auth-required', { detail: { feature: 'your Profile' } }),
+      );
     }
   }, [status]);
 
@@ -84,7 +86,12 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
         >
           <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -92,12 +99,14 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
       {/* Profile Card */}
       <div className="flex items-center gap-5 mb-6 p-5 rounded-2xl bg-white/5 border border-white/10">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1ED760] to-[#00CC7F] flex items-center justify-center flex-shrink-0">
-          <span className="text-xl font-bold text-black">{(user?.name?.[0] || 'U') + (user?.email?.[1] || 'U')}</span>
+          <span className="text-xl font-bold text-black">
+            {(user?.name?.[0] || 'U') + (user?.email?.[1] || 'U')}
+          </span>
         </div>
         <div className="min-w-0 flex-1">
           {isEditing ? (
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Your Name"
@@ -119,15 +128,23 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10">
           <div className="text-2xl font-bold text-[#1ED760]">0</div>
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">Rides</p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">
+            Rides
+          </p>
         </div>
         <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10">
           <div className="text-2xl font-bold text-[#1ED760]">0 km</div>
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">Distance</p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">
+            Distance
+          </p>
         </div>
         <div className="text-center p-4 rounded-2xl bg-white/5 border border-white/10">
-          <div className="text-2xl font-bold text-white">₦{user?.wallet?.current?.toLocaleString() || '0'}</div>
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">Balance</p>
+          <div className="text-2xl font-bold text-white">
+            ₦{user?.wallet?.current?.toLocaleString() || '0'}
+          </div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-1 font-bold">
+            Balance
+          </p>
         </div>
       </div>
 
@@ -145,8 +162,8 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
           <div className="min-w-0 flex-1">
             <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Phone</p>
             {isEditing ? (
-              <input 
-                type="tel" 
+              <input
+                type="tel"
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
                 placeholder="+234..."
@@ -162,7 +179,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
       {/* Actions */}
       <div className="space-y-2 mb-4">
         {isEditing ? (
-          <button 
+          <button
             onClick={handleSave}
             disabled={isSaving}
             className="w-full py-3 px-4 rounded-xl bg-primary text-black hover:bg-primary/90 transition-colors font-bold text-sm active:scale-[0.98] flex items-center justify-center gap-2"
@@ -170,7 +187,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
             {isSaving ? <LoadingSpinner size="sm" /> : 'Save Changes'}
           </button>
         ) : (
-          <button 
+          <button
             onClick={() => setIsEditing(true)}
             className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]"
           >
@@ -186,8 +203,8 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
       </div>
 
       {/* Logout */}
-      <button 
-        className="w-full py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98]" 
+      <button
+        className="w-full py-3 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98]"
         onClick={() => {
           logout();
           signOut({ redirect: false }).then(() => {

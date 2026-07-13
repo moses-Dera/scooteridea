@@ -7,16 +7,28 @@ export default function HelpPage() {
   const router = useRouter();
 
   const faqs = [
-    { q: "How do I start a ride?", a: "Scan the QR code on the handlebars or enter the bike ID manually to unlock." },
-    { q: "Where can I park?", a: "You must park at designated 'Docks' visible on the map. Parking elsewhere incurs a penalty." },
-    { q: "What if the battery dies?", a: "If the battery dies mid-ride, please park it safely on the sidewalk and end the ride in the app. You won't be charged extra." },
+    {
+      q: 'How do I start a ride?',
+      a: 'Scan the QR code on the handlebars or enter the bike ID manually to unlock.',
+    },
+    {
+      q: 'Where can I park?',
+      a: "You must park at designated 'Docks' visible on the map. Parking elsewhere incurs a penalty.",
+    },
+    {
+      q: 'What if the battery dies?',
+      a: "If the battery dies mid-ride, please park it safely on the sidewalk and end the ride in the app. You won't be charged extra.",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-[#0A0D14] text-white">
       <div className="sticky top-0 z-40 pt-20 px-6 pb-6 border-b border-white/5 bg-[#0A0D14]/80 backdrop-blur-xl">
         <div className="flex items-center gap-4 mb-2">
-          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="text-2xl font-bold">Help & Support</div>
@@ -24,7 +36,6 @@ export default function HelpPage() {
       </div>
 
       <div className="px-6 py-6 space-y-8">
-        
         {/* Contact Support */}
         <div>
           <h2 className="text-lg font-bold mb-4 text-slate-200">Contact Us</h2>
@@ -55,7 +66,6 @@ export default function HelpPage() {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );

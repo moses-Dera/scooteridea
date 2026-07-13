@@ -1,37 +1,37 @@
-import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Operator Login",
+      name: 'Operator Login',
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "admin@scooter.com" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email', placeholder: 'admin@scooter.com' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-        
+
         try {
           const res = await fetch(`${backendUrl}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: credentials.email,
-              password: credentials.password
-            })
+              password: credentials.password,
+            }),
           });
 
           const json = await res.json();
-          
+
           if (res.ok && json.success && json.data?.accessToken) {
             const { user, accessToken, refreshToken } = json.data;
-            
+
             // Only allow Operators and Admins
             if (user.role !== 'OPERATOR' && user.role !== 'ADMIN') {
-              throw new Error("Access Denied: You do not have operator privileges.");
+              throw new Error('Access Denied: You do not have operator privileges.');
             }
 
             return {
@@ -40,18 +40,18 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               role: user.role,
               accessToken,
-              refreshToken
+              refreshToken,
             };
           }
           return null;
         } catch (e: any) {
-          throw new Error(e.message || "Invalid credentials");
+          throw new Error(e.message || 'Invalid credentials');
         }
-      }
-    })
+      },
+    }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours sliding window
   },
@@ -63,15 +63,17 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
       }
-      
+
       // Check if access token is expired (or close to expiring)
       if (token.accessToken && typeof token.accessToken === 'string') {
         try {
           const payloadBase64 = token.accessToken.split('.')[1];
           if (payloadBase64) {
-            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const decodedPayload = JSON.parse(
+              Buffer.from(payloadBase64, 'base64').toString('utf-8'),
+            );
             const exp = decodedPayload.exp * 1000;
-            
+
             // If token expires in less than 5 minutes, refresh it
             if (Date.now() > exp - 5 * 60 * 1000) {
               console.log('[NextAuth] Access token expired/expiring, refreshing...');
@@ -81,7 +83,7 @@ export const authOptions: NextAuthOptions = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refreshToken: token.refreshToken }),
               });
-              
+
               if (refreshRes.ok) {
                 const refreshedTokens = await refreshRes.json();
                 if (refreshedTokens.success && refreshedTokens.data) {
@@ -106,7 +108,7 @@ export const authOptions: NextAuthOptions = {
         (session as any).refreshToken = token.refreshToken;
       }
       return session;
-    }
+    },
   },
   pages: {
     signIn: '/login',
@@ -119,7 +121,7 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-      }
+      },
     },
     callbackUrl: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.callback-url`,
@@ -128,7 +130,7 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-      }
-    }
+      },
+    },
   },
 };

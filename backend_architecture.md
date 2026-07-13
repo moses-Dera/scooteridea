@@ -8,19 +8,19 @@
 
 ## 1. Service Catalogue
 
-| # | Service | Responsibility | Lang | Port |
-|---|---------|---------------|------|------|
-| 1 | **Auth Service** | JWT issuance, refresh, OAuth, RBAC | Node.js | 3001 |
-| 2 | **Fleet Service** | MQTT ingestion, Redis writes, telemetry fan-out | Node.js | 3002 |
-| 3 | **Ride Service** | Ride lifecycle (start → end → bill) | Node.js | 3003 |
-| 4 | **Matching Service** | Geo-query, scoring, bike reservation | Node.js | 3004 |
-| 5 | **Pricing Service** | Surge calc per geohash, fare formula | Node.js | 3005 |
-| 6 | **Payment Service** | Stripe/Paystack integration, wallet | Node.js | 3006 |
-| 7 | **Notification Service** | Push, SMS, email fan-out | Node.js | 3007 |
-| 8 | **WebSocket Hub** | Client subscriptions, live event relay | Node.js | 3008 |
-| 9 | **Dock Service** | Dock telemetry, slot state, rebalancing alerts | Node.js | 3009 |
-| 10 | **ML Service** | PPO matching, anomaly detection inference | Python | 8000 |
-| 11 | **API Gateway** | Auth, rate-limit, routing (Kong / Nginx) | — | 443 |
+| #   | Service                  | Responsibility                                  | Lang    | Port |
+| --- | ------------------------ | ----------------------------------------------- | ------- | ---- |
+| 1   | **Auth Service**         | JWT issuance, refresh, OAuth, RBAC              | Node.js | 3001 |
+| 2   | **Fleet Service**        | MQTT ingestion, Redis writes, telemetry fan-out | Node.js | 3002 |
+| 3   | **Ride Service**         | Ride lifecycle (start → end → bill)             | Node.js | 3003 |
+| 4   | **Matching Service**     | Geo-query, scoring, bike reservation            | Node.js | 3004 |
+| 5   | **Pricing Service**      | Surge calc per geohash, fare formula            | Node.js | 3005 |
+| 6   | **Payment Service**      | Stripe/Paystack integration, wallet             | Node.js | 3006 |
+| 7   | **Notification Service** | Push, SMS, email fan-out                        | Node.js | 3007 |
+| 8   | **WebSocket Hub**        | Client subscriptions, live event relay          | Node.js | 3008 |
+| 9   | **Dock Service**         | Dock telemetry, slot state, rebalancing alerts  | Node.js | 3009 |
+| 10  | **ML Service**           | PPO matching, anomaly detection inference       | Python  | 8000 |
+| 11  | **API Gateway**          | Auth, rate-limit, routing (Kong / Nginx)        | —       | 443  |
 
 ---
 
@@ -104,11 +104,13 @@ async findByEmail(email) {
 ```
 
 **JWT Payload:**
+
 ```json
 { "sub": "user_id", "role": "RIDER", "iat": 1234567890, "exp": 1234571490 }
 ```
 
 **Redis keys:**
+
 ```
 refresh:{user_id}  →  refresh_token  (TTL: 30 days)
 blacklist:{jti}    →  1              (TTL: access token lifetime)
@@ -121,6 +123,7 @@ blacklist:{jti}    →  1              (TTL: access token lifetime)
 **Responsibilities:** Subscribe to all MQTT telemetry topics, parse payloads, write live state to Redis, publish Kafka events for downstream consumers.
 
 **MQTT Subscriptions:**
+
 ```
 bikes/+/telemetry   →  handleBikeTelemetry()
 docks/+/status      →  handleDockTelemetry()
@@ -128,6 +131,7 @@ bikes/+/alerts      →  handleBikeAlert()
 ```
 
 **Bike Telemetry Handler (core loop):**
+
 ```javascript
 async handleBikeTelemetry(bikeId, payload) {
   const { lat, lng, battery_pct, speed_kmh, lock_status, docked_at } = payload;
@@ -150,11 +154,12 @@ async handleBikeTelemetry(bikeId, payload) {
 ```
 
 **Kafka Topics published:**
-| Topic | Consumers |
-|-------|-----------|
-| `fleet.telemetry` | WebSocket Hub, DB Writer Worker |
-| `fleet.alert` | Notification Service, Ops Dashboard |
-| `dock.status` | WebSocket Hub, Pricing Service |
+
+| Topic             | Consumers                           |
+| ----------------- | ----------------------------------- |
+| `fleet.telemetry` | WebSocket Hub, DB Writer Worker     |
+| `fleet.alert`     | Notification Service, Ops Dashboard |
+| `dock.status`     | WebSocket Hub, Pricing Service      |
 
 ---
 
@@ -163,6 +168,7 @@ async handleBikeTelemetry(bikeId, payload) {
 **Responsibilities:** Full ride lifecycle — reserve, start, track, end, calculate fare, trigger billing.
 
 **API:**
+
 ```
 POST /rides/reserve          ← Reserve bike (15s hold)
 POST /rides/:id/start        ← Confirm start, send UNLOCK to bike
@@ -173,6 +179,7 @@ POST /rides/:id/dispute      ← Flag a ride
 ```
 
 **Ride State Machine:**
+
 ```
 IDLE → RESERVED → ACTIVE → COMPLETING → COMPLETED
                   ↓                        ↑
@@ -180,6 +187,7 @@ IDLE → RESERVED → ACTIVE → COMPLETING → COMPLETED
 ```
 
 **Start Ride Flow:**
+
 ```javascript
 async startRide(rideId, userId) {
   const ride = await rideRepo.findById(rideId);
@@ -203,6 +211,7 @@ async startRide(rideId, userId) {
 ```
 
 **End Ride + Fare Calculation:**
+
 ```javascript
 async endRide(rideId, dockId) {
   const ride     = await rideRepo.findById(rideId);
@@ -233,11 +242,13 @@ async endRide(rideId, dockId) {
 **Responsibilities:** Accept a rider location, find + score candidate bikes, make a reservation.
 
 **API:**
+
 ```
 POST /match/request   body: { lat, lng, radiusKm }
 ```
 
 **Algorithm:**
+
 ```javascript
 async matchBike(userLat, userLng, radiusKm = 2) {
   // Step 1: Geospatial query — sub 10ms
@@ -281,6 +292,7 @@ function scoreBike({ distanceKm, batteryPct, nearestDock }) {
 ```
 
 **Lua script for atomic reservation** (prevents race conditions):
+
 ```lua
 -- RESERVE_BIKE_LUA
 local status = redis.call('GET', KEYS[1])
@@ -299,12 +311,14 @@ return 0
 **Responsibilities:** Calculate surge multipliers per geohash cell every 60s. Serve fare estimates.
 
 **API:**
+
 ```
 GET /pricing/surge?lat=&lng=        ← Current multiplier at location
 GET /pricing/estimate?bikeId=&dest= ← Fare estimate for a trip
 ```
 
 **Surge Calculation (runs every 60s via cron):**
+
 ```javascript
 async recalculateSurge() {
   const activeCells = await redis.keys('geohash:demand:*');
@@ -332,11 +346,13 @@ async recalculateSurge() {
 **Responsibilities:** Maintain persistent WebSocket connections to rider apps and operator dashboards. Relay Kafka events to subscribed clients.
 
 **Connection:**
+
 ```
 wss://api.platform.com/live?token=<jwt>
 ```
 
 **Subscription model:**
+
 ```javascript
 // Client sends on connect:
 { "subscribe": ["bike:BK-00123", "dock:DOCK-007", "fleet:nearby"] }
@@ -364,6 +380,7 @@ Kafka (fleet.telemetry) → Consumer → Redis PUBLISH ws:events
 **Responsibilities:** Receive dock telemetry via MQTT, maintain slot state, confirm bike docking events, trigger ride-end when docking confirmed, send rebalancing alerts.
 
 **Dock-In Event Flow:**
+
 ```javascript
 async handleDockTelemetry(dockId, payload) {
   const { slots, available_slots } = payload;
@@ -482,16 +499,16 @@ CREATE INDEX geofences_boundary_idx ON geofences USING GIST(boundary);
 
 ## 5. Kafka Event Bus
 
-| Topic | Producer | Consumers | Payload |
-|-------|----------|-----------|---------|
-| `fleet.telemetry` | Fleet Service | WS Hub, DB Writer | `{ bikeId, lat, lng, battery, status }` |
-| `dock.status` | Dock Service | WS Hub, Pricing | `{ dockId, availableSlots }` |
-| `ride.started` | Ride Service | Notification, Pricing | `{ rideId, bikeId, userId }` |
-| `ride.ended` | Ride Service | Payment, Notification | `{ rideId, fare, userId }` |
-| `payment.charge` | Ride Service | Payment Service | `{ userId, amount, rideId }` |
-| `payment.result` | Payment Service | Ride Service, Notification | `{ rideId, status }` |
-| `ops.alert` | Fleet/Dock | Notification, Dashboard | `{ type, bikeId/dockId }` |
-| `fleet.command` | Ride/Ops | Fleet Service (MQTT relay) | `{ bikeId, command }` |
+| Topic             | Producer        | Consumers                  | Payload                                 |
+| ----------------- | --------------- | -------------------------- | --------------------------------------- |
+| `fleet.telemetry` | Fleet Service   | WS Hub, DB Writer          | `{ bikeId, lat, lng, battery, status }` |
+| `dock.status`     | Dock Service    | WS Hub, Pricing            | `{ dockId, availableSlots }`            |
+| `ride.started`    | Ride Service    | Notification, Pricing      | `{ rideId, bikeId, userId }`            |
+| `ride.ended`      | Ride Service    | Payment, Notification      | `{ rideId, fare, userId }`              |
+| `payment.charge`  | Ride Service    | Payment Service            | `{ userId, amount, rideId }`            |
+| `payment.result`  | Payment Service | Ride Service, Notification | `{ rideId, status }`                    |
+| `ops.alert`       | Fleet/Dock      | Notification, Dashboard    | `{ type, bikeId/dockId }`               |
+| `fleet.command`   | Ride/Ops        | Fleet Service (MQTT relay) | `{ bikeId, command }`                   |
 
 ---
 
@@ -586,7 +603,9 @@ GCP_REGION=africa-south1
 ```javascript
 // shared/mqtt/commander.js
 class BikeCommander {
-  constructor(mqttClient) { this.client = mqttClient; }
+  constructor(mqttClient) {
+    this.client = mqttClient;
+  }
 
   unlock(bikeId, rideId) {
     return this._send(bikeId, { command: 'UNLOCK', rideId });
@@ -608,7 +627,7 @@ class BikeCommander {
     return this.client.publishAsync(
       `bikes/${bikeId}/commands`,
       JSON.stringify({ ...payload, ts: Date.now() }),
-      { qos: 1 }   // at-least-once delivery
+      { qos: 1 }, // at-least-once delivery
     );
   }
 }
@@ -678,30 +697,34 @@ Week 12    ml/             — PPO matching inference, anomaly detection
 ```
 
 ### 8. MQTT Broker Transition (Mosquitto -> EMQX)
+
 Currently, for the MVP and Beta Test, the `docker-compose.yml` is configured to use **Eclipse Mosquitto**. Mosquitto is an ultra-lightweight C-based MQTT broker that consumes ~3MB of RAM, making it perfect for running the entire stack on a $6/mo (1GB RAM) DigitalOcean Droplet.
 
 When scaling beyond 10,000+ scooters or requiring multi-server clustering, you must revert to **EMQX**.
 
 **To revert to EMQX:**
+
 1. Open `backend/infra/docker-compose.yml`.
 2. Replace the `mosquitto` block with:
+
 ```yaml
-  emqx:
-    image: emqx/emqx:5.6.0
-    ports:
-      - '1883:1883'   # MQTT
-      - '8083:8083'   # WebSocket MQTT
-      - '18083:18083' # Dashboard
-    environment:
-      EMQX_NAME:           emqx
-      EMQX_HOST:           127.0.0.1
-    volumes:
-      - emqx_data:/opt/emqx/data
-    healthcheck:
-      test: ["CMD", "/opt/emqx/bin/emqx", "ping"]
-      interval: 5s
-      retries: 5
+emqx:
+  image: emqx/emqx:5.6.0
+  ports:
+    - '1883:1883' # MQTT
+    - '8083:8083' # WebSocket MQTT
+    - '18083:18083' # Dashboard
+  environment:
+    EMQX_NAME: emqx
+    EMQX_HOST: 127.0.0.1
+  volumes:
+    - emqx_data:/opt/emqx/data
+  healthcheck:
+    test: ['CMD', '/opt/emqx/bin/emqx', 'ping']
+    interval: 5s
+    retries: 5
 ```
+
 3. In `docker-compose.yml`, update `MQTT_BROKER_URL` for `fleet-service`, `ride-service`, and `dock-service` from `mqtt://mosquitto:1883` back to `mqtt://emqx:1883`.
-4. Run `docker-compose up -d --build`. 
-*Note: Ensure your cloud server has at least 2GB RAM ($12/mo plan) before switching back to EMQX.*
+4. Run `docker-compose up -d --build`.
+   _Note: Ensure your cloud server has at least 2GB RAM ($12/mo plan) before switching back to EMQX._

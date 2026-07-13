@@ -3,7 +3,7 @@ import { logger } from '@ebike/core';
 
 /**
  * Debt Collector Cron Job
- * Runs periodically to scan for users with negative wallet balances 
+ * Runs periodically to scan for users with negative wallet balances
  * and a saved Paystack Authorization Code.
  * It attempts to auto-deduct the debt directly from their bank account.
  */
@@ -29,8 +29,11 @@ export async function runDebtCollection() {
     for (const user of usersInDebt) {
       // The debt is negative, so we multiply by -1 to get the positive amount to charge
       const amountToChargeCents = user.walletCents * -1;
-      
-      logger.info({ userId: user.id, amountCents: amountToChargeCents }, '[DebtCollector] Attempting charge authorization...');
+
+      logger.info(
+        { userId: user.id, amountCents: amountToChargeCents },
+        '[DebtCollector] Attempting charge authorization...',
+      );
 
       if (paystackSecret === 'sk_test_mock' || process.env.NODE_ENV !== 'production') {
         // MOCK MODE: Just assume the bank charge succeeded and clear the debt
@@ -56,18 +59,21 @@ export async function runDebtCollection() {
         }),
       });
 
-      const data = await response.json() as any;
+      const data = (await response.json()) as any;
 
       if (response.ok && data.data?.status === 'success') {
         logger.info({ userId: user.id }, '[DebtCollector] Bank charge successful! Debt cleared.');
-        
+
         // Reset wallet to 0
         await prisma.user.update({
           where: { id: user.id },
           data: { walletCents: 0 },
         });
       } else {
-        logger.warn({ userId: user.id, error: data.message }, '[DebtCollector] Bank charge failed (Insufficient funds in bank account).');
+        logger.warn(
+          { userId: user.id, error: data.message },
+          '[DebtCollector] Bank charge failed (Insufficient funds in bank account).',
+        );
       }
     }
   } catch (error) {

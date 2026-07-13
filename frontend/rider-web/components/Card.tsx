@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import React from 'react'
+import React from 'react';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  elevated?: boolean
-  children: React.ReactNode
+  elevated?: boolean;
+  children: React.ReactNode;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -22,23 +22,19 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       >
         {children}
       </div>
-    )
-  }
-)
+    );
+  },
+);
 
-Card.displayName = 'Card'
+Card.displayName = 'Card';
 
 interface CardHeaderProps {
-  title?: React.ReactNode
-  subtitle?: React.ReactNode
-  action?: React.ReactNode
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  action?: React.ReactNode;
 }
 
-export const CardHeader: React.FC<CardHeaderProps> = ({
-  title,
-  subtitle,
-  action,
-}) => (
+export const CardHeader: React.FC<CardHeaderProps> = ({ title, subtitle, action }) => (
   <div className="flex items-start justify-between gap-4 mb-4">
     <div>
       {title && <div className="text-lg font-bold text-white">{title}</div>}
@@ -46,22 +42,22 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
     </div>
     {action}
   </div>
-)
+);
 
 interface CardContentProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export const CardContent: React.FC<CardContentProps> = ({ children }) => (
   <div className="text-neutral-300">{children}</div>
-)
+);
 
 interface CardFooterProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export const CardFooter: React.FC<CardFooterProps> = ({ children }) => (
   <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-neutral-800">
     {children}
   </div>
-)
+);

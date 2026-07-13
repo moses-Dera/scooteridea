@@ -12,7 +12,7 @@
 
 import 'dotenv/config';
 import express from 'express';
-import http    from 'http';
+import http from 'http';
 import { prisma } from '@ebike/db';
 
 import {
@@ -30,11 +30,17 @@ import {
   withDLQ,
 } from '@ebike/core';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
-import { createConsumer, connectProducer, disconnectProducer, publish, TOPICS } from '@ebike/events';
+import {
+  createConsumer,
+  connectProducer,
+  disconnectProducer,
+  publish,
+  TOPICS,
+} from '@ebike/events';
 import type { KafkaPaymentChargeEvent } from '@ebike/types';
 
-const app    = express();
-const PORT   = Number(process.env.PORT ?? 3006);
+const app = express();
+const PORT = Number(process.env.PORT ?? 3006);
 process.env.SERVICE_NAME = 'payment-service';
 
 app.use(requestId);
@@ -45,10 +51,14 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // ── Health Probes ─────────────────────────────────────────────────────────────
-registerProbe('postgres', async () => {
-  await prisma.$queryRaw`SELECT 1`;
-  return { status: 'ok' };
-}, { critical: true });
+registerProbe(
+  'postgres',
+  async () => {
+    await prisma.$queryRaw`SELECT 1`;
+    return { status: 'ok' };
+  },
+  { critical: true },
+);
 
 // ── Payment Handler ───────────────────────────────────────────────────────────
 async function processPaymentCharge(event: KafkaPaymentChargeEvent): Promise<void> {
@@ -68,7 +78,7 @@ async function processPaymentCharge(event: KafkaPaymentChargeEvent): Promise<voi
           rideId,
           amountCents,
           currency: 'NGN',
-          status:   'failed',
+          status: 'failed',
           provider: 'wallet',
         },
       });
@@ -82,7 +92,7 @@ async function processPaymentCharge(event: KafkaPaymentChargeEvent): Promise<voi
     // Deduct from wallet
     await tx.user.update({
       where: { id: userId },
-      data:  { walletCents: { decrement: amountCents } },
+      data: { walletCents: { decrement: amountCents } },
     });
 
     await tx.payment.create({
@@ -91,7 +101,7 @@ async function processPaymentCharge(event: KafkaPaymentChargeEvent): Promise<voi
         rideId,
         amountCents,
         currency: 'NGN',
-        status:   'success',
+        status: 'success',
         provider: 'wallet',
       },
     });
@@ -127,8 +137,8 @@ async function bootstrap(): Promise<void> {
     await handlerWithDLQ(payload as KafkaPaymentChargeEvent);
   });
 
-  registerCleanup('Postgres',       () => prisma.$disconnect());
-  registerCleanup('Redis',          () => disconnectRedis());
+  registerCleanup('Postgres', () => prisma.$disconnect());
+  registerCleanup('Redis', () => disconnectRedis());
   registerCleanup('Events Producer', () => disconnectProducer());
   registerCleanup('Events Consumer', () => consumer.disconnect());
 

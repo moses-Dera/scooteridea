@@ -1,15 +1,15 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  preset:          'ts-jest',
+  preset: 'ts-jest',
   testEnvironment: 'node',
-  roots:           ['<rootDir>/src'],
-  testMatch:       ['**/*.test.ts'],
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/*.test.ts'],
   moduleNameMapper: {
-    '^@ebike/core$':   '<rootDir>/../../shared/core/index.ts',
-    '^@ebike/types$':  '<rootDir>/../../shared/types/index.ts',
-    '^@ebike/redis$':  '<rootDir>/../../shared/redis/client.ts',
-    '^@ebike/db$':     '<rootDir>/../../shared/db/index.ts',
+    '^@ebike/core$': '<rootDir>/../../shared/core/index.ts',
+    '^@ebike/types$': '<rootDir>/../../shared/types/index.ts',
+    '^@ebike/redis$': '<rootDir>/../../shared/redis/client.ts',
+    '^@ebike/db$': '<rootDir>/../../shared/db/index.ts',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }],
@@ -18,7 +18,7 @@ const config: Config = {
   coverageThreshold: {
     global: { branches: 60, functions: 70, lines: 70, statements: 70 },
   },
-  clearMocks:   true,
+  clearMocks: true,
   resetModules: true,
 };
 

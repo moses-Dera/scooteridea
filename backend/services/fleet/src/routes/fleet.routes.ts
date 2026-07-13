@@ -27,7 +27,7 @@ fleetRouter.put('/config', jwtGuard, requireRole('ADMIN'), async (req, res) => {
     const config = await prisma.systemConfig.upsert({
       where: { id: 'global' },
       update: { unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents },
-      create: { id: 'global', unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents }
+      create: { id: 'global', unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents },
     });
     res.json({ success: true, data: config });
   } catch (err) {
@@ -41,7 +41,7 @@ fleetRouter.put('/config', jwtGuard, requireRole('ADMIN'), async (req, res) => {
 fleetRouter.get('/bikes', jwtGuard, async (req: Request, res: Response) => {
   try {
     let bikes = await FleetService.getAllBikes();
-    
+
     // RBAC Backend Filtering
     const userRole = (req as any).user?.role;
     const userId = (req as any).user?.sub;
@@ -49,14 +49,14 @@ fleetRouter.get('/bikes', jwtGuard, async (req: Request, res: Response) => {
     if (userRole === 'OPERATOR' && userId) {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { assignedZones: true }
+        include: { assignedZones: true },
       });
-      
-      const allowedZoneIds = user?.assignedZones.map(z => z.id) || [];
-      
+
+      const allowedZoneIds = user?.assignedZones.map((z) => z.id) || [];
+
       // Filter out bikes that don't have at least one zone intersecting with allowedZoneIds
-      bikes = bikes.filter(bike => 
-        bike.zoneIds.some((id: string) => allowedZoneIds.includes(id))
+      bikes = bikes.filter((bike) =>
+        bike.zoneIds.some((id: string) => allowedZoneIds.includes(id)),
       );
     }
 
@@ -72,7 +72,7 @@ fleetRouter.get('/bikes/:id/trail', jwtGuard, async (req: Request, res: Response
     const { id } = req.params;
     const redis = await getRedisClient();
     const trailRaw = await redis.lRange(`bike:${id}:trail`, 0, -1);
-    
+
     // Parse the JSON strings back into objects
     const trail = trailRaw.map((point: string) => JSON.parse(point));
 
@@ -98,7 +98,11 @@ fleetRouter.get('/nearby', async (req, res) => {
     res.json({ success: true, data: bikes });
   } catch (err) {
     console.error('[Fleet API] /nearby Error:', err);
-    res.status(500).json({ success: false, error: 'Failed to find nearby bikes', details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to find nearby bikes',
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
@@ -126,7 +130,7 @@ fleetRouter.get('/docks/nearby', async (req, res) => {
 fleetRouter.get('/docks', jwtGuard, async (req: Request, res: Response) => {
   try {
     let docks = await FleetService.getAllDocks();
-    
+
     // RBAC Backend Filtering
     const userRole = (req as any).user?.role;
     const userId = (req as any).user?.sub;
@@ -134,11 +138,11 @@ fleetRouter.get('/docks', jwtGuard, async (req: Request, res: Response) => {
     if (userRole === 'OPERATOR' && userId) {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { assignedZones: true }
+        include: { assignedZones: true },
       });
-      
-      const allowedZoneIds = user?.assignedZones.map(z => z.id) || [];
-      
+
+      const allowedZoneIds = user?.assignedZones.map((z) => z.id) || [];
+
       // Assume docks have a geofenceId field or we check spatial (for now, return all if no geofenceId)
       // Actually, docks don't have a direct geofenceId in schema right now. We'd use PostGIS, but for now we filter by ST_Contains on DB or just return all if not explicitly modeled.
       // Since docks are stationary, we'll keep it simple for this demonstration.
@@ -165,7 +169,7 @@ fleetRouter.get('/alerts', jwtGuard, requireRole('OPERATOR', 'ADMIN'), async (re
 // GET /fleet/maintenance — maintenance issues
 fleetRouter.get('/maintenance', jwtGuard, requireRole('OPERATOR', 'ADMIN'), async (req, res) => {
   try {
-    const status = req.query.status as string || 'open';
+    const status = (req.query.status as string) || 'open';
     const maintenance = await FleetService.getMaintenance(status);
     res.json({ success: true, data: maintenance || [] });
   } catch (err) {
@@ -174,32 +178,47 @@ fleetRouter.get('/maintenance', jwtGuard, requireRole('OPERATOR', 'ADMIN'), asyn
 });
 
 // POST /fleet/bikes/:id/command — remote operator command
-fleetRouter.post('/bikes/:id/command', jwtGuard, requireRole('OPERATOR', 'ADMIN'), async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { command, value, reason, rideId } = req.body;
+fleetRouter.post(
+  '/bikes/:id/command',
+  jwtGuard,
+  requireRole('OPERATOR', 'ADMIN'),
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { command, value, reason, rideId } = req.body;
 
-  try {
-    switch (command) {
-      case 'LOCK':        await bikeCommander.lock(id); break;
-      case 'UNLOCK':      await bikeCommander.unlock(id, rideId); break;
-      case 'ALARM':       await bikeCommander.alarm(id); break;
-      case 'DISABLE':     await bikeCommander.disable(id, reason ?? 'OPERATOR'); break;
-      case 'SPEED_LIMIT': await bikeCommander.speedLimit(id, value); break;
-      default:
-        res.status(400).json({ success: false, error: `Unknown command: ${command}` });
-        return;
+    try {
+      switch (command) {
+        case 'LOCK':
+          await bikeCommander.lock(id);
+          break;
+        case 'UNLOCK':
+          await bikeCommander.unlock(id, rideId);
+          break;
+        case 'ALARM':
+          await bikeCommander.alarm(id);
+          break;
+        case 'DISABLE':
+          await bikeCommander.disable(id, reason ?? 'OPERATOR');
+          break;
+        case 'SPEED_LIMIT':
+          await bikeCommander.speedLimit(id, value);
+          break;
+        default:
+          res.status(400).json({ success: false, error: `Unknown command: ${command}` });
+          return;
+      }
+      res.json({ success: true, message: `Command ${command} sent to bike ${id}` });
+    } catch {
+      res.status(500).json({ success: false, error: 'Command delivery failed' });
     }
-    res.json({ success: true, message: `Command ${command} sent to bike ${id}` });
-  } catch {
-    res.status(500).json({ success: false, error: 'Command delivery failed' });
-  }
-});
+  },
+);
 
 // POST /fleet/simulator/telemetry — Inject fake telemetry for development
 fleetRouter.post('/simulator/telemetry', async (req, res) => {
   try {
     const { bikeId, lat, lng, battery_pct, speed_kmh, lock_status, docked_at } = req.body;
-    
+
     if (!bikeId || lat === undefined || lng === undefined) {
       res.status(400).json({ success: false, error: 'Missing required telemetry fields' });
       return;
@@ -212,7 +231,7 @@ fleetRouter.post('/simulator/telemetry', async (req, res) => {
       battery_pct: battery_pct ?? 100,
       speed_kmh: speed_kmh ?? 0,
       lock_status: lock_status ?? 'LOCKED',
-      docked_at
+      docked_at,
     });
 
     res.json({ success: true, message: `Simulated telemetry injected for ${bikeId}` });
@@ -225,7 +244,7 @@ fleetRouter.post('/simulator/telemetry', async (req, res) => {
 fleetRouter.post('/demo/spawn', async (req, res) => {
   try {
     const { lat, lng, count, radius } = req.body;
-    
+
     if (lat === undefined || lng === undefined) {
       res.status(400).json({ success: false, error: 'Missing lat/lng' });
       return;
@@ -233,13 +252,16 @@ fleetRouter.post('/demo/spawn', async (req, res) => {
 
     const { getMqttClient } = require('@ebike/mqtt');
     const mqtt = getMqttClient();
-    
-    mqtt.publish('system/demo/spawn', JSON.stringify({
-      lat,
-      lng,
-      count: count || 10,
-      radius: radius || 2
-    }));
+
+    mqtt.publish(
+      'system/demo/spawn',
+      JSON.stringify({
+        lat,
+        lng,
+        count: count || 10,
+        radius: radius || 2,
+      }),
+    );
 
     res.json({ success: true, message: `Demo spawn triggered at ${lat}, ${lng}` });
   } catch (err) {

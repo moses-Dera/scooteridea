@@ -24,11 +24,13 @@ export function BikeCard({ bike, onCommand }: BikeCardProps) {
           <h3 className="font-semibold text-lg text-gray-900">{bike.bike_id}</h3>
           <p className="text-sm text-gray-500">{bike.timestamp}</p>
         </div>
-        <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-          bike.lock_status === 'UNLOCKED' 
-            ? 'bg-red-100 text-red-800' 
-            : 'bg-green-100 text-green-800'
-        }`}>
+        <div
+          className={`px-3 py-1 rounded-full text-sm font-medium ${
+            bike.lock_status === 'UNLOCKED'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-green-100 text-green-800'
+          }`}
+        >
           {bike.lock_status}
         </div>
       </div>
@@ -37,12 +39,8 @@ export function BikeCard({ bike, onCommand }: BikeCardProps) {
         <div className="text-gray-700">
           📍 {bike.lat.toFixed(4)}, {bike.lng.toFixed(4)}
         </div>
-        <div className="text-gray-700">
-          ⚡ {bike.speed_kmh} km/h
-        </div>
-        <div className="text-gray-700">
-          🔋 {bike.battery_pct.toFixed(1)}%
-        </div>
+        <div className="text-gray-700">⚡ {bike.speed_kmh} km/h</div>
+        <div className="text-gray-700">🔋 {bike.battery_pct.toFixed(1)}%</div>
         <div className="text-gray-700">
           {bike.docked_at ? `📌 ${bike.docked_at}` : 'Free roaming'}
         </div>

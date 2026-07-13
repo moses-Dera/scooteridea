@@ -8,14 +8,17 @@ export const authRouter = Router();
 
 // ── Validation Schemas ────────────────────────────────────────────────────────
 const registerSchema = z.object({
-  email:    z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  name:     z.string().min(1, 'Name is required').max(100),
-  phone:    z.string().regex(/^\+?[1-9]\d{6,14}$/, 'Invalid phone number').optional(),
+  name: z.string().min(1, 'Name is required').max(100),
+  phone: z
+    .string()
+    .regex(/^\+?[1-9]\d{6,14}$/, 'Invalid phone number')
+    .optional(),
 });
 
 const loginSchema = z.object({
-  email:    z.string().email(),
+  email: z.string().email(),
   password: z.string().min(1),
 });
 
@@ -72,8 +75,8 @@ authRouter.post(
   asyncHandler(AuthController.resetPassword),
 );
 
-authRouter.post('/logout',       jwtGuard, asyncHandler(AuthController.logout));
-authRouter.get('/me',            jwtGuard, asyncHandler(AuthController.me));
+authRouter.post('/logout', jwtGuard, asyncHandler(AuthController.logout));
+authRouter.get('/me', jwtGuard, asyncHandler(AuthController.me));
 authRouter.post('/oauth/google', authRateLimiter, asyncHandler(AuthController.oauthGoogle));
 
 // Register Expo push token — call this on the client immediately after login

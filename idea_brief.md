@@ -1,4 +1,5 @@
 # How Our E-Bike Sharing Platform Works
+
 ### A Non-Technical Overview for Stakeholders
 
 ---
@@ -120,17 +121,17 @@ This is not a Day One feature. It is a strategic option we are building toward a
 
 ## Summary: How It All Fits Together
 
-| What Happens | How We Achieve It |
-|---|---|
-| Bikes are always tracked | 4G-connected onboard computer sends GPS every 3–5 seconds |
-| Riders see live bikes and stands on a map | Real-time connection between our server and the app |
-| Booking and unlocking is instant | Wireless command from server to the bike's electronic lock |
-| Bikes are automatically charged | Docking stations charge bikes the moment they are returned |
-| Riders are guided to the nearest stand | Bike display and app show nearest available dock in real time |
-| Pricing reflects demand | Automated surge pricing recalculated every 60 seconds |
-| Bikes stay where they should | Digital geofences with automatic enforcement |
-| Assets are protected | Remote lock, alarm, and disable capabilities at all times |
-| The platform grows smarter | AI matching engine learns from usage data over time |
+| What Happens                              | How We Achieve It                                             |
+| ----------------------------------------- | ------------------------------------------------------------- |
+| Bikes are always tracked                  | 4G-connected onboard computer sends GPS every 3–5 seconds     |
+| Riders see live bikes and stands on a map | Real-time connection between our server and the app           |
+| Booking and unlocking is instant          | Wireless command from server to the bike's electronic lock    |
+| Bikes are automatically charged           | Docking stations charge bikes the moment they are returned    |
+| Riders are guided to the nearest stand    | Bike display and app show nearest available dock in real time |
+| Pricing reflects demand                   | Automated surge pricing recalculated every 60 seconds         |
+| Bikes stay where they should              | Digital geofences with automatic enforcement                  |
+| Assets are protected                      | Remote lock, alarm, and disable capabilities at all times     |
+| The platform grows smarter                | AI matching engine learns from usage data over time           |
 
 ---
 
