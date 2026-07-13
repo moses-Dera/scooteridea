@@ -115,7 +115,7 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-session-token`,
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-operator-token`,
       options: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

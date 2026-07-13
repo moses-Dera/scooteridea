@@ -11,8 +11,8 @@ export default withAuth(
       authorized: ({ req, token }) => {
         // Since we use a custom cookie name, we must check it manually
         // if withAuth's getToken fails to find the default cookie.
-        const secureCookie = req.cookies.get('__Secure-scooter-session-token');
-        const standardCookie = req.cookies.get('scooter-session-token');
+        const secureCookie = req.cookies.get('__Secure-scooter-rider-token');
+        const standardCookie = req.cookies.get('scooter-rider-token');
         return !!token || !!secureCookie || !!standardCookie;
       },
     },
