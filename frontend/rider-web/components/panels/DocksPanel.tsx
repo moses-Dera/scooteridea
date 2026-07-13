@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 
 import { useRouter } from 'next/navigation';
 import { MapPin, Navigation, Info } from 'lucide-react';
@@ -11,9 +12,19 @@ interface DocksPanelProps {
 
 export default function DocksPanel({ onClose }: DocksPanelProps) {
   const router = useRouter();
+  const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   
-  // Lagos approx coords for mock
-  const { docks, loading } = useNearbyDocks(6.4541, 3.3792);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.error("Error getting location", err),
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
+  const { docks, loading } = useNearbyDocks(userLoc?.lat, userLoc?.lng);
 
   return (
     <div className="px-6 pb-6 text-white space-y-4">

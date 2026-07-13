@@ -219,7 +219,7 @@ export const bikeApi = {
 };
 
 export const rideApi = {
-  reserve: (bikeId: string, startDockId: string) =>
+  reserve: (bikeId: string, startDockId?: string) =>
     api.post('/rides', { bikeId, startDockId }),
 
   start: (rideId: string) => api.post(`/rides/${rideId}/start`, {}),
@@ -241,7 +241,16 @@ export const userApi = {
 
   updateProfile: (data: any) => api.put('/auth/me', data),
 
-  getWallet: () => Promise.resolve({ data: { balance: 2500 } }),
+  getWallet: () => api.get('/auth/me').then((res: any) => {
+    // Adapter: convert walletCents from backend to NGN balance on frontend
+    return { data: { balance: (res.data?.data?.walletCents || 0) / 100 } };
+  }),
+  topUpWallet: (reference: string) => {
+    return api.post('/auth/wallet/topup', { reference }).then((res: any) => {
+      // Return updated balance converted from cents
+      return { data: { balance: (res.data?.data?.walletCents || 0) / 100 } };
+    });
+  },
 
   topUp: (amount: number, paymentMethodId: string) =>
     Promise.resolve({ data: { success: true } }),

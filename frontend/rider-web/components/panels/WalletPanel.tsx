@@ -3,7 +3,8 @@
 import { useWallet } from '@/hooks';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { CreditCard, Plus, History, ChevronRight } from 'lucide-react';
+import { CreditCard, Plus, History, ChevronRight, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
@@ -23,6 +24,16 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
       window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'your Wallet' } }));
     }
   }, [status]);
+
+  useEffect(() => {
+    if (!document.getElementById('paystack-inline-script')) {
+      const script = document.createElement('script');
+      script.id = 'paystack-inline-script';
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   if (status === 'loading' || status === 'unauthenticated') {
     return (
@@ -60,18 +71,78 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
            </h1>
         )}
         
-        <button 
-          onClick={() => {
-            const amount = prompt('Enter amount to add (₦):');
-            if (amount) {
-              setTopUpAmount(amount);
-              setIsTopping(true);
-            }
-          }}
-          className="mt-6 w-full py-4 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <Plus className="w-5 h-5" /> Top Up Balance
-        </button>
+        {isTopping ? (
+          <div className="mt-6 flex gap-2 items-center relative z-10">
+            <input 
+              type="number" 
+              placeholder="Amount (₦)" 
+              className="flex-1 bg-black/40 border border-primary/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+              value={topUpAmount}
+              onChange={(e) => setTopUpAmount(e.target.value)}
+              autoFocus
+            />
+            <button 
+              onClick={() => {
+                const amount = parseFloat(topUpAmount);
+                if (!amount || amount < 100) {
+                  toast.error('Minimum top-up is ₦100');
+                  return;
+                }
+                
+                // Initialize Paystack Checkout
+                if ((window as any).PaystackPop) {
+                  const handler = (window as any).PaystackPop.setup({
+                    key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || 'pk_test_xxxxxxxxxxxxxxxxxxxxxxxx', 
+                    email: session?.user?.email || 'rider@scooter.com',
+                    amount: amount * 100, // Paystack expects lowest currency denomination (Kobo)
+                    currency: 'NGN',
+                    ref: 'txn_' + Math.floor((Math.random() * 1000000000) + 1),
+                    callback: async function(response: any) {
+                      // Payment Complete! 
+                      // In production, we'd verify this reference on the backend before crediting.
+                      try {
+                        const { userApi } = await import('@/lib/api');
+                        await userApi.topUpWallet(response.reference);
+                        toast.success(`Payment successful! ₦${amount} has been added to your wallet.`);
+                      } catch (err: any) {
+                        console.error('Failed to top up wallet on backend', err);
+                        const errorMessage = err?.message || 'Transaction verification failed.';
+                        toast.error(`Attention: ${errorMessage}`);
+                      }
+                      setIsTopping(false);
+                      setTopUpAmount('');
+                      // Force a refresh of the wallet balance
+                      window.location.reload(); 
+                    },
+                    onClose: function() {
+                      // User closed the payment window
+                      setIsTopping(false);
+                    }
+                  });
+                  handler.openIframe();
+                } else {
+                  toast.error('Payment gateway is still loading. Please try again in a moment.');
+                }
+              }}
+              className="py-3 px-6 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform cursor-pointer"
+            >
+              Pay
+            </button>
+            <button 
+              onClick={() => setIsTopping(false)}
+              className="py-3 px-4 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={() => setIsTopping(true)}
+            className="mt-6 w-full py-4 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Plus className="w-5 h-5" /> Top Up Balance
+          </button>
+        )}
       </div>
 
       {error && (
@@ -80,19 +151,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
         </div>
       )}
 
-      {/* Payment Methods */}
-      <div>
-        <h2 className="text-lg font-bold mb-4 text-slate-200">Payment Methods</h2>
-        <div className="space-y-3">
-          <div className="text-sm text-slate-400 mb-2 px-2">No payment methods saved.</div>
-          <button className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center gap-4 hover:bg-white/5 transition-colors border-dashed text-slate-400 hover:text-white cursor-pointer">
-            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center">
-              <Plus className="w-5 h-5" />
-            </div>
-            <span className="font-semibold">Add New Card</span>
-          </button>
-        </div>
-      </div>
+
 
       {/* Recent Transactions Link */}
       <div>

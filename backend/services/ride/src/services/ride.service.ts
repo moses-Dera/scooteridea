@@ -12,6 +12,7 @@ import {
   ForbiddenError,
   BikeUnavailableError,
   RideNotActiveError,
+  InsufficientBalanceError,
   retry,
   logger,
 } from '@ebike/core';
@@ -92,6 +93,14 @@ export class RideService {
 
     // Lock in the price for this ride at reservation time
     const pricing = await getConfig(bikeId);
+
+    // Verify User has enough funds to cover the base fare (minimum balance)
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundError('User', userId);
+
+    if (user.walletCents < pricing.baseFareCents) {
+      throw new InsufficientBalanceError(pricing.baseFareCents, user.walletCents);
+    }
 
     const ride = await prisma.ride.create({
       data: { 

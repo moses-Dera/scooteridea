@@ -23,7 +23,7 @@ jest.mock('@ebike/redis', () => ({
   getRedisClient: jest.fn(),
 }));
 
-jest.mock('../src/repositories/user.repository', () => ({
+jest.mock('../repositories/user.repository', () => ({
   UserRepository: {
     findByEmail:       jest.fn(),
     findById:          jest.fn(),
@@ -34,8 +34,8 @@ jest.mock('../src/repositories/user.repository', () => ({
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { AuthService }     from '../src/services/auth.service';
-import { UserRepository }  from '../src/repositories/user.repository';
+import { AuthService }     from './auth.service';
+import { UserRepository }  from '../repositories/user.repository';
 import { getRedisClient }  from '@ebike/redis';
 import { OAuth2Client }    from 'google-auth-library';
 
@@ -151,7 +151,7 @@ describe('AuthService.oauthGoogle', () => {
     process.env.GOOGLE_CLIENT_ID = 'test-client-id.apps.googleusercontent.com';
 
     const mockVerifyIdToken = jest.fn().mockRejectedValue(new Error('Token verification failed'));
-    (OAuth2Client as jest.Mock).mockImplementation(() => ({
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
       verifyIdToken: mockVerifyIdToken,
     }));
 
@@ -171,12 +171,12 @@ describe('AuthService.oauthGoogle', () => {
       }),
     };
     const mockVerifyIdToken = jest.fn().mockResolvedValue(mockTicket);
-    (OAuth2Client as jest.Mock).mockImplementation(() => ({
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
       verifyIdToken: mockVerifyIdToken,
     }));
 
     const oauthUser = { ...mockUser, email: 'google-user@gmail.com', name: 'Google User' };
-    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue(oauthUser);
+    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue({ user: oauthUser, isNew: false });
     (getRedisClient as jest.Mock).mockResolvedValue(makeMockRedis());
 
     const tokens = await AuthService.oauthGoogle('valid-google-id-token');
@@ -199,12 +199,12 @@ describe('AuthService.oauthGoogle', () => {
         sub:   'sub-no-name',
       }),
     };
-    (OAuth2Client as jest.Mock).mockImplementation(() => ({
+    (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
       verifyIdToken: jest.fn().mockResolvedValue(mockTicket),
     }));
 
     const oauthUser = { ...mockUser, email: 'noname@gmail.com', name: 'noname' };
-    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue(oauthUser);
+    (UserRepository.findOrCreateOAuth as jest.Mock).mockResolvedValue({ user: oauthUser, isNew: false });
     (getRedisClient as jest.Mock).mockResolvedValue(makeMockRedis());
 
     await AuthService.oauthGoogle('valid-token');

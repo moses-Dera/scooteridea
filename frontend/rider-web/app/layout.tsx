@@ -20,6 +20,8 @@ import SplashScreen from '@/components/SplashScreen'
 
 import { AlertCircle } from 'lucide-react'
 
+import { Toaster } from 'react-hot-toast'
+
 type PanelType = 'menu' | 'profile' | 'wallet' | 'history' | 'docks' | 'settings' | 'help' | 'safety' | 'report' | 'login' | null;
 
 export default function RootLayout({
@@ -74,9 +76,17 @@ export default function RootLayout({
       <head>
         <title>Scooterfy - Premium Urban Mobility</title>
         <meta name="description" content="Unlock and ride electric bikes in your city." />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#1ED760" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="min-h-screen bg-background text-white antialiased overflow-hidden">
         <SplashScreen />
+        <Toaster position="top-center" toastOptions={{
+          style: { background: '#111622', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' },
+          success: { iconTheme: { primary: '#1ED760', secondary: '#000' } }
+        }} />
         <AuthProvider>
         <RideProvider>
         <div className="w-full h-screen h-[100dvh] relative flex flex-col overflow-hidden bg-background">

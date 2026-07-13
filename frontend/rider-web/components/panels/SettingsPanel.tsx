@@ -1,7 +1,8 @@
 'use client';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
-import { Bell, Lock, User, ChevronRight } from 'lucide-react';
+import { Shield, Bell, Key, LogOut, ChevronRight, User, Lock } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { data: session } = useSession();
@@ -69,7 +70,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
       <div className="space-y-2">
         <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Security</div>
         <div 
-          onClick={() => alert("A secure password reset link has been sent to your registered email address.")}
+          onClick={() => toast.success("A secure password reset link has been sent to your registered email address.")}
           className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-center hover:bg-white/5 cursor-pointer"
         >
           <div className="flex items-center gap-2">

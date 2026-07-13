@@ -83,3 +83,11 @@ authRouter.post(
   validate({ body: pushTokenSchema }),
   asyncHandler(AuthController.registerPushToken),
 );
+
+// Wallet Top-up Verification
+authRouter.post(
+  '/wallet/topup',
+  jwtGuard,
+  validate({ body: z.object({ reference: z.string().min(1, 'Reference is required') }) }),
+  asyncHandler(AuthController.topUpWallet),
+);

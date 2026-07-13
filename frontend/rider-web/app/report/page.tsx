@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, AlertOctagon } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function ReportPage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function ReportPage() {
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); alert("Report submitted successfully!"); router.back(); }}>
+        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); toast.success("Report submitted successfully!"); router.back(); }}>
           
           <div>
             <label className="block text-sm font-bold text-slate-300 mb-2 ml-1">Issue Type</label>
