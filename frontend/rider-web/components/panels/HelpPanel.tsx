@@ -1,5 +1,6 @@
 'use client';
 import { HelpCircle, ChevronDown, Mail, MessageSquare } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 
 export default function HelpPanel({ onClose }: { onClose: () => void }) {
@@ -9,7 +10,7 @@ export default function HelpPanel({ onClose }: { onClose: () => void }) {
   const handleLiveChat = () => {
     setConnecting(true);
     setTimeout(() => {
-      alert("All our support agents are currently busy. Please leave us an email.");
+      toast.error("All our support agents are currently busy. Please leave us an email.", { icon: '🤖' });
       setConnecting(false);
     }, 1500);
   };

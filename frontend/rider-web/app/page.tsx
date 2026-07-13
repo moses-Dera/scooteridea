@@ -6,6 +6,7 @@ import { useNearbyDocks } from '@/hooks/useNearbyDocks'
 import { UnlockModal } from '@/components/UnlockModal'
 import { DestinationSearch } from '@/components/Map/DestinationSearch'
 import { QRScannerOverlay } from '@/components/panels/QRScannerOverlay'
+import { ManualEntryModal } from '@/components/ManualEntryModal'
 
 export default function RiderHome() {
   const searchParams = useSearchParams();
@@ -32,6 +33,7 @@ export default function RiderHome() {
 
   // Handle QR scanner state and redirect
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
   const unlockId = searchParams.get('unlock');
   useEffect(() => {
     if (unlockId) {
@@ -92,10 +94,15 @@ export default function RiderHome() {
         isOpen={isScannerOpen} 
         onClose={() => setIsScannerOpen(false)} 
         onManualEntryClick={() => {
-          // Open manual entry modal (can just trigger a generic prompt for MVP)
-          const manualId = window.prompt("Enter Scooter ID (e.g. SCT123)");
-          if (manualId) router.push(`/?bike=${manualId}&action=unlock`);
+          setIsScannerOpen(false);
+          setIsManualEntryOpen(true);
         }} 
+      />
+
+      <ManualEntryModal 
+        isOpen={isManualEntryOpen} 
+        onClose={() => setIsManualEntryOpen(false)} 
+        onSubmit={(manualId) => router.push(`/?bike=${manualId}&action=unlock`)} 
       />
 
       {action === 'unlock' && bikeId && (
@@ -302,10 +309,7 @@ export default function RiderHome() {
               <span onClick={() => setIsScannerOpen(true)} className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Scan QR</span>
               <span className="w-1 h-1 rounded-full bg-slate-600"></span>
               <span 
-                onClick={() => {
-                  const manualId = window.prompt("Enter Scooter ID (e.g. SCT123)");
-                  if (manualId) router.push(`/?bike=${manualId}&action=unlock`);
-                }}
+                onClick={() => setIsManualEntryOpen(true)}
                 className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> Enter Bike ID</span>
               <span className="w-1 h-1 rounded-full bg-slate-600"></span>
               <span 

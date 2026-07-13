@@ -4,6 +4,7 @@ import { useWallet } from '@/hooks';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { CreditCard, Plus, History, ChevronRight, X } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
@@ -84,7 +85,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
               onClick={() => {
                 const amount = parseFloat(topUpAmount);
                 if (!amount || amount < 100) {
-                  alert('Minimum top-up is ₦100');
+                  toast.error('Minimum top-up is ₦100');
                   return;
                 }
                 
@@ -102,11 +103,11 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
                       try {
                         const { userApi } = await import('@/lib/api');
                         await userApi.topUpWallet(response.reference);
-                        alert(`Payment successful! ₦${amount} has been added to your wallet.\nReference: ${response.reference}`);
+                        toast.success(`Payment successful! ₦${amount} has been added to your wallet.`);
                       } catch (err: any) {
                         console.error('Failed to top up wallet on backend', err);
                         const errorMessage = err?.message || 'Transaction verification failed.';
-                        alert(`Attention: ${errorMessage}\nReference: ${response.reference}`);
+                        toast.error(`Attention: ${errorMessage}`);
                       }
                       setIsTopping(false);
                       setTopUpAmount('');
@@ -120,7 +121,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
                   });
                   handler.openIframe();
                 } else {
-                  alert('Payment gateway is still loading. Please try again in a moment.');
+                  toast.error('Payment gateway is still loading. Please try again in a moment.');
                 }
               }}
               className="py-3 px-6 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform cursor-pointer"
@@ -150,19 +151,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
         </div>
       )}
 
-      {/* Payment Methods */}
-      <div>
-        <h2 className="text-lg font-bold mb-4 text-slate-200">Payment Methods</h2>
-        <div className="space-y-3">
-          <div className="text-sm text-slate-400 mb-2 px-2">No payment methods saved.</div>
-          <button className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center gap-4 hover:bg-white/5 transition-colors border-dashed text-slate-400 hover:text-white cursor-pointer">
-            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center">
-              <Plus className="w-5 h-5" />
-            </div>
-            <span className="font-semibold">Add New Card</span>
-          </button>
-        </div>
-      </div>
+
 
       {/* Recent Transactions Link */}
       <div>

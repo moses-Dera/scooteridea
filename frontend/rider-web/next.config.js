@@ -13,10 +13,17 @@ const nextConfig = {
   },
 };
 
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  skipWaiting: true,
+});
+
 const { withSentryConfig } = require("@sentry/nextjs");
 
 module.exports = withSentryConfig(
-  nextConfig,
+  withPWA(nextConfig),
   {
     silent: true,
     org: "scooteridea",
