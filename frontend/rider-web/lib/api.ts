@@ -58,6 +58,10 @@ function createApiClient(): AxiosInstance {
           else if (url.includes('history') || url.includes('rides')) feature = 'your Ride History';
           else if (url.includes('profile') || url.includes('auth/me')) feature = 'your Profile';
 
+          // Force NextAuth state to clear locally so the Menu and other UI updates
+          const { signOut } = await import('next-auth/react');
+          await signOut({ redirect: false });
+
           window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature } }));
         }
         // Return a never-resolving promise to prevent UI from rendering the error while redirecting
