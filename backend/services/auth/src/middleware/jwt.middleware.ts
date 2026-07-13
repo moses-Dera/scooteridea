@@ -12,11 +12,7 @@ declare global {
   }
 }
 
-export async function jwtGuard(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
+export async function jwtGuard(req: Request, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ success: false, error: 'Missing token' });

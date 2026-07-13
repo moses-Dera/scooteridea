@@ -8,7 +8,9 @@ export class RideController {
       const userId = req.user!.sub; // secure, pulled directly from cryptographically verified JWT
       const ride = await RideService.reserve(bikeId, userId);
       res.status(201).json({ success: true, data: ride });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async start(req: Request, res: Response, next: NextFunction) {
@@ -16,7 +18,9 @@ export class RideController {
       const userId = req.user!.sub;
       await RideService.startRide(req.params.id, userId);
       res.json({ success: true, message: 'Ride started' });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async end(req: Request, res: Response, next: NextFunction) {
@@ -24,33 +28,41 @@ export class RideController {
       const { dockId } = req.body;
       await RideService.endRide(req.params.id, dockId);
       res.json({ success: true, message: 'Ride ended' });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const ride = await RideService.getById(req.params.id);
       res.json({ success: true, data: ride });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async history(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId   = req.user!.sub;
-      const page     = Number(req.query.page)     || 1;
+      const userId = req.user!.sub;
+      const page = Number(req.query.page) || 1;
       const pageSize = Number(req.query.pageSize) || 20;
-      const result   = await RideService.getHistory(userId, page, pageSize);
+      const result = await RideService.getHistory(userId, page, pageSize);
       res.json({ success: true, data: result });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async allHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const page     = Number(req.query.page)     || 1;
+      const page = Number(req.query.page) || 1;
       const pageSize = Number(req.query.pageSize) || 20;
-      const result   = await RideService.getAllHistory(page, pageSize);
+      const result = await RideService.getAllHistory(page, pageSize);
       res.json({ success: true, data: result });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async dispute(req: Request, res: Response, next: NextFunction) {
@@ -58,7 +70,9 @@ export class RideController {
       const { reason } = req.body;
       const ride = await RideService.disputeRide(req.params.id, reason);
       res.json({ success: true, data: ride });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async getTopRiders(req: Request, res: Response, next: NextFunction) {
@@ -66,7 +80,9 @@ export class RideController {
       const limit = Number(req.query.limit) || 5;
       const riders = await RideService.getTopRiders(limit);
       res.json({ success: true, data: riders });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 
   static async getAnalytics(req: Request, res: Response, next: NextFunction) {
@@ -74,6 +90,8 @@ export class RideController {
       const timeRange = (req.query.timeRange as string) || 'today';
       const analytics = await RideService.getAnalytics(timeRange);
       res.json({ success: true, data: analytics });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 }

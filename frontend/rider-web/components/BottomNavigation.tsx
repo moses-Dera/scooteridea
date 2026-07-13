@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import React from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface NavItem {
-  href: string
-  icon: React.ReactNode
-  label: string
+  href: string;
+  icon: React.ReactNode;
+  label: string;
 }
 
 interface BottomNavigationProps {
-  items: NavItem[]
+  items: NavItem[];
 }
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items }) => {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <nav
@@ -29,7 +29,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items }) => 
       `}
     >
       {items.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
         return (
           <Link
             key={item.href}
@@ -50,8 +50,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items }) => 
             <span className="w-6 h-6">{item.icon}</span>
             <span className="hidden sm:inline">{item.label}</span>
           </Link>
-        )
+        );
       })}
     </nav>
-  )
-}
+  );
+};

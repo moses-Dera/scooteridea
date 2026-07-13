@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import Map, { GeolocateControl, Source, Layer, MapRef } from 'react-map-gl';
@@ -31,19 +31,19 @@ export interface FleetMapProps {
   error?: string | null;
   selectedBikeId?: string | null;
   onSelectBikeId?: (id: string | null) => void;
-  historicalRoute?: {lat: number, lng: number}[];
+  historicalRoute?: { lat: number; lng: number }[];
 }
 
-export function FleetMapComponent({ 
-  bikes: externalBikes, 
-  connected: externalConnected, 
-  error: externalError, 
-  selectedBikeId, 
+export function FleetMapComponent({
+  bikes: externalBikes,
+  connected: externalConnected,
+  error: externalError,
+  selectedBikeId,
   onSelectBikeId,
-  historicalRoute
+  historicalRoute,
 }: FleetMapProps = {}) {
   const mapRef = useRef<MapRef>(null);
-  
+
   const [internalSelectedBike, setInternalSelectedBike] = useState<Bike | null>(null);
   const [docks, setDocks] = useState<Dock[]>([]);
 
@@ -53,9 +53,10 @@ export function FleetMapComponent({
   const connected = externalConnected ?? socketData.connected;
   const error = externalError ?? socketData.error;
 
-  const selectedBike = selectedBikeId !== undefined 
-    ? bikes.find(b => b.id === selectedBikeId) || null 
-    : internalSelectedBike;
+  const selectedBike =
+    selectedBikeId !== undefined
+      ? bikes.find((b) => b.id === selectedBikeId) || null
+      : internalSelectedBike;
 
   const handleSelectBike = (bike: Bike | null) => {
     if (onSelectBikeId) onSelectBikeId(bike?.id || null);
@@ -79,19 +80,20 @@ export function FleetMapComponent({
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const token = localStorage.getItem('token') || '';
         const res = await fetch(`${baseUrl}/api/proxy/fleet/docks`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         if (res.ok) {
           const data = await res.json();
-          const fetchedDocks = data.success && data.data ? data.data : Array.isArray(data) ? data : [];
+          const fetchedDocks =
+            data.success && data.data ? data.data : Array.isArray(data) ? data : [];
           setDocks(fetchedDocks);
-          
+
           if (fetchedDocks.length > 0) {
-            setViewState(prev => ({
+            setViewState((prev) => ({
               ...prev,
               latitude: fetchedDocks[0].lat,
               longitude: fetchedDocks[0].lng,
-              zoom: 14
+              zoom: 14,
             }));
           }
         }
@@ -102,7 +104,7 @@ export function FleetMapComponent({
     fetchDocks();
   }, []);
 
-  const [bikeTrail, setBikeTrail] = useState<{lat: number, lng: number, ts: number}[]>([]);
+  const [bikeTrail, setBikeTrail] = useState<{ lat: number; lng: number; ts: number }[]>([]);
 
   // Fetch trail when a bike is selected
   useEffect(() => {
@@ -119,7 +121,7 @@ export function FleetMapComponent({
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const token = localStorage.getItem('token') || '';
         const res = await fetch(`${baseUrl}/api/proxy/fleet/bikes/${selectedBike.id}/trail`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         if (res.ok) {
           const data = await res.json();
@@ -131,12 +133,16 @@ export function FleetMapComponent({
         console.error('Failed to fetch trail:', err);
       }
     };
-    
+
     fetchTrail();
     const interval = setInterval(fetchTrail, 5000);
 
     if (mapRef.current) {
-      mapRef.current.flyTo({ center: [selectedBike.lng, selectedBike.lat], zoom: 16, duration: 1500 });
+      mapRef.current.flyTo({
+        center: [selectedBike.lng, selectedBike.lat],
+        zoom: 16,
+        duration: 1500,
+      });
     }
 
     return () => clearInterval(interval);
@@ -148,37 +154,49 @@ export function FleetMapComponent({
       mapRef.current.flyTo({
         center: [historicalRoute[0].lng, historicalRoute[0].lat],
         zoom: 14,
-        duration: 1500
+        duration: 1500,
       });
     }
   }, [historicalRoute]);
 
   // Convert Bikes to GeoJSON
-  const bikesGeoJSON = useMemo(() => ({
-    type: 'FeatureCollection',
-    features: bikes.map(bike => {
-      const color = bike.status === 'in_use' ? '#ef4444' : bike.battery_pct < 20 ? '#f97316' : '#22c55e';
-      return {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [bike.lng, bike.lat] },
-        properties: { id: bike.id, color, battery: bike.battery_pct, status: bike.status }
-      };
-    })
-  }), [bikes]);
+  const bikesGeoJSON = useMemo(
+    () => ({
+      type: 'FeatureCollection',
+      features: bikes.map((bike) => {
+        const color =
+          bike.status === 'in_use' ? '#ef4444' : bike.battery_pct < 20 ? '#f97316' : '#22c55e';
+        return {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [bike.lng, bike.lat] },
+          properties: { id: bike.id, color, battery: bike.battery_pct, status: bike.status },
+        };
+      }),
+    }),
+    [bikes],
+  );
 
   // Convert Docks to GeoJSON
-  const docksGeoJSON = useMemo(() => ({
-    type: 'FeatureCollection',
-    features: docks.map(dock => {
-      const available_pct = (dock.available_slots / dock.total_slots) * 100;
-      const color = available_pct > 50 ? '#3b82f6' : available_pct > 20 ? '#eab308' : '#ef4444';
-      return {
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [dock.lng, dock.lat] },
-        properties: { id: dock.id, name: dock.name, slots: dock.available_slots.toString(), color }
-      };
-    })
-  }), [docks]);
+  const docksGeoJSON = useMemo(
+    () => ({
+      type: 'FeatureCollection',
+      features: docks.map((dock) => {
+        const available_pct = (dock.available_slots / dock.total_slots) * 100;
+        const color = available_pct > 50 ? '#3b82f6' : available_pct > 20 ? '#eab308' : '#ef4444';
+        return {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [dock.lng, dock.lat] },
+          properties: {
+            id: dock.id,
+            name: dock.name,
+            slots: dock.available_slots.toString(),
+            color,
+          },
+        };
+      }),
+    }),
+    [docks],
+  );
 
   const routeToDraw = historicalRoute && historicalRoute.length > 0 ? historicalRoute : bikeTrail;
   const trailGeoJSON = useMemo(() => {
@@ -187,31 +205,41 @@ export function FleetMapComponent({
       type: 'Feature',
       geometry: {
         type: 'LineString',
-        coordinates: routeToDraw.map(p => [p.lng, p.lat])
-      }
+        coordinates: routeToDraw.map((p) => [p.lng, p.lat]),
+      },
     };
   }, [routeToDraw]);
 
-  const onMapClick = useCallback((e: mapboxgl.MapLayerMouseEvent) => {
-    const feature = e.features && e.features[0];
-    if (!feature) return;
+  const onMapClick = useCallback(
+    (e: mapboxgl.MapLayerMouseEvent) => {
+      const feature = e.features && e.features[0];
+      if (!feature) return;
 
-    if (feature.layer?.id === 'bikes-circle-layer' || feature.layer?.id === 'bikes-core-layer') {
-      const bikeId = feature.properties?.id;
-      const bike = bikes.find(b => b.id === bikeId);
-      if (bike) handleSelectBike(bike);
-    }
-  }, [bikes, handleSelectBike]);
+      if (feature.layer?.id === 'bikes-circle-layer' || feature.layer?.id === 'bikes-core-layer') {
+        const bikeId = feature.properties?.id;
+        const bike = bikes.find((b) => b.id === bikeId);
+        if (bike) handleSelectBike(bike);
+      }
+    },
+    [bikes, handleSelectBike],
+  );
 
   // User Location & Navigation for Stakeholder Van
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const geoControlRef = useRef<mapboxgl.GeolocateControl>(null);
   const [navProfile, setNavProfile] = useState<NavigationProfile>('driving-traffic');
 
-  const { isActive: isNavigating, routeGeoJSON, steps, currentStepIndex, distanceText, etaText } = useNavigationEngine(
+  const {
+    isActive: isNavigating,
+    routeGeoJSON,
+    steps,
+    currentStepIndex,
+    distanceText,
+    etaText,
+  } = useNavigationEngine(
     userLocation,
     selectedBike ? { lat: selectedBike.lat, lng: selectedBike.lng } : null,
-    navProfile
+    navProfile,
   );
 
   useEffect(() => {
@@ -221,28 +249,30 @@ export function FleetMapComponent({
         center: [userLocation.lng, userLocation.lat],
         zoom: 17,
         pitch: 60,
-        duration: 1000
+        duration: 1000,
       });
     }
   }, [isNavigating, userLocation, selectedBike?.lat, selectedBike?.lng]);
 
   const startNavigation = () => {
     if (!navigator.geolocation) return;
-    
+
     // Fallback if they click navigate without a real device GPS
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => console.warn(err),
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
     const watchId = navigator.geolocation.watchPosition(
       (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {}, { enableHighAccuracy: true }
+      () => {},
+      { enableHighAccuracy: true },
     );
     return () => navigator.geolocation.clearWatch(watchId);
   };
 
-  if (!mounted) return <div className="flex-1 bg-slate-900 animate-pulse rounded-lg border border-slate-700" />;
+  if (!mounted)
+    return <div className="flex-1 bg-slate-900 animate-pulse rounded-lg border border-slate-700" />;
 
   return (
     <div className="flex flex-col h-full gap-4 relative">
@@ -269,36 +299,38 @@ export function FleetMapComponent({
         >
           {/* Navigation HUD */}
           {isNavigating && steps.length > 0 && (
-             <div className="absolute top-4 left-4 z-20 max-w-[320px]">
-               <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-2xl flex items-center gap-3">
-                 <div className="flex-1 min-w-0">
-                   <div className="text-white font-bold text-sm leading-tight truncate">
-                     {steps[currentStepIndex]?.maneuver?.instruction || "Proceed"}
-                   </div>
-                   <div className="text-blue-400 font-extrabold text-xs mt-0.5 tracking-wide">
-                     {steps[currentStepIndex]?.distance ? `${Math.round(steps[currentStepIndex].distance)}m` : 'Arriving'}
-                   </div>
-                 </div>
-               </div>
-             </div>
+            <div className="absolute top-4 left-4 z-20 max-w-[320px]">
+              <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-2xl flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-bold text-sm leading-tight truncate">
+                    {steps[currentStepIndex]?.maneuver?.instruction || 'Proceed'}
+                  </div>
+                  <div className="text-blue-400 font-extrabold text-xs mt-0.5 tracking-wide">
+                    {steps[currentStepIndex]?.distance
+                      ? `${Math.round(steps[currentStepIndex].distance)}m`
+                      : 'Arriving'}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Docks */}
           {docksGeoJSON && (
             <Source id="docks-source" type="geojson" data={docksGeoJSON as any}>
-              <Layer 
-                id="docks-rect-layer" 
-                type="circle" 
+              <Layer
+                id="docks-rect-layer"
+                type="circle"
                 paint={{
                   'circle-radius': 14,
                   'circle-color': ['get', 'color'],
                   'circle-stroke-width': 2,
-                  'circle-stroke-color': '#ffffff'
+                  'circle-stroke-color': '#ffffff',
                 }}
               />
-              <Layer 
-                id="docks-text-layer" 
-                type="symbol" 
+              <Layer
+                id="docks-text-layer"
+                type="symbol"
                 layout={{
                   'text-field': ['get', 'slots'],
                   'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
@@ -306,9 +338,9 @@ export function FleetMapComponent({
                 }}
                 paint={{ 'text-color': '#ffffff' }}
               />
-              <Layer 
-                id="docks-name-layer" 
-                type="symbol" 
+              <Layer
+                id="docks-name-layer"
+                type="symbol"
                 layout={{
                   'text-field': ['get', 'name'],
                   'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
@@ -323,24 +355,24 @@ export function FleetMapComponent({
           {/* Bikes */}
           {bikesGeoJSON && (
             <Source id="bikes-source" type="geojson" data={bikesGeoJSON as any}>
-              <Layer 
-                id="bikes-circle-layer" 
-                type="circle" 
+              <Layer
+                id="bikes-circle-layer"
+                type="circle"
                 paint={{
                   'circle-radius': 16,
                   'circle-color': ['get', 'color'],
                   'circle-opacity': 0.3,
-                  'circle-blur': 0.5
+                  'circle-blur': 0.5,
                 }}
               />
-              <Layer 
-                id="bikes-core-layer" 
-                type="circle" 
+              <Layer
+                id="bikes-core-layer"
+                type="circle"
                 paint={{
                   'circle-radius': 6,
                   'circle-color': ['get', 'color'],
                   'circle-stroke-width': 2,
-                  'circle-stroke-color': '#ffffff'
+                  'circle-stroke-color': '#ffffff',
                 }}
               />
             </Source>
@@ -349,11 +381,16 @@ export function FleetMapComponent({
           {/* Bike Trail */}
           {trailGeoJSON && (
             <Source id="bike-trail-source" type="geojson" data={trailGeoJSON as any}>
-              <Layer 
-                id="bike-trail-line" 
-                type="line" 
+              <Layer
+                id="bike-trail-line"
+                type="line"
                 layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-                paint={{ 'line-color': '#0ea5e9', 'line-width': 4, 'line-opacity': 0.8, 'line-dasharray': [1, 2] }}
+                paint={{
+                  'line-color': '#0ea5e9',
+                  'line-width': 4,
+                  'line-opacity': 0.8,
+                  'line-dasharray': [1, 2],
+                }}
               />
             </Source>
           )}
@@ -361,9 +398,9 @@ export function FleetMapComponent({
           {/* Navigation Route */}
           {routeGeoJSON && (
             <Source id="route-source" type="geojson" data={routeGeoJSON}>
-              <Layer 
-                id="route-layer" 
-                type="line" 
+              <Layer
+                id="route-layer"
+                type="line"
                 layout={{ 'line-join': 'round', 'line-cap': 'round' }}
                 paint={{ 'line-color': '#3b82f6', 'line-width': 6, 'line-opacity': 0.8 }}
               />
@@ -371,7 +408,7 @@ export function FleetMapComponent({
           )}
 
           {/* 3D Buildings */}
-          <Layer 
+          <Layer
             id="3d-buildings"
             source="composite"
             source-layer="building"
@@ -382,7 +419,7 @@ export function FleetMapComponent({
               'fill-extrusion-color': '#1e293b',
               'fill-extrusion-height': ['get', 'height'],
               'fill-extrusion-base': ['get', 'min_height'],
-              'fill-extrusion-opacity': 0.6
+              'fill-extrusion-opacity': 0.6,
             }}
           />
 
@@ -403,9 +440,13 @@ export function FleetMapComponent({
             <div>
               <div className="font-bold text-white flex items-center gap-2">
                 {selectedBike.id}
-                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                  selectedBike.battery_pct < 20 ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'
-                }`}>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                    selectedBike.battery_pct < 20
+                      ? 'bg-orange-500/20 text-orange-400'
+                      : 'bg-green-500/20 text-green-400'
+                  }`}
+                >
                   {selectedBike.battery_pct}% Battery
                 </span>
               </div>
@@ -415,7 +456,7 @@ export function FleetMapComponent({
             </div>
             <div className="flex gap-2">
               {!isNavigating ? (
-                <button 
+                <button
                   onClick={startNavigation}
                   className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
                 >
@@ -426,16 +467,23 @@ export function FleetMapComponent({
                   ETA: {etaText} | {distanceText}
                 </div>
               )}
-              <button onClick={() => {
-                 handleSelectBike(null);
-                 setUserLocation(null); // Stops navigation
-              }} className="text-slate-400 hover:text-white bg-slate-700 w-8 rounded-lg flex items-center justify-center">×</button>
+              <button
+                onClick={() => {
+                  handleSelectBike(null);
+                  setUserLocation(null); // Stops navigation
+                }}
+                className="text-slate-400 hover:text-white bg-slate-700 w-8 rounded-lg flex items-center justify-center"
+              >
+                ×
+              </button>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-slate-400">Location</p>
-              <p className="text-white">{selectedBike.lat.toFixed(4)}, {selectedBike.lng.toFixed(4)}</p>
+              <p className="text-white">
+                {selectedBike.lat.toFixed(4)}, {selectedBike.lng.toFixed(4)}
+              </p>
             </div>
             <div>
               <p className="text-slate-400">Status</p>

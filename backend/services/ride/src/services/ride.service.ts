@@ -16,52 +16,55 @@ import {
   retry,
   logger,
 } from '@ebike/core';
-import { getRedisClient, redisGetJson, redisGetWaypoints, redisDeleteWaypoints } from '@ebike/redis';
-import { kafka }          from '@ebike/events';
-import { bikeCommander }  from '@ebike/mqtt';
-import Geohash           from 'ngeohash';
+import {
+  getRedisClient,
+  redisGetJson,
+  redisGetWaypoints,
+  redisDeleteWaypoints,
+} from '@ebike/redis';
+import { kafka } from '@ebike/events';
+import { bikeCommander } from '@ebike/mqtt';
+import Geohash from 'ngeohash';
 
 async function getConfig(bikeId?: string) {
-    let globalConfig = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
-    if (!globalConfig) {
-      globalConfig = await prisma.systemConfig.create({ data: { id: 'global' } });
-    }
-
-    let base = globalConfig.unlockFeeCents;
-    let min  = globalConfig.perMinuteCents;
-    let km   = globalConfig.perKmCents;
-
-    if (bikeId) {
-      // Resolve hierarchy: Dock > Geofence > Global
-      const bike = await prisma.bike.findUnique({
-        where: { id: bikeId },
-        include: { dock: true }
-      });
-      if (bike?.dock) {
-        if (bike.dock.baseFareOverride != null) base = bike.dock.baseFareOverride;
-        if (bike.dock.perMinuteOverride != null) min = bike.dock.perMinuteOverride;
-        if (bike.dock.perKmOverride != null) km = bike.dock.perKmOverride;
-      }
-    }
-
-    return {
-      baseFareCents: base,
-      perMinuteCents: min,
-      perKmCents: km,
-    };
+  let globalConfig = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
+  if (!globalConfig) {
+    globalConfig = await prisma.systemConfig.create({ data: { id: 'global' } });
   }
+
+  let base = globalConfig.unlockFeeCents;
+  let min = globalConfig.perMinuteCents;
+  let km = globalConfig.perKmCents;
+
+  if (bikeId) {
+    // Resolve hierarchy: Dock > Geofence > Global
+    const bike = await prisma.bike.findUnique({
+      where: { id: bikeId },
+      include: { dock: true },
+    });
+    if (bike?.dock) {
+      if (bike.dock.baseFareOverride != null) base = bike.dock.baseFareOverride;
+      if (bike.dock.perMinuteOverride != null) min = bike.dock.perMinuteOverride;
+      if (bike.dock.perKmOverride != null) km = bike.dock.perKmOverride;
+    }
+  }
+
+  return {
+    baseFareCents: base,
+    perMinuteCents: min,
+    perKmCents: km,
+  };
+}
 
 // ── Pure Haversine ────────────────────────────────────────────────────────────
 /** Returns great-circle distance in km between two coordinate pairs. */
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R  = 6371;
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLng / 2) ** 2;
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -78,7 +81,7 @@ function totalDistanceKm(pts: Array<{ lat: number; lng: number }>): number {
 export class RideService {
   // ── Reserve ──────────────────────────────────────────────────────────────────
   static async reserve(bikeId: string, userId: string) {
-    const redis  = await getRedisClient();
+    const redis = await getRedisClient();
     const status = await redis.get(`bike:${bikeId}:status`);
 
     if (status !== 'available') {
@@ -103,15 +106,15 @@ export class RideService {
     }
 
     const ride = await prisma.ride.create({
-      data: { 
-        userId, 
-        bikeId, 
+      data: {
+        userId,
+        bikeId,
         status: 'RESERVED',
         lockedBaseFareCents: pricing.baseFareCents,
         lockedPerMinCents: pricing.perMinuteCents,
         lockedPerKmCents: pricing.perKmCents,
       },
-      include: { bike: true }
+      include: { bike: true },
     });
 
     // If the bike doesn't have a PIN yet, generate one now
@@ -119,7 +122,7 @@ export class RideService {
       const newPin = Math.floor(1000 + Math.random() * 9000).toString();
       await prisma.bike.update({
         where: { id: bikeId },
-        data: { currentPin: newPin }
+        data: { currentPin: newPin },
       });
       ride.bike.currentPin = newPin;
     }
@@ -131,18 +134,22 @@ export class RideService {
   // ── Start ────────────────────────────────────────────────────────────────────
   static async startRide(rideId: string, userId: string): Promise<void> {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
-    if (!ride)                       throw new NotFoundError('Ride', rideId);
-    if (ride.status !== 'RESERVED')  throw new ConflictError(`Ride is not in RESERVED state`, { rideId, currentStatus: ride.status });
-    if (ride.userId !== userId)      throw new ForbiddenError();
+    if (!ride) throw new NotFoundError('Ride', rideId);
+    if (ride.status !== 'RESERVED')
+      throw new ConflictError(`Ride is not in RESERVED state`, {
+        rideId,
+        currentStatus: ride.status,
+      });
+    if (ride.userId !== userId) throw new ForbiddenError();
 
     // Send UNLOCK — retry up to 3 times on MQTT flap
-    await retry(
-      () => bikeCommander.unlock(ride.bikeId, rideId),
-      { maxAttempts: 3, label: 'mqtt:unlock' },
-    );
+    await retry(() => bikeCommander.unlock(ride.bikeId, rideId), {
+      maxAttempts: 3,
+      label: 'mqtt:unlock',
+    });
 
     const redis = await getRedisClient();
-    
+
     // Capture starting battery percentage
     let batteryStartPct = null;
     const locationRaw = await redis.get(`bike:${ride.bikeId}:location`);
@@ -153,7 +160,7 @@ export class RideService {
 
     await prisma.ride.update({
       where: { id: rideId },
-      data:  { status: 'ACTIVE', startedAt: new Date(), batteryStartPct },
+      data: { status: 'ACTIVE', startedAt: new Date(), batteryStartPct },
     });
 
     // session:userId — tracks that user has an active ride (prevents double-booking)
@@ -162,10 +169,7 @@ export class RideService {
       JSON.stringify({ rideId, bikeId: ride.bikeId, startedAt: Date.now() }),
     );
     // bike:bikeId:ride — allows fleet-service to look up rideId when appending GPS waypoints
-    await redis.set(
-      `bike:${ride.bikeId}:ride`,
-      JSON.stringify({ rideId, userId }),
-    );
+    await redis.set(`bike:${ride.bikeId}:ride`, JSON.stringify({ rideId, userId }));
 
     await kafka.rideStarted({ rideId, bikeId: ride.bikeId, userId, ts: Date.now() });
     logger.info({ rideId, bikeId: ride.bikeId, userId }, '[Ride] Started');
@@ -174,29 +178,34 @@ export class RideService {
   // ── End ──────────────────────────────────────────────────────────────────────
   static async endRide(rideId: string, dockId: string): Promise<{ fareCents: number }> {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
-    if (!ride)                     throw new NotFoundError('Ride', rideId);
-    if (ride.status !== 'ACTIVE')  throw new RideNotActiveError(rideId, ride.status);
+    if (!ride) throw new NotFoundError('Ride', rideId);
+    if (ride.status !== 'ACTIVE') throw new RideNotActiveError(rideId, ride.status);
 
     const durationMin = (Date.now() - (ride.startedAt?.getTime() ?? Date.now())) / 60_000;
 
     // ── Distance: sum Haversine over Redis GPS waypoint track ─────────────────
-    const waypoints   = await redisGetWaypoints(rideId);
-    const distanceKm  = totalDistanceKm(waypoints);
+    const waypoints = await redisGetWaypoints(rideId);
+    const distanceKm = totalDistanceKm(waypoints);
     if (waypoints.length < 2) {
-      logger.warn({ rideId, waypointCount: waypoints.length }, '[Ride] Insufficient waypoints — distance defaulting to 0');
+      logger.warn(
+        { rideId, waypointCount: waypoints.length },
+        '[Ride] Insufficient waypoints — distance defaulting to 0',
+      );
     }
 
     // ── Surge: read geohash:surge:* from Redis using bike's last-known position ─
     let surgeMult = 1.0;
     let endBatteryPct = null;
     try {
-      const location = await redisGetJson<{ lat: number; lng: number, battery_pct?: number }>(`bike:${ride.bikeId}:location`);
+      const location = await redisGetJson<{ lat: number; lng: number; battery_pct?: number }>(
+        `bike:${ride.bikeId}:location`,
+      );
       if (location) {
         endBatteryPct = location.battery_pct ?? null;
         const geohash = Geohash.encode(location.lat, location.lng, 5);
-        const redis   = await getRedisClient();
-        const raw     = await redis.get(`geohash:surge:${geohash}`);
-        surgeMult     = raw ? parseFloat(raw) : 1.0;
+        const redis = await getRedisClient();
+        const raw = await redis.get(`geohash:surge:${geohash}`);
+        surgeMult = raw ? parseFloat(raw) : 1.0;
       }
     } catch (err) {
       logger.warn({ err, rideId }, '[Ride] Surge lookup failed — defaulting to 1.0x');
@@ -213,10 +222,8 @@ export class RideService {
     const perKm = (ride.lockedPerKmCents ?? config.perKmCents) / 100;
 
     const fareCents = Math.max(
-      Math.round(baseFare * 100),  // minimum fare is base fare
-      Math.round(
-        (baseFare + perMinute * durationMin + perKm * distanceKm) * surgeMult * 100,
-      ),
+      Math.round(baseFare * 100), // minimum fare is base fare
+      Math.round((baseFare + perMinute * durationMin + perKm * distanceKm) * surgeMult * 100),
     );
 
     // ── Generate Rolling PIN ────────────────────────────────────────────────
@@ -225,28 +232,38 @@ export class RideService {
     // Update Bike with new PIN
     await prisma.bike.update({
       where: { id: ride.bikeId },
-      data: { currentPin: newPin }
+      data: { currentPin: newPin },
     });
 
     // Lock the bike and update PIN on hardware (best-effort, don't fail ride-end if MQTT is down)
-    bikeCommander.lock(ride.bikeId).catch((err) =>
-      logger.warn({ err, bikeId: ride.bikeId }, '[Ride] MQTT lock command failed — bike may need manual lock'),
-    );
-    bikeCommander.setPin(ride.bikeId, newPin).catch((err: any) =>
-      logger.warn({ err, bikeId: ride.bikeId }, '[Ride] MQTT set_pin command failed — bike PIN not rolled on hardware'),
-    );
+    bikeCommander
+      .lock(ride.bikeId)
+      .catch((err) =>
+        logger.warn(
+          { err, bikeId: ride.bikeId },
+          '[Ride] MQTT lock command failed — bike may need manual lock',
+        ),
+      );
+    bikeCommander
+      .setPin(ride.bikeId, newPin)
+      .catch((err: any) =>
+        logger.warn(
+          { err, bikeId: ride.bikeId },
+          '[Ride] MQTT set_pin command failed — bike PIN not rolled on hardware',
+        ),
+      );
 
     await prisma.ride.update({
       where: { id: rideId },
-      data:  {
-        status:         'COMPLETED',
-        endedAt:        new Date(),
+      data: {
+        status: 'COMPLETED',
+        endedAt: new Date(),
         fareCents,
         distanceKm,
         surgeMult,
-        endDockId:      dockId,
+        endDockId: dockId,
         batteryUsedPct,
-        routeGeometry:  waypoints as any,
+        routeGeometry: waypoints as any,
       },
     });
 
@@ -260,11 +277,17 @@ export class RideService {
     await Promise.all([
       redis.del(`session:${ride.userId}`),
       redis.del(`bike:${ride.bikeId}:ride`),
-      redisDeleteWaypoints(rideId),        // free GPS track memory
+      redisDeleteWaypoints(rideId), // free GPS track memory
     ]);
 
     logger.info(
-      { rideId, fareCents, distanceKm: distanceKm.toFixed(2), durationMin: durationMin.toFixed(1), surgeMult },
+      {
+        rideId,
+        fareCents,
+        distanceKm: distanceKm.toFixed(2),
+        durationMin: durationMin.toFixed(1),
+        surgeMult,
+      },
       '[Ride] Ended',
     );
     return { fareCents };
@@ -290,10 +313,10 @@ export class RideService {
     const skip = (page - 1) * pageSize;
     const [items, total] = await prisma.$transaction([
       prisma.ride.findMany({
-        where:   { userId },
+        where: { userId },
         orderBy: { createdAt: 'desc' },
         skip,
-        take:    pageSize,
+        take: pageSize,
       }),
       prisma.ride.count({ where: { userId } }),
     ]);
@@ -306,7 +329,7 @@ export class RideService {
       prisma.ride.findMany({
         orderBy: { createdAt: 'desc' },
         skip,
-        take:    pageSize,
+        take: pageSize,
       }),
       prisma.ride.count(),
     ]);
@@ -346,7 +369,7 @@ export class RideService {
           rides_count: group._count?.id ?? 0,
           total_distance: Math.round(Number(group._sum?.distanceKm ?? 0) * 1000), // in meters
         };
-      })
+      }),
     );
 
     return riders;
@@ -396,7 +419,12 @@ export class RideService {
       prisma.bike.count(),
       prisma.bike.count({ where: { status: 'in_use' } }),
       prisma.ride.findMany({
-        where: { createdAt: { gte: startDate }, status: 'COMPLETED', startedAt: { not: null }, endedAt: { not: null } },
+        where: {
+          createdAt: { gte: startDate },
+          status: 'COMPLETED',
+          startedAt: { not: null },
+          endedAt: { not: null },
+        },
         select: { startedAt: true, endedAt: true },
       }),
     ]);
@@ -406,21 +434,23 @@ export class RideService {
       : 0;
 
     // Compute avg ride duration in minutes from actual startedAt/endedAt timestamps
-    const avgRideDurationMins = completedRides.length > 0
-      ? Math.round(
-          completedRides.reduce((sum, r) =>
-            sum + (r.endedAt!.getTime() - r.startedAt!.getTime()) / 60_000, 0
-          ) / completedRides.length * 10
-        ) / 10
-      : 0;
+    const avgRideDurationMins =
+      completedRides.length > 0
+        ? Math.round(
+            (completedRides.reduce(
+              (sum, r) => sum + (r.endedAt!.getTime() - r.startedAt!.getTime()) / 60_000,
+              0,
+            ) /
+              completedRides.length) *
+              10,
+          ) / 10
+        : 0;
 
-    const fleetUtilization = bikesTotal > 0
-      ? Math.round((bikesActive / bikesTotal) * 100)
-      : 0;
+    const fleetUtilization = bikesTotal > 0 ? Math.round((bikesActive / bikesTotal) * 100) : 0;
 
     return {
       total_rides: totalRides,
-      total_revenue: Math.round(((totalRevenue._sum?.fareCents) ?? 0) / 100),
+      total_revenue: Math.round((totalRevenue._sum?.fareCents ?? 0) / 100),
       active_users: activeUsers.length,
       fleet_utilization: fleetUtilization,
       avg_ride_duration: avgRideDurationMins,

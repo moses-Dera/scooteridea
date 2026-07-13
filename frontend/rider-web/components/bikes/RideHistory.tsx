@@ -1,35 +1,36 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { ridesService } from '@/lib/ridesService'
-import { Ride, PaginatedResponse } from '@/lib/types'
-import { Bike, Star } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { ridesService } from '@/lib/ridesService';
+import { Ride, PaginatedResponse } from '@/lib/types';
+import { Bike, Star } from 'lucide-react';
+import Link from 'next/link';
 
 export function RideHistoryComponent() {
-  const [rides, setRides] = useState<Ride[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(false)
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     const fetchRides = async () => {
       try {
-        setIsLoading(true)
-        setError(null)
-        const response = await ridesService.getHistory(page, 10)
-        setRides(response.data)
-        setHasMore(response.pagination.hasMore)
+        setIsLoading(true);
+        setError(null);
+        const response = await ridesService.getHistory(page, 10);
+        setRides(response.data);
+        setHasMore(response.pagination.hasMore);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load ride history'
-        setError(message)
+        const message = err instanceof Error ? err.message : 'Failed to load ride history';
+        setError(message);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchRides()
-  }, [page])
+    fetchRides();
+  }, [page]);
 
   if (isLoading) {
     return (
@@ -39,7 +40,7 @@ export function RideHistoryComponent() {
           <p className="text-slate-400">Loading your rides...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -53,7 +54,7 @@ export function RideHistoryComponent() {
           Try Again
         </button>
       </div>
-    )
+    );
   }
 
   if (rides.length === 0) {
@@ -62,14 +63,14 @@ export function RideHistoryComponent() {
         <Bike className="w-12 h-12 mx-auto mb-4 text-white" />
         <div className="text-xl font-bold text-white mb-2">No Rides Yet</div>
         <p className="text-slate-400 mb-6">Start your first ride to see history here</p>
-        <a
+        <Link
           href="/"
           className="inline-block px-6 py-3 bg-primary text-black font-bold rounded-xl hover:bg-primary/90 transition-colors"
         >
           Find a Bike
-        </a>
+        </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -84,7 +85,7 @@ export function RideHistoryComponent() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <button
-          onClick={() => setPage(p => Math.max(1, p - 1))}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
           disabled={page === 1}
           className="px-6 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
         >
@@ -94,7 +95,7 @@ export function RideHistoryComponent() {
         <span className="text-slate-400">Page {page}</span>
 
         <button
-          onClick={() => setPage(p => p + 1)}
+          onClick={() => setPage((p) => p + 1)}
           disabled={!hasMore}
           className="px-6 py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
         >
@@ -102,32 +103,34 @@ export function RideHistoryComponent() {
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 interface RideCardProps {
-  ride: Ride
+  ride: Ride;
 }
 
 function RideCard({ ride }: RideCardProps) {
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
-  const duration = ride.duration / 60
-  const distance = ride.distance || 0
+  const duration = ride.duration / 60;
+  const distance = ride.distance || 0;
 
   return (
     <div className="bg-surfaceLight border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center"><Bike className="w-6 h-6 text-primary" /></div>
+          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+            <Bike className="w-6 h-6 text-primary" />
+          </div>
           <div>
             <div className="font-bold text-white">{ride.bikeId}</div>
             <p className="text-sm text-slate-400">{formatDate(ride.startTime)}</p>
@@ -136,9 +139,13 @@ function RideCard({ ride }: RideCardProps) {
 
         <div className="text-right">
           <div className="text-xl font-bold text-primary">₦ {ride.fare.toFixed(2)}</div>
-          <div className={`text-xs font-medium px-2 py-1 rounded-md ${
-            ride.status === 'completed' ? 'bg-primary/20 text-primary' : 'bg-warning/20 text-warning'
-          }`}>
+          <div
+            className={`text-xs font-medium px-2 py-1 rounded-md ${
+              ride.status === 'completed'
+                ? 'bg-primary/20 text-primary'
+                : 'bg-warning/20 text-warning'
+            }`}
+          >
             {ride.status}
           </div>
         </div>
@@ -177,12 +184,12 @@ function RideCard({ ride }: RideCardProps) {
       )}
 
       <div className="flex gap-2 mt-4">
-        <a
+        <Link
           href={`/ride/receipt/${ride.id}`}
           className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 transition-colors rounded-lg text-white text-sm font-medium text-center"
         >
           View Receipt
-        </a>
+        </Link>
         {!ride.dispute && ride.status === 'completed' && (
           <button className="flex-1 px-4 py-2 border border-warning/20 hover:border-warning/40 transition-colors rounded-lg text-warning text-sm font-medium">
             Dispute
@@ -190,5 +197,5 @@ function RideCard({ ride }: RideCardProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

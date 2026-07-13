@@ -15,16 +15,16 @@ import { logger } from '../logger';
 export type HealthStatus = 'ok' | 'degraded' | 'down';
 
 export interface HealthProbeResult {
-  status:   HealthStatus;
+  status: HealthStatus;
   latencyMs?: number;
-  detail?:  string;
+  detail?: string;
 }
 
 type ProbeFn = () => Promise<HealthProbeResult>;
 
 interface RegisteredProbe {
   name: string;
-  fn:   ProbeFn;
+  fn: ProbeFn;
   /** If critical=true, a 'down' result makes /ready return 503. */
   critical: boolean;
 }
@@ -50,8 +50,8 @@ export function registerProbe(
 
 /** Run all probes and return a summary. */
 async function runProbes(): Promise<{
-  status:       HealthStatus;
-  checks:       Record<string, HealthProbeResult>;
+  status: HealthStatus;
+  checks: Record<string, HealthProbeResult>;
   uptimeSeconds: number;
 }> {
   const checks: Record<string, HealthProbeResult> = {};
@@ -61,17 +61,17 @@ async function runProbes(): Promise<{
     probes.map(async ({ name, fn, critical }) => {
       const start = Date.now();
       try {
-        const result  = await fn();
+        const result = await fn();
         const latency = Date.now() - start;
-        checks[name]  = { ...result, latencyMs: latency };
+        checks[name] = { ...result, latencyMs: latency };
 
-        if (result.status === 'down'     && critical)    overall = 'down';
+        if (result.status === 'down' && critical) overall = 'down';
         if (result.status === 'degraded' && overall !== 'down') overall = 'degraded';
       } catch (err) {
         checks[name] = {
-          status:  'down',
+          status: 'down',
           latencyMs: Date.now() - start,
-          detail:  err instanceof Error ? err.message : 'Unknown error',
+          detail: err instanceof Error ? err.message : 'Unknown error',
         };
         if (critical) overall = 'down';
         logger.warn({ probe: name, err }, '[Health] Probe failed');
@@ -80,7 +80,7 @@ async function runProbes(): Promise<{
   );
 
   return {
-    status:        overall,
+    status: overall,
     checks,
     uptimeSeconds: Math.floor(process.uptime()),
   };

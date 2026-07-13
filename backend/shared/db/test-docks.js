@@ -12,9 +12,9 @@ async function main() {
         location_lng as lng
       FROM docks LIMIT 1;
     `;
-    console.log("DOCKS:", docks);
-  } catch(e) {
-    console.error("ERROR:", e);
+    console.log('DOCKS:', docks);
+  } catch (e) {
+    console.error('ERROR:', e);
   } finally {
     await prisma.$disconnect();
   }

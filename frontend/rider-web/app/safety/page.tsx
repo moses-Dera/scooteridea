@@ -10,7 +10,10 @@ export default function SafetyPage() {
     <div className="min-h-screen bg-[#0A0D14] text-white">
       <div className="sticky top-0 z-40 pt-20 px-6 pb-6 border-b border-white/5 bg-[#0A0D14]/80 backdrop-blur-xl">
         <div className="flex items-center gap-4 mb-2">
-          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="text-2xl font-bold">Safety Rules</div>
@@ -18,14 +21,14 @@ export default function SafetyPage() {
       </div>
 
       <div className="px-6 py-6 space-y-6">
-        
         <div className="bg-primary p-6 rounded-3xl text-black flex flex-col items-center text-center">
           <div className="w-16 h-16 bg-black/10 rounded-full flex items-center justify-center mb-4">
             <ShieldAlert className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-black mb-2 tracking-tight">Ride Safe, Ride Smart</h2>
           <p className="text-black/70 font-medium text-sm leading-relaxed">
-            Your safety and the safety of pedestrians is our top priority. Please follow these city guidelines.
+            Your safety and the safety of pedestrians is our top priority. Please follow these city
+            guidelines.
           </p>
         </div>
 
@@ -34,7 +37,9 @@ export default function SafetyPage() {
             <CheckCircle2 className="w-6 h-6 text-primary shrink-0" />
             <div>
               <h3 className="font-bold text-white mb-1">Wear a Helmet</h3>
-              <p className="text-sm text-slate-400">Always wear a certified helmet when riding. Protect your head at all times.</p>
+              <p className="text-sm text-slate-400">
+                Always wear a certified helmet when riding. Protect your head at all times.
+              </p>
             </div>
           </div>
 
@@ -42,7 +47,9 @@ export default function SafetyPage() {
             <AlertTriangle className="w-6 h-6 text-warning shrink-0" />
             <div>
               <h3 className="font-bold text-white mb-1">Stay off Sidewalks</h3>
-              <p className="text-sm text-slate-400">Ride in bike lanes or close to the right edge of the street. Yield to pedestrians.</p>
+              <p className="text-sm text-slate-400">
+                Ride in bike lanes or close to the right edge of the street. Yield to pedestrians.
+              </p>
             </div>
           </div>
 
@@ -50,11 +57,12 @@ export default function SafetyPage() {
             <CheckCircle2 className="w-6 h-6 text-primary shrink-0" />
             <div>
               <h3 className="font-bold text-white mb-1">Park Responsibly</h3>
-              <p className="text-sm text-slate-400">Use designated docks. Do not block driveways, crosswalks, or wheelchair ramps.</p>
+              <p className="text-sm text-slate-400">
+                Use designated docks. Do not block driveways, crosswalks, or wheelchair ramps.
+              </p>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

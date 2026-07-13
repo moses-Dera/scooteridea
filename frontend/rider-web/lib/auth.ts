@@ -1,29 +1,29 @@
-import { type NextAuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import CredentialsProvider from "next-auth/providers/credentials"
+import { type NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       authorization: {
-        params: { prompt: "select_account" }
-      }
+        params: { prompt: 'select_account' },
+      },
     }),
     CredentialsProvider({
       name: 'Email and Password',
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "you@example.com" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email', placeholder: 'you@example.com' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         // Exchange credentials with backend BFF endpoint
         try {
           if (!credentials?.email || !credentials?.password) {
-            return null
+            return null;
           }
-          
+
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/login`,
             {
@@ -33,15 +33,15 @@ export const authOptions: NextAuthOptions = {
                 email: credentials.email,
                 password: credentials.password,
               }),
-            }
-          )
-          
+            },
+          );
+
           if (!response.ok) {
-            return null
+            return null;
           }
-          
-          const data = await response.json()
-          
+
+          const data = await response.json();
+
           if (data.success && data.data?.accessToken) {
             return {
               id: credentials.email,
@@ -49,18 +49,18 @@ export const authOptions: NextAuthOptions = {
               name: credentials.email.split('@')[0],
               accessToken: data.data.accessToken,
               refreshToken: data.data.refreshToken,
-            }
+            };
           }
-          return null
+          return null;
         } catch (err) {
-          console.error('Auth error:', err)
-          return null
+          console.error('Auth error:', err);
+          return null;
         }
-      }
-    })
+      },
+    }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours sliding window
   },
@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-      }
+      },
     },
     callbackUrl: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.callback-url`,
@@ -84,20 +84,27 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-      }
-    }
+      },
+    },
   },
   callbacks: {
     async jwt({ token, account, user }) {
-      const fs = require('fs')
+      const fs = require('fs');
       if (account) {
-        console.log('[NextAuth] JWT callback triggered with account:', account)
-        try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] account: ' + JSON.stringify(account) + '\n') } catch(e){}
+        console.log('[NextAuth] JWT callback triggered with account:', account);
+        try {
+          fs.appendFileSync(
+            '/tmp/nextauth.log',
+            '[NextAuth] account: ' + JSON.stringify(account) + '\n',
+          );
+        } catch (e) {}
       }
       // Google OAuth
       if (account?.provider === 'google' && account?.id_token) {
-        console.log('[NextAuth] Exchanging Google token...')
-        try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] Exchanging...\n') } catch(e){}
+        console.log('[NextAuth] Exchanging Google token...');
+        try {
+          fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] Exchanging...\n');
+        } catch (e) {}
         try {
           // Exchange Google token for backend JWT via BFF
           const response = await fetch(
@@ -106,59 +113,84 @@ export const authOptions: NextAuthOptions = {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ idToken: account.id_token }),
-            }
-          )
-          
-          console.log('[NextAuth] Google backend response status:', response.status)
-          try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] status: ' + response.status + '\n') } catch(e){}
+            },
+          );
+
+          console.log('[NextAuth] Google backend response status:', response.status);
+          try {
+            fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] status: ' + response.status + '\n');
+          } catch (e) {}
           if (response.ok) {
-            const data = await response.json()
-            console.log('[NextAuth] Google backend success:', data.success)
-            try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] data: ' + JSON.stringify(data) + '\n') } catch(e){}
+            const data = await response.json();
+            console.log('[NextAuth] Google backend success:', data.success);
+            try {
+              fs.appendFileSync(
+                '/tmp/nextauth.log',
+                '[NextAuth] data: ' + JSON.stringify(data) + '\n',
+              );
+            } catch (e) {}
             if (data.success && data.data) {
-               token.accessToken = data.data.accessToken
-               token.refreshToken = data.data.refreshToken
-               console.log('[NextAuth] Tokens successfully attached to jwt token')
-               try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] Success\n') } catch(e){}
+              token.accessToken = data.data.accessToken;
+              token.refreshToken = data.data.refreshToken;
+              console.log('[NextAuth] Tokens successfully attached to jwt token');
+              try {
+                fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] Success\n');
+              } catch (e) {}
             } else {
-               console.error('[NextAuth] Google backend returned ok but missing success/data', data)
+              console.error('[NextAuth] Google backend returned ok but missing success/data', data);
             }
           } else {
-            const text = await response.text()
-            console.error('[NextAuth] Google backend returned non-ok status:', response.status, text)
-            try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] error text: ' + text + '\n') } catch(e){}
+            const text = await response.text();
+            console.error(
+              '[NextAuth] Google backend returned non-ok status:',
+              response.status,
+              text,
+            );
+            try {
+              fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] error text: ' + text + '\n');
+            } catch (e) {}
           }
         } catch (err) {
-          console.error('Google token exchange error:', err)
-          try { fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] catch error: ' + (err as any).message + '\n') } catch(e){}
+          console.error('Google token exchange error:', err);
+          try {
+            fs.appendFileSync(
+              '/tmp/nextauth.log',
+              '[NextAuth] catch error: ' + (err as any).message + '\n',
+            );
+          } catch (e) {}
         }
-        token.id = user?.id || account.sub
+        token.id = user?.id || account.sub;
       }
-      
+
       // Email/password - tokens from credentials provider
       if ((user as any)?.accessToken) {
-        token.accessToken = (user as any).accessToken
-        token.refreshToken = (user as any).refreshToken
-        token.id = user?.email || user?.id
+        token.accessToken = (user as any).accessToken;
+        token.refreshToken = (user as any).refreshToken;
+        token.id = user?.email || user?.id;
       }
-      
+
       // Check if access token is expired (or close to expiring)
       if (token.accessToken && typeof token.accessToken === 'string') {
         try {
           const payloadBase64 = token.accessToken.split('.')[1];
           if (payloadBase64) {
-            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const decodedPayload = JSON.parse(
+              Buffer.from(payloadBase64, 'base64').toString('utf-8'),
+            );
             const exp = decodedPayload.exp * 1000;
-            
+
             // If token expires in less than 5 minutes, refresh it
             if (Date.now() > exp - 5 * 60 * 1000) {
               console.log('[NextAuth] Access token expired/expiring, refreshing...');
-              const refreshRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/refresh`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken: token.refreshToken }),
-              });
-              
+              const refreshRes = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/refresh`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ refreshToken: token.refreshToken }),
+                },
+              );
+
               if (refreshRes.ok) {
                 const refreshedTokens = await refreshRes.json();
                 if (refreshedTokens.success && refreshedTokens.data) {
@@ -167,7 +199,10 @@ export const authOptions: NextAuthOptions = {
                   console.log('[NextAuth] Successfully refreshed access token!');
                 }
               } else {
-                console.error('[NextAuth] Failed to refresh token, backend returned:', refreshRes.status);
+                console.error(
+                  '[NextAuth] Failed to refresh token, backend returned:',
+                  refreshRes.status,
+                );
                 // If refresh fails, we could clear the tokens or just let it pass and let the interceptor catch the 401
               }
             }
@@ -176,17 +211,17 @@ export const authOptions: NextAuthOptions = {
           console.error('[NextAuth] Error parsing token payload for expiration check:', e);
         }
       }
-      
-      return token
+
+      return token;
     },
     async session({ session, token }) {
       // Store token in session for API requests
-      ;(session as any).accessToken = (token as any).accessToken;
-      ;(session as any).refreshToken = (token as any).refreshToken;
+      (session as any).accessToken = (token as any).accessToken;
+      (session as any).refreshToken = (token as any).refreshToken;
       if (session.user) {
-        ;(session.user as any).id = (token.id as string);
+        (session.user as any).id = token.id as string;
       }
       return session;
     },
-  }
-}
+  },
+};

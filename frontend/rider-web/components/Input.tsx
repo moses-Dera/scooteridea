@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import React from 'react'
+import React from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string
-  error?: string
-  icon?: React.ReactNode
-  helperText?: string
+  label?: string;
+  error?: string;
+  icon?: React.ReactNode;
+  helperText?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -14,16 +14,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-neutral-300 mb-2">
-            {label}
-          </label>
+          <label className="block text-sm font-medium text-neutral-300 mb-2">{label}</label>
         )}
 
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
-              {icon}
-            </div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">{icon}</div>
           )}
 
           <input
@@ -46,18 +42,19 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18.101 12.93a1 1 0 00-1.414-1.414L10 15.586l-6.687-6.687a1 1 0 00-1.414 1.414l8.1 8.1a1 1 0 001.414 0l9.9-9.9z" />
+              <path
+                fillRule="evenodd"
+                d="M18.101 12.93a1 1 0 00-1.414-1.414L10 15.586l-6.687-6.687a1 1 0 00-1.414 1.414l8.1 8.1a1 1 0 001.414 0l9.9-9.9z"
+              />
             </svg>
             {error}
           </p>
         )}
 
-        {helperText && !error && (
-          <p className="text-xs text-neutral-400 mt-2">{helperText}</p>
-        )}
+        {helperText && !error && <p className="text-xs text-neutral-400 mt-2">{helperText}</p>}
       </div>
-    )
-  }
-)
+    );
+  },
+);
 
-Input.displayName = 'Input'
+Input.displayName = 'Input';

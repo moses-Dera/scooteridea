@@ -18,7 +18,7 @@ const DOCK_NAMES = [
   'Yaba Tech Park',
   'Marina Business District',
   'Surulere Junction',
-  'Festac Gateway'
+  'Festac Gateway',
 ];
 
 class DockSimulator {
@@ -37,13 +37,13 @@ class DockSimulator {
         slot: i,
         bike_id: hasBike ? `BK-${String(Math.floor(Math.random() * 100)).padStart(5, '0')}` : null,
         charging: hasBike,
-        battery_pct: hasBike ? Math.floor(Math.random() * 40) + 60 : null
+        battery_pct: hasBike ? Math.floor(Math.random() * 40) + 60 : null,
       });
     }
   }
 
   get availableSlots() {
-    return this.slots.filter(s => s.bike_id === null).length;
+    return this.slots.filter((s) => s.bike_id === null).length;
   }
 
   generateStatus() {
@@ -55,15 +55,15 @@ class DockSimulator {
       total_slots: this.totalSlots,
       available_slots: this.availableSlots,
       slots: this.slots,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
   simulateActivity() {
     // Randomly dock/undock bikes
     if (Math.random() > 0.8) {
-      const emptySlots = this.slots.filter(s => s.bike_id === null);
-      const occupiedSlots = this.slots.filter(s => s.bike_id !== null);
+      const emptySlots = this.slots.filter((s) => s.bike_id === null);
+      const occupiedSlots = this.slots.filter((s) => s.bike_id !== null);
 
       if (Math.random() > 0.5 && emptySlots.length > 0) {
         // Dock a bike
@@ -71,11 +71,15 @@ class DockSimulator {
         slot.bike_id = `BK-${String(Math.floor(Math.random() * 100)).padStart(5, '0')}`;
         slot.charging = true;
         slot.battery_pct = Math.floor(Math.random() * 50) + 30;
-        console.log(chalk.green(`  ✓ Bike ${slot.bike_id} docked at ${this.name} slot ${slot.slot}`));
+        console.log(
+          chalk.green(`  ✓ Bike ${slot.bike_id} docked at ${this.name} slot ${slot.slot}`),
+        );
       } else if (occupiedSlots.length > 0) {
         // Undock a bike
         const slot = occupiedSlots[Math.floor(Math.random() * occupiedSlots.length)];
-        console.log(chalk.yellow(`  ✓ Bike ${slot.bike_id} undocked from ${this.name} slot ${slot.slot}`));
+        console.log(
+          chalk.yellow(`  ✓ Bike ${slot.bike_id} undocked from ${this.name} slot ${slot.slot}`),
+        );
         slot.bike_id = null;
         slot.charging = false;
         slot.battery_pct = null;
@@ -83,7 +87,7 @@ class DockSimulator {
     }
 
     // Update battery levels for charging bikes
-    this.slots.forEach(slot => {
+    this.slots.forEach((slot) => {
       if (slot.charging && slot.battery_pct < 100) {
         slot.battery_pct = Math.min(100, slot.battery_pct + Math.random() * 2);
       }
@@ -96,7 +100,7 @@ function startDockStations() {
 
   const client = mqtt.connect(MQTT_BROKER, {
     username: process.env.MQTT_USERNAME,
-    password: process.env.MQTT_PASSWORD
+    password: process.env.MQTT_PASSWORD,
   });
 
   const docks = [];
@@ -124,15 +128,16 @@ function startDockStations() {
 
     // Start status broadcast loop
     setInterval(() => {
-      docks.forEach(dock => {
+      docks.forEach((dock) => {
         dock.simulateActivity();
         const status = dock.generateStatus();
-        client.publish(
-          `docks/${dock.dockId}/status`,
-          JSON.stringify(status)
-        );
+        client.publish(`docks/${dock.dockId}/status`, JSON.stringify(status));
       });
-      process.stdout.write(chalk.gray(`🏗️  Status sent from ${NUM_DOCKS} docks | ${new Date().toLocaleTimeString()}\r`));
+      process.stdout.write(
+        chalk.gray(
+          `🏗️  Status sent from ${NUM_DOCKS} docks | ${new Date().toLocaleTimeString()}\r`,
+        ),
+      );
     }, DOCK_INTERVAL);
   });
 

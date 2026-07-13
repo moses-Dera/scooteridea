@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@ebike/types", "@ebike/api-client"],
+  transpilePackages: ['@ebike/types', '@ebike/api-client'],
   async redirects() {
     return [
       {
@@ -13,26 +13,26 @@ const nextConfig = {
   },
 };
 
-const withPWA = require("@ducanh2912/next-pwa").default({
-  dest: "public",
-  disable: process.env.NODE_ENV === "development",
+const withPWA = require('@ducanh2912/next-pwa').default({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
 });
 
-const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require('@sentry/nextjs');
 
 module.exports = withSentryConfig(
   withPWA(nextConfig),
   {
     silent: true,
-    org: "scooteridea",
-    project: "rider-web",
+    org: 'scooteridea',
+    project: 'rider-web',
   },
   {
     widenClientFileUpload: true,
     transpileClientSDK: true,
     hideSourceMaps: true,
     disableLogger: true,
-  }
+  },
 );

@@ -23,8 +23,13 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
           <Send className="w-8 h-8 text-primary" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">Report Received</h2>
-        <p className="text-slate-400 mb-6">Thank you for helping keep our fleet safe and reliable. Our team is reviewing your report.</p>
-        <button onClick={onClose} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors">
+        <p className="text-slate-400 mb-6">
+          Thank you for helping keep our fleet safe and reliable. Our team is reviewing your report.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
+        >
           Close
         </button>
       </div>
@@ -39,8 +44,18 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
             onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'menu' }))}
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
-            <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-5 h-5 text-slate-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <div className="text-2xl font-bold flex items-center gap-2">
@@ -52,15 +67,22 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
         >
           <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Issue Type</label>
-          <select 
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">
+            Issue Type
+          </label>
+          <select
             value={issueType}
             onChange={(e) => setIssueType(e.target.value)}
             className="w-full bg-[#0A0D14] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary appearance-none"
@@ -74,8 +96,10 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Description</label>
-          <textarea 
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">
+            Description
+          </label>
+          <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Please describe the issue in detail..."
@@ -88,7 +112,7 @@ export default function ReportPanel({ onClose }: { onClose: () => void }) {
           <Camera className="w-5 h-5" /> Attach Photo (Optional)
         </button>
 
-        <button 
+        <button
           onClick={handleSubmit}
           disabled={description.trim() === '' || submitting}
           className="w-full mt-4 py-4 bg-primary disabled:bg-primary/30 disabled:text-slate-500 text-black font-bold rounded-xl shadow-glow-primary transition-all flex items-center justify-center gap-2"

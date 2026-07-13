@@ -3,7 +3,7 @@ const { spawn, execSync } = require('child_process');
 console.log('🧹 Cleaning up blocked ports to guarantee startup...');
 const portsToClear = [1883, 6379, 5432, 3010, 3004, 3002, 80];
 
-portsToClear.forEach(port => {
+portsToClear.forEach((port) => {
   try {
     // Suppress output so it doesn't clutter the terminal if the port is already free
     execSync(`fuser -k ${port}/tcp > /dev/null 2>&1`);
@@ -23,17 +23,16 @@ try {
 
 console.log('✅ Docker containers are up! Starting Turborepo...');
 
-
 // Start the Turborepo dev server
-const turbo = spawn('npm', ['run', 'dev:turbo'], { 
+const turbo = spawn('npm', ['run', 'dev:turbo'], {
   stdio: 'inherit',
-  env: process.env
+  env: process.env,
 });
 
 // Function to gracefully shut down everything
 const shutdown = () => {
   console.log('\n🛑 Shutting down...');
-  
+
   if (turbo.pid) {
     turbo.kill('SIGINT');
   }

@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import React from 'react'
+import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
-  fullWidth?: boolean
-  loading?: boolean
-  icon?: React.ReactNode
-  children: React.ReactNode
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
+  loading?: boolean;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
 }
 
 const variantClasses = {
@@ -20,13 +20,13 @@ const variantClasses = {
     'bg-transparent hover:bg-neutral-800 active:bg-neutral-700 text-white border border-neutral-600 hover:border-neutral-500',
   danger:
     'bg-red-500 hover:bg-red-600 active:bg-red-700 text-white shadow-md hover:shadow-lg border-0',
-} as const
+} as const;
 
 const sizeClasses = {
   sm: 'px-3 py-2 text-sm font-medium rounded-lg h-10',
   md: 'px-4 py-2 text-base font-semibold rounded-lg h-12',
   lg: 'px-6 py-3 text-lg font-bold rounded-xl h-14',
-} as const
+} as const;
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
@@ -41,7 +41,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className = '',
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <button
@@ -66,8 +66,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ) : null}
         {children}
       </button>
-    )
-  }
-)
+    );
+  },
+);
 
-Button.displayName = 'Button'
+Button.displayName = 'Button';

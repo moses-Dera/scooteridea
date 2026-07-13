@@ -14,11 +14,11 @@ export function DockCard({ dock }: DockCardProps) {
           <h3 className="font-semibold text-lg text-gray-900">{dock.name}</h3>
           <p className="text-sm text-gray-600">{dock.dock_id}</p>
         </div>
-        <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-          dock.available_slots > 0 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
+        <div
+          className={`px-3 py-1 rounded-full text-sm font-medium ${
+            dock.available_slots > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
           {dock.available_slots}/{dock.total_slots} slots
         </div>
       </div>
@@ -36,9 +36,7 @@ export function DockCard({ dock }: DockCardProps) {
             <div
               key={slot.slot}
               className={`p-2 rounded text-center text-xs font-medium ${
-                slot.bike_id
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-gray-100 text-gray-800'
+                slot.bike_id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
               }`}
             >
               <div className="font-semibold">#{slot.slot}</div>

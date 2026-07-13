@@ -30,15 +30,20 @@ export interface NavigationState {
 
 // Google Polyline Decoder to GeoJSON LineString
 function decodePolyline(encoded: string) {
-  let index = 0, lat = 0, lng = 0, coordinates = [];
+  let index = 0,
+    lat = 0,
+    lng = 0,
+    coordinates = [];
   while (index < encoded.length) {
-    let b, shift = 0, result = 0;
+    let b,
+      shift = 0,
+      result = 0;
     do {
       b = encoded.charCodeAt(index++) - 63;
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlat = (result & 1) !== 0 ? ~(result >> 1) : (result >> 1);
+    let dlat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
     lat += dlat;
 
     shift = 0;
@@ -48,7 +53,7 @@ function decodePolyline(encoded: string) {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlng = (result & 1) !== 0 ? ~(result >> 1) : (result >> 1);
+    let dlng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
     lng += dlng;
 
     coordinates.push([lng / 1e5, lat / 1e5]);
@@ -59,7 +64,7 @@ function decodePolyline(encoded: string) {
 export function useNavigationEngine(
   startLocation: { lat: number; lng: number } | null,
   destination: { lat: number; lng: number } | null,
-  profile: NavigationProfile = 'walking'
+  profile: NavigationProfile = 'walking',
 ) {
   const [navState, setNavState] = useState<NavigationState>({
     isActive: false,
@@ -77,7 +82,7 @@ export function useNavigationEngine(
 
   useEffect(() => {
     if (!startLocation || !destination) {
-      setNavState(prev => ({ ...prev, isActive: false, routeGeoJSON: null }));
+      setNavState((prev) => ({ ...prev, isActive: false, routeGeoJSON: null }));
       return;
     }
 
@@ -86,30 +91,30 @@ export function useNavigationEngine(
       setError(null);
       try {
         // Map our profiles to Google's profiles
-        // Note: Google Maps does NOT support 'bicycling' mode in Nigeria/Africa. 
+        // Note: Google Maps does NOT support 'bicycling' mode in Nigeria/Africa.
         // We map our 'cycling' profile to 'driving' so the scooter can use the standard road network.
         let googleMode = 'walking';
         let durationMultiplier = 1.0;
 
         if (profile === 'cycling') {
-            googleMode = 'driving'; 
-            durationMultiplier = 1.8; // Scooters are generally 1.8x slower than cars in clear traffic
+          googleMode = 'driving';
+          durationMultiplier = 1.8; // Scooters are generally 1.8x slower than cars in clear traffic
         }
         if (profile === 'driving-traffic') {
-            googleMode = 'driving';
+          googleMode = 'driving';
         }
 
         const originStr = `${startLocation.lat},${startLocation.lng}`;
         const destStr = `${destination.lat},${destination.lng}`;
         const url = `/api/directions?origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destStr)}&mode=${googleMode}`;
-        
+
         const res = await fetch(url);
         const data = await res.json();
-        
+
         if (data.routes && data.routes.length > 0) {
           const route = data.routes[0];
           const leg = route.legs[0];
-          
+
           // Convert Google steps to our format
           const mappedSteps: RouteStep[] = leg.steps.map((s: any) => {
             const rawInstruction = s.html_instructions.replace(/<[^>]+>/g, ' '); // Strip HTML tags safely
@@ -122,8 +127,8 @@ export function useNavigationEngine(
                 instruction: rawInstruction,
                 type: s.maneuver || 'straight',
                 modifier: s.maneuver ? s.maneuver.replace(/-/g, ' ') : 'straight',
-                location: [s.start_location.lng, s.start_location.lat]
-              }
+                location: [s.start_location.lng, s.start_location.lat],
+              },
             };
           });
 

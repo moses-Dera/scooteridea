@@ -1,36 +1,36 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { ridesService } from '@/lib/ridesService'
-import { useRide } from '@/context/RideContext'
-import { Ride } from '@/lib/types'
-import { Camera, CheckCircle, AlertTriangle } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ridesService } from '@/lib/ridesService';
+import { useRide } from '@/context/RideContext';
+import { Ride } from '@/lib/types';
+import { Camera, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function RideReceipt({ params }: { params: { rideId: string } }) {
-  const router = useRouter()
-  const { clearActiveRide } = useRide()
-  const [ride, setRide] = useState<Ride | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const { clearActiveRide } = useRide();
+  const [ride, setRide] = useState<Ride | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRide = async () => {
       try {
-        const rideData = await ridesService.getById(params.rideId)
-        setRide(rideData)
-        clearActiveRide()
+        const rideData = await ridesService.getById(params.rideId);
+        setRide(rideData);
+        clearActiveRide();
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load receipt'
-        setError(message)
+        const message = err instanceof Error ? err.message : 'Failed to load receipt';
+        setError(message);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchRide()
-  }, [params.rideId, clearActiveRide])
+    fetchRide();
+  }, [params.rideId, clearActiveRide]);
 
   if (isLoading) {
     return (
@@ -40,7 +40,7 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
           <p className="text-slate-400">Processing receipt...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !ride) {
@@ -60,16 +60,15 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
-  const duration = ride.duration / 60 // Convert to minutes
-  const distance = ride.distance || 0
+  const duration = ride.duration / 60; // Convert to minutes
+  const distance = ride.distance || 0;
 
   return (
     <div className="w-full h-full overflow-y-auto bg-gradient-to-br from-slate-900 to-slate-800 p-6">
       <div className="max-w-md mx-auto pb-8">
-        
         {/* Success Header */}
         <div className="text-center mb-8 mt-8">
           <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary shadow-glow-primary mx-auto mb-6 relative">
@@ -82,7 +81,6 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
 
         {/* Receipt Card */}
         <div className="bg-surfaceLight border border-white/10 rounded-3xl p-6 mb-6">
-          
           {/* Ride Info */}
           <div className="mb-6 pb-6 border-b border-white/10">
             <div className="flex justify-between items-center mb-4">
@@ -101,7 +99,9 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
 
           {/* Cost Breakdown */}
           <div className="mb-6 pb-6 border-b border-white/10">
-            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Cost Breakdown</div>
+            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">
+              Cost Breakdown
+            </div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-slate-400">Base fare ({duration.toFixed(1)} min × ₦50)</span>
               <span className="text-white">₦ {(duration * 50).toFixed(2)}</span>
@@ -109,7 +109,9 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
             {ride.surgeMultiplier > 1 && (
               <div className="flex justify-between items-center mb-2">
                 <span className="text-slate-400">Surge ({ride.surgeMultiplier}x)</span>
-                <span className="text-warning">+ ₦ {((duration * 50 * (ride.surgeMultiplier - 1)).toFixed(2))}</span>
+                <span className="text-warning">
+                  + ₦ {(duration * 50 * (ride.surgeMultiplier - 1)).toFixed(2)}
+                </span>
               </div>
             )}
             <div className="flex justify-between items-center pt-3 border-t border-white/10">
@@ -149,5 +151,5 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
         </button>
       </div>
     </div>
-  )
+  );
 }

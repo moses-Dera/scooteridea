@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useBikeCommand } from '@/hooks/useBikeCommand';
@@ -29,17 +29,26 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
     }
   };
 
-  const statusColor = {
-    'available': 'text-green-400',
-    'in_use': 'text-red-400',
-    'charging': 'text-blue-400',
-    'maintenance': 'text-yellow-400',
-  }[bike.status] || 'text-slate-400';
+  const statusColor =
+    {
+      available: 'text-green-400',
+      in_use: 'text-red-400',
+      charging: 'text-blue-400',
+      maintenance: 'text-yellow-400',
+    }[bike.status] || 'text-slate-400';
 
-  const batteryColor = bike.battery_pct > 50 ? 'text-green-400' : bike.battery_pct > 20 ? 'text-yellow-400' : 'text-red-400';
+  const batteryColor =
+    bike.battery_pct > 50
+      ? 'text-green-400'
+      : bike.battery_pct > 20
+        ? 'text-yellow-400'
+        : 'text-red-400';
 
   return (
-    <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
+    <div
+      className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all cursor-pointer"
+      onClick={() => setShowDetails(!showDetails)}
+    >
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
@@ -58,7 +67,9 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-slate-400">Location</p>
-              <p className="text-white">{bike.lat.toFixed(4)}, {bike.lng.toFixed(4)}</p>
+              <p className="text-white">
+                {bike.lat.toFixed(4)}, {bike.lng.toFixed(4)}
+              </p>
             </div>
             <div>
               <p className="text-slate-400">Speed</p>
@@ -121,9 +132,7 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
             </button>
           </div>
 
-          {commandError && (
-            <p className="text-xs text-red-400">{commandError}</p>
-          )}
+          {commandError && <p className="text-xs text-red-400">{commandError}</p>}
         </div>
       )}
 

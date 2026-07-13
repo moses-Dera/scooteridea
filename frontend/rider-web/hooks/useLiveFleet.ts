@@ -13,7 +13,7 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
   const { data: session } = useSession();
   const [bikes, setBikes] = useState<LiveBike[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  
+
   const bikesMap = useRef<Map<string, LiveBike>>(new Map());
   const subscribedBikes = useRef<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
@@ -34,7 +34,7 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
         ws.onopen = () => {
           setIsConnected(true);
           // Re-subscribe to everything we know about if we disconnected
-          const toSubscribe = Array.from(subscribedBikes.current).map(id => `bike:${id}`);
+          const toSubscribe = Array.from(subscribedBikes.current).map((id) => `bike:${id}`);
           if (toSubscribe.length > 0) {
             ws.send(JSON.stringify({ subscribe: toSubscribe }));
           }
@@ -50,10 +50,10 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
                 lat: msg.lat,
                 lng: msg.lng,
                 batteryPct: msg.battery ?? current?.batteryPct ?? 100,
-                status: msg.status ?? current?.status ?? 'available'
+                status: msg.status ?? current?.status ?? 'available',
               };
               bikesMap.current.set(msg.bikeId, updated);
-              
+
               // Trigger React render so the bikes physically glide on the Map!
               setBikes(Array.from(bikesMap.current.values()));
             }
@@ -89,14 +89,19 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
-            
             // Demo mode logic
-            if (json.data.length === 0 && !window.sessionStorage.getItem(`demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`)) {
-              window.sessionStorage.setItem(`demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`, 'true');
+            if (
+              json.data.length === 0 &&
+              !window.sessionStorage.getItem(`demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`)
+            ) {
+              window.sessionStorage.setItem(
+                `demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`,
+                'true',
+              );
               fetch('/api/proxy/fleet/demo/spawn', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat, lng, count: 12, radius: radius * 0.8 })
+                body: JSON.stringify({ lat, lng, count: 12, radius: radius * 0.8 }),
               });
             }
 
@@ -108,9 +113,9 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
                 lat: b.lat,
                 lng: b.lng,
                 batteryPct: b.battery_pct,
-                status: b.status || 'available'
+                status: b.status || 'available',
               };
-              
+
               // Only add if not already in our Map to prevent jumpy overwrites of live WS data
               if (!bikesMap.current.has(bike.id)) {
                 bikesMap.current.set(bike.id, bike);

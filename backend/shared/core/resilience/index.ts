@@ -15,7 +15,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import CircuitBreaker from 'opossum';
-import { logger }     from '../logger';
+import { logger } from '../logger';
 
 // ── Circuit Breaker ───────────────────────────────────────────────────────────
 
@@ -45,18 +45,20 @@ export function withCircuitBreaker<T extends (...args: unknown[]) => Promise<unk
 ): CircuitBreaker<Parameters<T>, Awaited<ReturnType<T>>> {
   const breaker = new CircuitBreaker(fn, {
     errorThresholdPercentage: options.errorThresholdPercentage ?? 50,
-    resetTimeout:             options.resetTimeout             ?? 30_000,
-    timeout:                  options.timeout                  ?? 5_000,
-    volumeThreshold:          5, // min requests before tripping
+    resetTimeout: options.resetTimeout ?? 30_000,
+    timeout: options.timeout ?? 5_000,
+    volumeThreshold: 5, // min requests before tripping
   });
 
   if (options.fallback) breaker.fallback(options.fallback);
 
-  breaker.on('open',     () => logger.warn(`[CircuitBreaker:${options.name}] OPEN — fast-failing`));
+  breaker.on('open', () => logger.warn(`[CircuitBreaker:${options.name}] OPEN — fast-failing`));
   breaker.on('halfOpen', () => logger.info(`[CircuitBreaker:${options.name}] HALF-OPEN — probing`));
-  breaker.on('close',    () => logger.info(`[CircuitBreaker:${options.name}] CLOSED — recovered`));
-  breaker.on('reject',   () => logger.warn(`[CircuitBreaker:${options.name}] Request rejected (circuit open)`));
-  breaker.on('timeout',  () => logger.warn(`[CircuitBreaker:${options.name}] Timeout`));
+  breaker.on('close', () => logger.info(`[CircuitBreaker:${options.name}] CLOSED — recovered`));
+  breaker.on('reject', () =>
+    logger.warn(`[CircuitBreaker:${options.name}] Request rejected (circuit open)`),
+  );
+  breaker.on('timeout', () => logger.warn(`[CircuitBreaker:${options.name}] Timeout`));
   breaker.on('fallback', () => logger.info(`[CircuitBreaker:${options.name}] Fallback triggered`));
 
   return breaker as CircuitBreaker<Parameters<T>, Awaited<ReturnType<T>>>;
@@ -87,11 +89,11 @@ export async function retry<T>(
   options: RetryOptions & { label?: string } = {},
 ): Promise<T> {
   const {
-    maxAttempts   = 3,
+    maxAttempts = 3,
     initialDelayMs = 200,
-    maxDelayMs    = 10_000,
-    shouldRetry   = () => true,
-    label         = 'operation',
+    maxDelayMs = 10_000,
+    shouldRetry = () => true,
+    label = 'operation',
   } = options;
 
   let lastErr: unknown;
@@ -111,7 +113,7 @@ export async function retry<T>(
       }
 
       // Full-jitter backoff: random in [0, min(cap, base * 2^attempt)]
-      const cap   = Math.min(maxDelayMs, initialDelayMs * 2 ** attempt);
+      const cap = Math.min(maxDelayMs, initialDelayMs * 2 ** attempt);
       const delay = Math.random() * cap;
 
       logger.warn(
@@ -149,7 +151,7 @@ export function withDLQ<T>(
     try {
       await retry(() => handler(payload), {
         maxAttempts: options.retries ?? 3,
-        label:       `kafka:${options.originalTopic}`,
+        label: `kafka:${options.originalTopic}`,
         shouldRetry: (err) => {
           // Don't retry validation / business logic errors — they'll never succeed
           if (err instanceof Error && err.name === 'ValidationError') return false;
@@ -160,8 +162,8 @@ export function withDLQ<T>(
       const dlqTopic = `${options.originalTopic}.dlq`;
       const dlqPayload = {
         originalTopic: options.originalTopic,
-        failedAt:      new Date().toISOString(),
-        error:         err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
+        failedAt: new Date().toISOString(),
+        error: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
         payload,
       };
 
@@ -171,7 +173,10 @@ export function withDLQ<T>(
         await publishDLQ(dlqTopic, dlqPayload);
       } catch (dlqErr) {
         // DLQ publish itself failed — log it prominently but don't crash the consumer
-        logger.fatal({ dlqErr, dlqTopic, originalPayload: payload }, '[DLQ] CRITICAL — failed to publish to DLQ');
+        logger.fatal(
+          { dlqErr, dlqTopic, originalPayload: payload },
+          '[DLQ] CRITICAL — failed to publish to DLQ',
+        );
       }
     }
   };

@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -14,13 +14,13 @@ const config: Config = {
         surface: '#111827',
         surfaceLight: '#1A2235',
         surfaceHover: '#242E45',
-        
+
         // Brand colors
         primary: '#1ED760',
         accent: '#10B981',
         danger: '#EF4444',
         warning: '#F59E0B',
-        
+
         // Modern palette
         emerald: {
           50: '#F0FDF4',
@@ -52,17 +52,18 @@ const config: Config = {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'glass-gradient': 'linear-gradient(to right bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.01))'
+        'glass-gradient':
+          'linear-gradient(to right bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.01))',
       },
       backdropBlur: {
-        'xs': '2px',
+        xs: '2px',
       },
       boxShadow: {
         'glow-primary': '0 0 20px rgba(34, 197, 94, 0.3)',
-        'elevation': '0 10px 25px rgba(0, 0, 0, 0.2)',
+        elevation: '0 10px 25px rgba(0, 0, 0, 0.2)',
       },
     },
   },
   plugins: [],
-}
-export default config
+};
+export default config;

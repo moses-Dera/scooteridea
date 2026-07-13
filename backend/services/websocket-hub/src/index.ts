@@ -6,11 +6,7 @@ import 'dotenv/config';
 
 import type { JwtPayload, WsServerEvent, WsSubscribeMessage } from '@ebike/types';
 import { createConsumer, TOPICS } from '@ebike/events';
-import {
-  logger,
-  setupGracefulShutdown,
-  registerCleanup,
-} from '@ebike/core';
+import { logger, setupGracefulShutdown, registerCleanup } from '@ebike/core';
 
 process.env.SERVICE_NAME = 'websocket-hub';
 
@@ -36,7 +32,10 @@ const wss = new WebSocketServer({ server });
 wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
   // Auth via ?token= query param
   const token = new URL(req.url!, `http://localhost`).searchParams.get('token');
-  if (!token) { ws.close(4001, 'Missing token'); return; }
+  if (!token) {
+    ws.close(4001, 'Missing token');
+    return;
+  }
 
   let payload: JwtPayload;
   try {
@@ -48,7 +47,7 @@ wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
 
   const state: ClientState = {
     ws,
-    userId:        payload.sub,
+    userId: payload.sub,
     subscriptions: new Set(),
   };
   clients.set(payload.sub, state);
@@ -63,20 +62,31 @@ wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
           // Security: Block riders from subscribing to mass location feeds
           if (ch === 'fleet:all' || ch.startsWith('zone:')) {
             if (payload.role !== 'OPERATOR' && payload.role !== 'ADMIN') {
-              logger.warn({ userId: payload.sub, role: payload.role, channel: ch }, '[WS Hub] Unauthorized subscription blocked');
+              logger.warn(
+                { userId: payload.sub, role: payload.role, channel: ch },
+                '[WS Hub] Unauthorized subscription blocked',
+              );
               return; // Reject silently
             }
           }
           state.subscriptions.add(ch);
         });
-        logger.debug({ userId: payload.sub, channels: Array.from(state.subscriptions) }, '[WS Hub] Subscribed');
+        logger.debug(
+          { userId: payload.sub, channels: Array.from(state.subscriptions) },
+          '[WS Hub] Subscribed',
+        );
       }
-    } catch { /* ignore malformed messages */ }
+    } catch {
+      /* ignore malformed messages */
+    }
   });
 
   ws.on('close', (code, reason) => {
     clients.delete(payload.sub);
-    logger.info({ userId: payload.sub, code, reason: reason.toString() }, '[WS Hub] Client disconnected');
+    logger.info(
+      { userId: payload.sub, code, reason: reason.toString() },
+      '[WS Hub] Client disconnected',
+    );
   });
 
   ws.on('error', (err) => {
@@ -97,10 +107,14 @@ async function startRedisPubSub() {
     try {
       const event = JSON.parse(message) as WsServerEvent & { _channel?: string };
       broadcastEvent(event);
-    } catch { /* ignore malformed messages */ }
+    } catch {
+      /* ignore malformed messages */
+    }
   });
 
-  registerCleanup('Redis-Sub', async () => { await sub.quit(); });
+  registerCleanup('Redis-Sub', async () => {
+    await sub.quit();
+  });
   logger.info('[WS Hub] Redis pub/sub backplane active');
 }
 
@@ -116,14 +130,16 @@ function broadcastEvent(event: WsServerEvent) {
       (event.event === 'bike_location_update' &&
         (state.subscriptions.has(`bike:${event.bikeId}`) ||
           state.subscriptions.has('fleet:all') ||
-          (event.zoneIds && event.zoneIds.some(z => state.subscriptions.has(`zone:${z}`))))) ||
+          (event.zoneIds && event.zoneIds.some((z) => state.subscriptions.has(`zone:${z}`))))) ||
       (event.event === 'dock_status_update' &&
-        (state.subscriptions.has(`dock:${event.dockId}`) ||
-          state.subscriptions.has('dock:all'))) ||
-      (event.event === 'surge_update'  && state.subscriptions.has('surge:all')) ||
-      (event.event === 'ride_ended'    && state.subscriptions.has(`ride:${event.rideId}`));
+        (state.subscriptions.has(`dock:${event.dockId}`) || state.subscriptions.has('dock:all'))) ||
+      (event.event === 'surge_update' && state.subscriptions.has('surge:all')) ||
+      (event.event === 'ride_ended' && state.subscriptions.has(`ride:${event.rideId}`));
 
-    if (shouldSend) { state.ws.send(payload); sent++; }
+    if (shouldSend) {
+      state.ws.send(payload);
+      sent++;
+    }
   }
 
   logger.debug({ event: event.event, recipients: sent }, '[WS Hub] Event broadcast');
@@ -143,27 +159,27 @@ async function startEventsConsumer() {
 
       if (payload.bikeId && payload.lat !== undefined) {
         event = {
-          event:    'bike_location_update',
-          bikeId:   payload.bikeId,
-          lat:      payload.lat,
-          lng:      payload.lng,
-          battery:  payload.batteryPct,
-          status:   payload.status,
-          zoneIds:  payload.zoneIds,
+          event: 'bike_location_update',
+          bikeId: payload.bikeId,
+          lat: payload.lat,
+          lng: payload.lng,
+          battery: payload.batteryPct,
+          status: payload.status,
+          zoneIds: payload.zoneIds,
         };
       } else if (payload.dockId) {
         event = {
-          event:          'dock_status_update',
-          dockId:         payload.dockId,
+          event: 'dock_status_update',
+          dockId: payload.dockId,
           availableSlots: payload.availableSlots,
         };
       } else if (payload.rideId && payload.fareCents !== undefined) {
         // RIDE_ENDED — notify the rider that their ride is complete
         event = {
-          event:     'ride_ended',
-          rideId:    payload.rideId,
+          event: 'ride_ended',
+          rideId: payload.rideId,
           fareCents: payload.fareCents,
-          userId:    payload.userId,
+          userId: payload.userId,
         };
       }
 
@@ -173,7 +189,9 @@ async function startEventsConsumer() {
     },
   );
 
-  registerCleanup('Redis-Pub', async () => { await publisher.quit(); });
+  registerCleanup('Redis-Pub', async () => {
+    await publisher.quit();
+  });
   logger.info('[WS Hub] Events → Redis relay active');
 }
 

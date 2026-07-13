@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -16,9 +16,9 @@ export function ActiveRideComponent() {
     // Simulate ride metrics
     const timer = setInterval(() => {
       setRideTime((t) => t + 1);
-      setDistance((d) => d + (Math.random() * 0.015)); // ~0.9 km per minute
+      setDistance((d) => d + Math.random() * 0.015); // ~0.9 km per minute
       setSpeed((Math.random() * 25 + 10).toFixed(1) as any); // 10-35 km/h
-      setEstimatedFare((d) => d + (Math.random() * 3)); // ~3 per km
+      setEstimatedFare((d) => d + Math.random() * 3); // ~3 per km
     }, 1000);
 
     return () => clearInterval(timer);
@@ -72,7 +72,9 @@ export function ActiveRideComponent() {
       {/* Live Map Placeholder */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 h-64 flex items-center justify-center">
         <div className="text-center">
-          <p className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-2"><MapIcon className="w-4 h-4" /> Live Map</p>
+          <p className="flex items-center justify-center gap-2 text-slate-400 text-sm mb-2">
+            <MapIcon className="w-4 h-4" /> Live Map
+          </p>
           <p className="text-slate-500 text-xs">Your ride is being tracked in real-time</p>
           <p className="text-slate-600 text-xs mt-2">Map integration coming soon</p>
         </div>
@@ -84,11 +86,15 @@ export function ActiveRideComponent() {
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="text-slate-400">Avg Speed</p>
-            <p className="text-white font-bold">{distance > 0 ? ((distance / (rideTime / 60)) * 60).toFixed(1) : 0} km/h</p>
+            <p className="text-white font-bold">
+              {distance > 0 ? ((distance / (rideTime / 60)) * 60).toFixed(1) : 0} km/h
+            </p>
           </div>
           <div>
             <p className="text-slate-400">Pace</p>
-            <p className="text-white font-bold">{rideTime > 0 ? (rideTime / (distance || 0.001)).toFixed(0) : 0} s/m</p>
+            <p className="text-white font-bold">
+              {rideTime > 0 ? (rideTime / (distance || 0.001)).toFixed(0) : 0} s/m
+            </p>
           </div>
           <div>
             <p className="text-slate-400">Bike ID</p>
@@ -103,7 +109,10 @@ export function ActiveRideComponent() {
 
       {/* Safety Message */}
       <div className="bg-blue-900 border border-blue-700 rounded-lg p-4">
-          <span className="flex items-center gap-2"><Bike className="w-4 h-4 inline" /> Stay safe! Keep right, signal turns, and watch for pedestrians.</span>
+        <span className="flex items-center gap-2">
+          <Bike className="w-4 h-4 inline" /> Stay safe! Keep right, signal turns, and watch for
+          pedestrians.
+        </span>
       </div>
 
       {/* End Ride Button */}
@@ -112,8 +121,7 @@ export function ActiveRideComponent() {
         disabled={ending}
         className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-colors"
       >
-        ✕
-        {ending ? 'Ending ride...' : 'End Ride'}
+        ✕{ending ? 'Ending ride...' : 'End Ride'}
       </button>
 
       {/* Emergency Contact */}

@@ -16,9 +16,9 @@
 
 import 'dotenv/config';
 import express from 'express';
-import helmet  from 'helmet';
-import cors    from 'cors';
-import http    from 'http';
+import helmet from 'helmet';
+import cors from 'cors';
+import http from 'http';
 import { prisma } from '@ebike/db';
 
 import {
@@ -41,7 +41,7 @@ import { authRouter } from './routes/auth.routes';
 // ── Prisma (shared singleton from @ebike/db) ────────────────────────────────
 
 // ── App ───────────────────────────────────────────────────────────────────────
-const app  = express();
+const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
 process.env.SERVICE_NAME = 'auth-service';
@@ -49,14 +49,16 @@ process.env.SERVICE_NAME = 'auth-service';
 // ── Security ──────────────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors({
-  origin:      process.env.CORS_ORIGINS?.split(',') ?? '*',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGINS?.split(',') ?? '*',
+    credentials: true,
+  }),
+);
 
 // ── Request Lifecycle ─────────────────────────────────────────────────────────
-app.use(requestId);    // Attach + propagate X-Request-ID
-app.use(httpLogger);   // Structured pino-http logging
+app.use(requestId); // Attach + propagate X-Request-ID
+app.use(httpLogger); // Structured pino-http logging
 app.use(express.json({ limit: '1mb' }));
 app.use(standardRateLimiter);
 app.use(userRateLimiter);
@@ -109,7 +111,7 @@ async function bootstrap(): Promise<void> {
 
   // Register cleanup callbacks (SIGTERM drain)
   registerCleanup('Postgres', () => prisma.$disconnect());
-  registerCleanup('Redis',    () => disconnectRedis());
+  registerCleanup('Redis', () => disconnectRedis());
 
   setupGracefulShutdown(server, 10_000);
 

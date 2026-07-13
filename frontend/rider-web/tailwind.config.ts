@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -14,13 +14,13 @@ const config: Config = {
         surface: '#111827',
         surfaceLight: '#1A2235',
         surfaceHover: '#242E45',
-        
+
         // Legacy support (for emerald-based design)
         primary: '#1ED760', // Neon green for glow effects
         secondary: '#00D4FF',
         danger: '#EF4444',
         warning: '#F59E0B',
-        
+
         // Modern color palette
         emerald: {
           50: '#F0FDF4',
@@ -56,12 +56,12 @@ const config: Config = {
       boxShadow: {
         'glow-primary': '0 0 20px rgba(34, 197, 94, 0.3)',
         'glow-secondary': '0 0 20px rgba(0, 212, 255, 0.4)',
-        'elevation': '0 10px 25px rgba(0, 0, 0, 0.2)',
+        elevation: '0 10px 25px rgba(0, 0, 0, 0.2)',
       },
       keyframes: {
         shimmer: {
           '100%': { transform: 'translateX(150%)' },
-        }
+        },
       },
       fontSize: {
         xs: '12px',
@@ -94,5 +94,5 @@ const config: Config = {
     },
   },
   plugins: [],
-}
-export default config
+};
+export default config;

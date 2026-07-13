@@ -5,14 +5,14 @@ export async function GET(request: Request) {
   const query = searchParams.get('q');
   const lat = searchParams.get('lat');
   const lng = searchParams.get('lng');
-  
+
   if (!query) {
     return NextResponse.json({ predictions: [] });
   }
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
-    console.error("Missing GOOGLE_MAPS_API_KEY in environment variables.");
+    console.error('Missing GOOGLE_MAPS_API_KEY in environment variables.');
     return NextResponse.json({ error: 'Missing Google Maps API Key' }, { status: 500 });
   }
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       // Fallback bias to the center of Nigeria (1000km radius) to prevent defaulting to the US Vercel server
       url += `&location=9.0820,8.6753&radius=1000000`;
     }
-    
+
     const res = await fetch(url);
     const data = await res.json();
     return NextResponse.json(data);

@@ -1,5 +1,5 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
@@ -9,7 +9,7 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ req, token }) => {
-        // Since we use a custom cookie name, we must check it manually 
+        // Since we use a custom cookie name, we must check it manually
         // if withAuth's getToken fails to find the default cookie.
         const secureCookie = req.cookies.get('__Secure-scooter-session-token');
         const standardCookie = req.cookies.get('scooter-session-token');
@@ -18,8 +18,8 @@ export default withAuth(
     },
     pages: {
       signIn: '/login', // Redirect to our smart overlay page
-    }
-  }
+    },
+  },
 );
 
 // Define exactly which routes require authentication

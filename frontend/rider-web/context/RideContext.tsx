@@ -159,7 +159,7 @@ export function RideProvider({ children }: RideProviderProps) {
     (dock: { id: string; name: string; distance: number } | null) => {
       dispatch({ type: 'UPDATE_NEAREST_DOCK', payload: dock });
     },
-    []
+    [],
   );
 
   const reset = useCallback(() => {

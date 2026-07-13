@@ -13,51 +13,54 @@ export class UserRepository {
   static async create(dto: RegisterDto & { passwordHash: string }): Promise<User> {
     const user = await prisma.user.create({
       data: {
-        email:        dto.email,
+        email: dto.email,
         passwordHash: dto.passwordHash,
-        name:         dto.name,
-        phone:        dto.phone,
-        role:         'RIDER',
+        name: dto.name,
+        phone: dto.phone,
+        role: 'RIDER',
       },
     });
     return {
-      id:          user.id,
-      email:       user.email,
-      name:        user.name,
-      phone:       user.phone ?? undefined,
-      role:        user.role as User['role'],
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone ?? undefined,
+      role: user.role as User['role'],
       walletCents: user.walletCents,
-      createdAt:   user.createdAt,
+      createdAt: user.createdAt,
     };
   }
 
-  static async findOrCreateOAuth(email: string, name: string): Promise<{ user: User, isNew: boolean }> {
+  static async findOrCreateOAuth(
+    email: string,
+    name: string,
+  ): Promise<{ user: User; isNew: boolean }> {
     let user = await prisma.user.findUnique({ where: { email } });
     let isNew = false;
-    
+
     if (!user) {
       user = await prisma.user.create({ data: { email, name, role: 'RIDER' } });
       isNew = true;
     }
-    
+
     return {
       user: {
-        id:          user.id,
-        email:       user.email,
-        name:        user.name,
-        phone:       user.phone ?? undefined,
-        role:        user.role as User['role'],
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone ?? undefined,
+        role: user.role as User['role'],
         walletCents: user.walletCents,
-        createdAt:   user.createdAt,
+        createdAt: user.createdAt,
       },
-      isNew
+      isNew,
     };
   }
 
   static async updatePassword(id: string, passwordHash: string): Promise<void> {
     await prisma.user.update({
       where: { id },
-      data: { passwordHash }
+      data: { passwordHash },
     });
   }
 }

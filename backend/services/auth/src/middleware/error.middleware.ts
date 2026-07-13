@@ -5,12 +5,7 @@ interface AppError extends Error {
   statusCode?: number;
 }
 
-export function errorHandler(
-  err: AppError,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-) {
+export function errorHandler(err: AppError, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof ZodError) {
     res.status(400).json({ success: false, error: 'Validation error', details: err.errors });
     return;

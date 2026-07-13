@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 
@@ -14,7 +14,11 @@ export function useBikeCommand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sendCommand = async (bikeId: string, command: BikeCommand, params?: Record<string, any>): Promise<CommandResponse> => {
+  const sendCommand = async (
+    bikeId: string,
+    command: BikeCommand,
+    params?: Record<string, any>,
+  ): Promise<CommandResponse> => {
     setLoading(true);
     setError(null);
 
@@ -23,7 +27,7 @@ export function useBikeCommand() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || 'demo-token'}`,
+          Authorization: `Bearer ${localStorage.getItem('token') || 'demo-token'}`,
         },
         body: JSON.stringify({
           command,
