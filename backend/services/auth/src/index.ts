@@ -59,7 +59,14 @@ app.use(
 // ── Request Lifecycle ─────────────────────────────────────────────────────────
 app.use(requestId); // Attach + propagate X-Request-ID
 app.use(httpLogger); // Structured pino-http logging
-app.use(express.json({ limit: '1mb' }));
+app.use(
+  express.json({
+    limit: '1mb',
+    verify: (req: any, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(standardRateLimiter);
 app.use(userRateLimiter);
 

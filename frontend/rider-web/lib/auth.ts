@@ -40,7 +40,15 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const data = await response.json();
+          let data;
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            console.error(`[NextAuth] Expected JSON but got ${contentType}:`, text.substring(0, 100));
+            throw new Error(`API Endpoint Misconfigured. Contact Support.`);
+          }
 
           if (data.success && data.data?.accessToken) {
             return {
@@ -51,7 +59,7 @@ export const authOptions: NextAuthOptions = {
               refreshToken: data.data.refreshToken,
             };
           }
-          return null;
+          throw new Error(data.message || data.error || 'Invalid credentials');
         } catch (err) {
           console.error('Auth error:', err);
           return null;

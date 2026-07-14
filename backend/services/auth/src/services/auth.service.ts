@@ -8,6 +8,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import sgMail from '@sendgrid/mail';
 import {
@@ -343,9 +344,20 @@ export class AuthService {
     }
 
     // Since auth.service.ts doesn't have prisma imported directly for writes, we can use the repository
-    // Let's import Prisma locally for this, or use UserRepository.
-    // Wait, UserRepository doesn't have an updateWallet method. Let's use the exported prisma from @ebike/db.
     const { prisma } = await import('@ebike/db');
+    const redis = await getRedisClient();
+
+    // Idempotency check: prevent double crediting
+    const isProcessed = await redis.get(`paystack_ref:${reference}`);
+    if (isProcessed) {
+      logger.info({ reference }, 'Transaction already processed (idempotent return)');
+      const existingUser = await UserRepository.findById(userId);
+      const { passwordHash, ...safeExistingUser } = existingUser!;
+      return safeExistingUser as Omit<User, 'passwordHash'>;
+    }
+
+    // Mark as processed (valid for 30 days)
+    await redis.setEx(`paystack_ref:${reference}`, 30 * 24 * 60 * 60, '1');
 
     // Prevent double crediting: check if payment reference already processed
     // In a full production system, we'd log this transaction to a `Payment` table first.
@@ -360,5 +372,69 @@ export class AuthService {
 
     const { passwordHash, ...safeUser } = user;
     return safeUser as Omit<User, 'passwordHash'>;
+  }
+
+  // ── Paystack Webhook Handler ──────────────────────────────────────────────────
+  static async handlePaystackWebhook(
+    rawBody: Buffer | string,
+    body: any,
+    signature: string,
+  ): Promise<void> {
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock';
+
+    // 1. Verify Signature
+    if (paystackSecret !== 'sk_test_mock' && process.env.NODE_ENV === 'production') {
+      const hash = crypto.createHmac('sha512', paystackSecret).update(rawBody).digest('hex');
+      if (hash !== signature) {
+        logger.warn({ signature, hash }, '[Auth] Invalid Paystack webhook signature');
+        throw new UnauthorizedError('Invalid signature');
+      }
+    }
+
+    // 2. Process Event
+    const event = body.event;
+    const data = body.data;
+
+    logger.info({ event, reference: data?.reference }, '[Auth] Received Paystack Webhook');
+
+    if (event === 'charge.success') {
+      const email = data.customer?.email;
+      if (!email) {
+        logger.error('[Auth] Paystack webhook charge.success missing customer email');
+        return;
+      }
+
+      const { prisma } = await import('@ebike/db');
+      const user = await prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        logger.error({ email }, '[Auth] User not found for Paystack webhook');
+        return;
+      }
+
+      const amountCents = data.amount;
+      const reference = data.reference;
+      const authCode: string | undefined = data.authorization?.authorization_code;
+
+      const redis = await getRedisClient();
+      const isProcessed = await redis.get(`paystack_ref:${reference}`);
+      if (isProcessed) {
+        logger.info({ reference }, '[Auth] Paystack webhook reference already processed');
+        return;
+      }
+
+      // Mark as processed (valid for 30 days)
+      await redis.setEx(`paystack_ref:${reference}`, 30 * 24 * 60 * 60, '1');
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          walletCents: { increment: amountCents },
+          ...(authCode ? { paystackAuthCode: authCode } : {}),
+        },
+      });
+
+      logger.info({ userId: user.id, amountCents, reference }, '[Auth] Wallet topped up via webhook');
+    }
   }
 }
