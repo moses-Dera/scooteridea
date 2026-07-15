@@ -139,9 +139,6 @@ export default function DashboardOverview() {
             Active Rides
           </p>
           <div className="text-4xl font-black text-white">{loading ? '-' : activeRides}</div>
-          <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" /> +12% from last hour
-          </p>
         </div>
 
         <div className="bg-surface border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
