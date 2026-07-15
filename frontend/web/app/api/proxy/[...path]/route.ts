@@ -1,12 +1,13 @@
 import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
+import { authOptions } from '@/lib/auth';
 
 /**
  * BFF Proxy for dynamic routes
  * /api/proxy/docks/list → http://backend:3001/docks/list
  */
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}`;
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
 }
 
 export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}`;
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}`;
@@ -133,7 +134,7 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}`;
