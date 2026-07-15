@@ -135,13 +135,11 @@ export default function FleetMapPage() {
             {activeTab === 'live' ? (
               <>
                 {bikes.map((bike) => (
-                  <div
-                    key={bike.id}
-                    onClick={() => handleSelectBike(bike.id)}
-                    className="cursor-pointer transition-transform hover:scale-[1.02]"
-                  >
-                    <BikeCard bike={bike} />
-                  </div>
+                  <BikeCard 
+                    key={bike.id} 
+                    bike={bike} 
+                    onSelect={() => handleSelectBike(bike.id)} 
+                  />
                 ))}
                 {bikes.length === 0 && (
                   <div className="text-center py-12 text-slate-400">

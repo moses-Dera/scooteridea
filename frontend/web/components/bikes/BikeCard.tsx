@@ -12,6 +12,7 @@ interface BikeCardProps {
     lat: number;
     lng: number;
     speed_kmh: number;
+    lock_status?: string;
   };
   onSelect?: () => void;
 }
@@ -78,18 +79,22 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
           </div>
 
           {/* Commands */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap mt-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleCommand(() => unlock(bike.id));
               }}
-              disabled={loading}
-              className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded text-sm transition-colors"
+              disabled={loading || bike.lock_status === 'UNLOCKED'}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm transition-colors ${
+                bike.lock_status === 'UNLOCKED'
+                  ? 'bg-blue-500 text-white ring-2 ring-blue-300 font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+                  : 'bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white'
+              }`}
               title="Unlock bike"
             >
               <FaUnlock size={12} />
-              Unlock
+              {bike.lock_status === 'UNLOCKED' ? 'Unlocked' : 'Unlock'}
             </button>
 
             <button
@@ -97,12 +102,16 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
                 e.stopPropagation();
                 handleCommand(() => lock(bike.id));
               }}
-              disabled={loading}
-              className="flex items-center gap-1 px-3 py-1 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-600 text-white rounded text-sm transition-colors"
+              disabled={loading || bike.lock_status === 'LOCKED'}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm transition-colors ${
+                bike.lock_status === 'LOCKED'
+                  ? 'bg-amber-500 text-white ring-2 ring-amber-300 font-bold shadow-[0_0_10px_rgba(245,158,11,0.5)]'
+                  : 'bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white'
+              }`}
               title="Lock bike"
             >
               <FaLock size={12} />
-              Lock
+              {bike.lock_status === 'LOCKED' ? 'Locked' : 'Lock'}
             </button>
 
             <button
@@ -111,7 +120,7 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
                 handleCommand(() => alarm(bike.id));
               }}
               disabled={loading}
-              className="flex items-center gap-1 px-3 py-1 bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-600 text-white rounded text-sm transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-800 text-white rounded text-sm transition-colors"
               title="Trigger alarm"
             >
               <FaBell size={12} />
@@ -124,11 +133,22 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
                 handleCommand(() => disable(bike.id));
               }}
               disabled={loading}
-              className="flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white rounded text-sm transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-800 text-white rounded text-sm transition-colors"
               title="Disable motor"
             >
               <FaXmark size={12} />
               Disable
+            </button>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onSelect) onSelect();
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 bg-slate-200 hover:bg-white text-slate-900 font-bold rounded text-sm transition-colors ml-auto w-full justify-center mt-2"
+              title="Locate on map"
+            >
+              Locate on Map
             </button>
           </div>
 
