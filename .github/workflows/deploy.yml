@@ -128,3 +128,6 @@ jobs:
             else
               echo "Warning: Auth container not found. Migration skipped."
             fi
+            
+            # 6. Force reload Nginx to resolve new upstream container IPs
+            docker service update --force scooter_stack_nginx
