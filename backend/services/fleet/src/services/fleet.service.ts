@@ -203,14 +203,16 @@ export class FleetService {
           redis.get(`bike:${bikeId}:zones`),
         ]);
         return {
+          id: bikeId,
           bikeId,
           status,
-          ...location,
+          ...(location || {}),
           zoneIds: zonesRaw ? JSON.parse(zonesRaw) : [],
         };
       }),
     );
-    return bikes;
+    // Filter out bikes whose location expired (TTL passed) to prevent invalid GeoJSON
+    return bikes.filter((b) => b.lat !== undefined && b.lng !== undefined);
   }
 
   /** Find nearby bikes using Redis Geospatial (Replacing the matching-service) */
