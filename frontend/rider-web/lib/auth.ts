@@ -40,7 +40,15 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const data = await response.json();
+          let data;
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            console.error(`[NextAuth] Expected JSON but got ${contentType}:`, text.substring(0, 100));
+            throw new Error(`API Endpoint Misconfigured. Contact Support.`);
+          }
 
           if (data.success && data.data?.accessToken) {
             return {
@@ -51,7 +59,7 @@ export const authOptions: NextAuthOptions = {
               refreshToken: data.data.refreshToken,
             };
           }
-          return null;
+          throw new Error(data.message || data.error || 'Invalid credentials');
         } catch (err) {
           console.error('Auth error:', err);
           return null;
@@ -69,7 +77,7 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-session-token`,
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-rider-token`,
       options: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -203,7 +211,7 @@ export const authOptions: NextAuthOptions = {
                   '[NextAuth] Failed to refresh token, backend returned:',
                   refreshRes.status,
                 );
-                // If refresh fails, we could clear the tokens or just let it pass and let the interceptor catch the 401
+                token.error = 'RefreshAccessTokenError';
               }
             }
           }
@@ -218,6 +226,7 @@ export const authOptions: NextAuthOptions = {
       // Store token in session for API requests
       (session as any).accessToken = (token as any).accessToken;
       (session as any).refreshToken = (token as any).refreshToken;
+      (session as any).error = token.error;
       if (session.user) {
         (session.user as any).id = token.id as string;
       }

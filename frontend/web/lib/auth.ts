@@ -24,7 +24,15 @@ export const authOptions: NextAuthOptions = {
             }),
           });
 
-          const json = await res.json();
+          let json;
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            json = await res.json();
+          } else {
+            const text = await res.text();
+            console.error(`[NextAuth] Expected JSON but got ${contentType}:`, text.substring(0, 100));
+            throw new Error(`API Endpoint Misconfigured. Contact Support.`);
+          }
 
           if (res.ok && json.success && json.data?.accessToken) {
             const { user, accessToken, refreshToken } = json.data;
@@ -43,7 +51,7 @@ export const authOptions: NextAuthOptions = {
               refreshToken,
             };
           }
-          return null;
+          throw new Error(json.message || json.error || 'Invalid credentials');
         } catch (e: any) {
           throw new Error(e.message || 'Invalid credentials');
         }
@@ -115,7 +123,7 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-session-token`,
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-operator-token`,
       options: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

@@ -87,10 +87,16 @@ authRouter.post(
   asyncHandler(AuthController.registerPushToken),
 );
 
-// Wallet Top-up Verification
+// Wallet Top-up Verification (Manual Sync via Frontend)
 authRouter.post(
   '/wallet/topup',
   jwtGuard,
   validate({ body: z.object({ reference: z.string().min(1, 'Reference is required') }) }),
   asyncHandler(AuthController.topUpWallet),
+);
+
+// Paystack Asynchronous Webhook
+authRouter.post(
+  '/wallet/webhook/paystack',
+  asyncHandler(AuthController.paystackWebhook),
 );
