@@ -46,6 +46,7 @@ jobs:
           context: .
           file: backend/services/${{ steps.folder.outputs.dir }}/Dockerfile
           push: true
+          provenance: false
           tags: ${{ env.REGISTRY }}/moses-dera/scooteridea-${{ matrix.service }}:latest
 
   build-simulator:
@@ -71,6 +72,7 @@ jobs:
           context: ./simulator
           file: ./simulator/Dockerfile
           push: true
+          provenance: false
           tags: ${{ env.REGISTRY }}/moses-dera/scooteridea-hardware-simulator:latest
 
   deploy-backend:
