@@ -23,7 +23,7 @@ export function useBikeCommand() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:3002/fleet/bikes/${bikeId}/command`, {
+      const response = await fetch(`/api/proxy/fleet/bikes/${bikeId}/command`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

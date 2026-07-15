@@ -177,7 +177,7 @@ export default function SimulatorPage() {
   ) => {
     try {
       await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/fleet/simulator/telemetry`,
+        `/api/proxy/fleet/simulator/telemetry`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -310,7 +310,7 @@ export default function SimulatorPage() {
   const selectedBike = bikes.find((b) => b.id === selectedBikeId);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-4 md:-m-8">
       {/* Map Area */}
       <div className="flex-1 relative">
         <div ref={mapContainer} className="absolute inset-0" />

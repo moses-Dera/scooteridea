@@ -121,18 +121,7 @@ export default function HeaderActions({ session }: { session: any }) {
         </div>
       )}
 
-      {/* Desktop Actions */}
-      <button className="hidden md:block relative p-2 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-colors">
-        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full border border-background"></span>
-        <FiBell className="w-5 h-5" />
-      </button>
-      <button
-        onClick={() => signOut({ callbackUrl: '/login' })}
-        className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors font-medium text-sm border border-red-500/20"
-      >
-        <FiLogOut className="w-4 h-4" />
-        <span>Logout</span>
-      </button>
+      {/* Desktop Actions Removed */}
     </div>
   );
 }
