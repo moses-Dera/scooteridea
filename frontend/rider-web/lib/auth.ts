@@ -145,6 +145,12 @@ export const authOptions: NextAuthOptions = {
             if (data.success && data.data) {
               token.accessToken = data.data.accessToken;
               token.refreshToken = data.data.refreshToken;
+              
+              // Decode JWT to get database UUID
+              const payloadBase64 = data.data.accessToken.split('.')[1];
+              const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+              token.id = decodedPayload.sub;
+
               console.log('[NextAuth] Tokens successfully attached to jwt token');
               try {
                 fs.appendFileSync('/tmp/nextauth.log', '[NextAuth] Success\n');
@@ -172,14 +178,14 @@ export const authOptions: NextAuthOptions = {
             );
           } catch (e) {}
         }
-        token.id = user?.id || account.sub;
+        token.id = token.id || user?.id || account.sub;
       }
 
       // Email/password - tokens from credentials provider
       if ((user as any)?.accessToken) {
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
-        token.id = user?.email || user?.id;
+        token.id = (user as any).id || (user as any).email;
       }
 
       // Check if access token is expired (or close to expiring)
