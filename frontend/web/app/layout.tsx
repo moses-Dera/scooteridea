@@ -121,7 +121,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
-              <header className="h-16 border-b border-white/10 flex items-center justify-between px-4 md:px-8 bg-surface/40 backdrop-blur-sm z-10 sticky top-0">
+              <header className="h-16 border-b border-white/10 flex items-center justify-between px-4 md:px-8 bg-surface z-20 sticky top-0">
                 <div className="hidden md:block text-lg font-semibold">Dashboard Overview</div>
                 <div className="md:hidden flex items-center">
                   <img

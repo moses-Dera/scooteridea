@@ -31,7 +31,7 @@ export default function HeaderActions({ session }: { session: any }) {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-md md:hidden flex flex-col pointer-events-auto">
+        <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md md:hidden flex flex-col pointer-events-auto">
           <div className="flex items-center justify-between p-6 border-b border-white/10">
             <div className="flex items-center">
               <img
