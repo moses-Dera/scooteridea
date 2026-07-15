@@ -48,7 +48,8 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
     const connect = () => {
       try {
         const token = localStorage.getItem('token') || 'demo-token';
-        ws = new WebSocket(`ws://localhost:3008/live?token=${token}`);
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3008/live';
+        ws = new WebSocket(`${wsUrl}?token=${token}`);
 
         ws.onopen = () => {
           setConnected(true);

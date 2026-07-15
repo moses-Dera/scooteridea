@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
         try {
           const res = await fetch(`${backendUrl}/auth/login`, {
@@ -91,7 +91,7 @@ export const authOptions: NextAuthOptions = {
             // If token expires in less than 5 minutes, refresh it
             if (Date.now() > exp - 5 * 60 * 1000) {
               console.log('[NextAuth] Access token expired/expiring, refreshing...');
-              const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+              const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
               const refreshRes = await fetch(`${backendUrl}/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
