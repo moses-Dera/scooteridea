@@ -14,6 +14,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import HeaderActions from '@/components/HeaderActions';
 
+import { Outfit } from 'next/font/google';
+
+const outfit = Outfit({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-outfit',
+});
+
 export const metadata: Metadata = {
   title: 'Scooterfy Operator Dashboard',
   description: 'Fleet management and operations dashboard for Scooterfy.',
@@ -23,8 +31,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await getServerSession(authOptions);
 
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-background text-white antialiased flex flex-col md:flex-row">
+    <html lang="en" className={`dark ${outfit.variable}`}>
+      <body className="min-h-screen bg-background text-white antialiased flex flex-col md:flex-row font-sans">
         {!session ? (
           /* Render full screen for login page */
           <main className="flex-1 w-full h-screen">{children}</main>
