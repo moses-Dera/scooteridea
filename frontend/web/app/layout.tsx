@@ -131,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   />
                   <span className="ml-2 text-xl font-bold text-primary tracking-tight">Ops</span>
                 </div>
-                <HeaderActions />
+                <HeaderActions session={session} />
               </header>
               <div className="flex-1 overflow-auto p-4 md:p-8">{children}</div>
             </main>

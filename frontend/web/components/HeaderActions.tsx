@@ -16,8 +16,7 @@ import { MdDirectionsBike } from 'react-icons/md';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 
-export default function HeaderActions() {
-  const { data: session } = useSession();
+export default function HeaderActions({ session }: { session: any }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
