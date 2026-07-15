@@ -75,12 +75,15 @@ export class AuthService {
   static async login(dto: LoginDto): Promise<TokenPair> {
     const user = await UserRepository.findByEmail(dto.email);
 
-    // Use constant-time compare even when user doesn't exist (prevents enumeration)
-    const hashToCompare = user?.passwordHash ?? '$2a$12$invalidhashpadding000000000000000';
-    const match = await bcrypt.compare(dto.password, hashToCompare);
+    if (!user || !user.passwordHash) {
+      // Hash the provided password to prevent timing attacks, then reject
+      await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+      throw new UnauthorizedError('Invalid email or password');
+    }
 
-    if (!user || !match) {
-      // Deliberately vague — don't hint whether email exists
+    const match = await bcrypt.compare(dto.password, user.passwordHash);
+
+    if (!match) {
       throw new UnauthorizedError('Invalid email or password');
     }
 
