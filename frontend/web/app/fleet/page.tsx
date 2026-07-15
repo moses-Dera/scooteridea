@@ -22,9 +22,8 @@ export default function FleetMapPage() {
 
   const fetchHistory = async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem('token') || '';
-      const res = await fetch(`${baseUrl}/api/proxy/rides/all-history`, {
+      const res = await fetch(`/api/proxy/rides/all-history`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       const data = await res.json();

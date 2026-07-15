@@ -77,9 +77,8 @@ export function FleetMapComponent({
   useEffect(() => {
     const fetchDocks = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const token = localStorage.getItem('token') || '';
-        const res = await fetch(`${baseUrl}/api/proxy/fleet/docks`, {
+        const res = await fetch(`/api/proxy/fleet/docks`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         if (res.ok) {
@@ -118,9 +117,8 @@ export function FleetMapComponent({
 
     const fetchTrail = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const token = localStorage.getItem('token') || '';
-        const res = await fetch(`${baseUrl}/api/proxy/fleet/bikes/${selectedBike.id}/trail`, {
+        const res = await fetch(`/api/proxy/fleet/bikes/${selectedBike.id}/trail`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         if (res.ok) {

@@ -75,28 +75,28 @@ export default function DashboardOverview() {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
         // Fetch fleet data
-        const fleetRes = await fetch(`${baseUrl}/api/proxy/fleet/bikes`).catch(() => null);
+        const fleetRes = await fetch(`/api/proxy/fleet/bikes`).catch(() => null);
         if (fleetRes?.ok) {
           const json = await fleetRes.json();
           if (json.success && json.data) setBikes(json.data);
         }
 
         // Fetch top riders
-        const ridersRes = await fetch(`${baseUrl}/api/proxy/rides/riders/top`).catch(() => null);
+        const ridersRes = await fetch(`/api/proxy/rides/riders/top`).catch(() => null);
         if (ridersRes?.ok) {
           const json = await ridersRes.json();
           if (json.success && json.data) setRiders(json.data);
         }
 
         // Fetch system alerts
-        const alertsRes = await fetch(`${baseUrl}/api/proxy/fleet/alerts`).catch(() => null);
+        const alertsRes = await fetch(`/api/proxy/fleet/alerts`).catch(() => null);
         if (alertsRes?.ok) {
           const json = await alertsRes.json();
           if (json.success && json.data) setAlerts(json.data);
         }
 
         // Fetch maintenance issues
-        const maintRes = await fetch(`${baseUrl}/api/proxy/fleet/maintenance`).catch(() => null);
+        const maintRes = await fetch(`/api/proxy/fleet/maintenance`).catch(() => null);
         if (maintRes?.ok) {
           const json = await maintRes.json();
           if (json.success && json.data) setMaintenance(json.data);

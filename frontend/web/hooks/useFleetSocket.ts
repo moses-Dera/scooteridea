@@ -23,14 +23,6 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleBikeUpdate = useCallback(
-    (bike: Bike) => {
-      setBikes((prev) => new Map(prev).set(bike.id, bike));
-      if (onBikeUpdate) onBikeUpdate(bike);
-    },
-    [onBikeUpdate],
-  );
-
   const handleBikesUpdate = useCallback(
     (updatedBikes: Bike[]) => {
       const newMap = new Map(bikes);
@@ -42,63 +34,36 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
   );
 
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let reconnectTimeout: NodeJS.Timeout;
+    let interval: NodeJS.Timeout;
 
-    const connect = () => {
+    const pollFleet = async () => {
       try {
-        const token = localStorage.getItem('token') || 'demo-token';
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3008/live';
-        ws = new WebSocket(`${wsUrl}?token=${token}`);
-
-        ws.onopen = () => {
-          setConnected(true);
-          setError(null);
-
-          const subscriptions = ['dock:all'];
-          if (zones && zones.length > 0) {
-            zones.forEach((z) => subscriptions.push(`zone:${z}`));
-          } else {
-            subscriptions.push('fleet:all');
+        const res = await fetch(`/api/proxy/fleet/bikes`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            handleBikesUpdate(json.data);
+            setConnected(true);
+            setError(null);
           }
-
-          ws?.send(JSON.stringify({ subscribe: subscriptions }));
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            if (message.event === 'bike_location_update' && message.bike) {
-              handleBikeUpdate(message.bike);
-            } else if (message.event === 'fleet_update' && Array.isArray(message.bikes)) {
-              handleBikesUpdate(message.bikes);
-            }
-          } catch (err) {
-            console.error('Failed to parse WebSocket message:', err);
-          }
-        };
-
-        ws.onerror = () => {
-          setError('WebSocket connection error');
+        } else {
           setConnected(false);
-        };
-
-        ws.onclose = () => {
-          setConnected(false);
-          reconnectTimeout = setTimeout(connect, 3000);
-        };
+          setError(`HTTP Error: ${res.status}`);
+        }
       } catch (err) {
-        setError(`Connection failed: ${err}`);
+        setConnected(false);
+        setError('Network Error fetching fleet data');
       }
     };
 
-    connect();
+    // Fetch immediately on mount
+    pollFleet();
 
-    return () => {
-      if (ws) ws.close();
-      if (reconnectTimeout) clearTimeout(reconnectTimeout);
-    };
-  }, [handleBikeUpdate, handleBikesUpdate]);
+    // Then poll every 3 seconds
+    interval = setInterval(pollFleet, 3000);
+
+    return () => clearInterval(interval);
+  }, [handleBikesUpdate]);
 
   return {
     bikes: Array.from(bikes.values()),

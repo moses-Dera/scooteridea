@@ -20,8 +20,7 @@ export default function AdminSettings() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const res = await fetch(`${baseUrl}/api/proxy/fleet/config`);
+        const res = await fetch(`/api/proxy/fleet/config`);
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
@@ -40,8 +39,7 @@ export default function AdminSettings() {
   const handleSavePricing = async () => {
     setSaving(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${baseUrl}/api/proxy/fleet/config`, {
+      const res = await fetch(`/api/proxy/fleet/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),

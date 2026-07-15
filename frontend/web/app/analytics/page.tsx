@@ -26,11 +26,10 @@ export default function AnalyticsOverview() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
         const [res, ridersRes, maintRes] = await Promise.all([
-          fetch(`${baseUrl}/api/proxy/ride/analytics?timeRange=${timeRange}`),
-          fetch(`${baseUrl}/api/proxy/ride/riders/top?limit=5`),
-          fetch(`${baseUrl}/api/proxy/fleet/maintenance?status=open`),
+          fetch(`/api/proxy/ride/analytics?timeRange=${timeRange}`),
+          fetch(`/api/proxy/ride/riders/top?limit=5`),
+          fetch(`/api/proxy/fleet/maintenance?status=open`),
         ]);
 
         if (res.ok) {
