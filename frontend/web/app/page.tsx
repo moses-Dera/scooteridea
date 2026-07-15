@@ -121,7 +121,7 @@ export default function DashboardOverview() {
   const totalFleet = bikes.length;
 
   return (
-    <div className="w-full p-4 sm:p-6 space-y-6 animate-in fade-in duration-500 font-sans bg-black min-h-screen text-slate-200">
+    <div className="w-full space-y-6 animate-in fade-in duration-500 font-sans text-slate-200">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-6 border-b border-white/5">
         <div>

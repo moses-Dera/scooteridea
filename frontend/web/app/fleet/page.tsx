@@ -47,7 +47,7 @@ export default function FleetMapPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] -m-4 md:-m-8">
+    <div className="flex flex-col h-[calc(100vh-80px)] -m-4 md:-m-8 relative">
       {/* Header overlaid on top */}
       <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none">
         <div className="flex justify-between items-start pointer-events-auto">

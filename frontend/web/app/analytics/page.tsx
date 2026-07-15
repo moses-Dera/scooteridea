@@ -58,9 +58,9 @@ export default function AnalyticsOverview() {
   }, [timeRange]);
 
   return (
-    <div className="w-full p-6 space-y-6 bg-neutral-950 min-h-screen">
+    <div className="w-full space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start pb-6 border-b border-neutral-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-neutral-800">
         <div>
           <div className="text-3xl font-bold text-white">Platform Analytics</div>
           <p className="text-sm text-neutral-400 mt-1">
