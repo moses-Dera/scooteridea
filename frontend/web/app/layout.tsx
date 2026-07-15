@@ -7,12 +7,14 @@ import {
   FiSettings,
   FiBell,
   FiBarChart2,
+  FiPlayCircle,
 } from 'react-icons/fi';
 import { MdDirectionsBike } from 'react-icons/md';
 import Link from 'next/link';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import HeaderActions from '@/components/HeaderActions';
+import SessionWatcher from '@/components/SessionWatcher';
 
 import { Outfit } from 'next/font/google';
 
@@ -33,6 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`dark ${outfit.variable}`}>
       <body className="min-h-screen bg-background text-white antialiased flex flex-col md:flex-row font-sans">
+        <SessionWatcher sessionError={(session as any)?.error} />
         {!session ? (
           /* Render full screen for login page */
           <main className="flex-1 w-full h-screen">{children}</main>
@@ -89,7 +92,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   href="/simulator"
                   className="px-4 py-2.5 rounded-lg bg-[#1ED760]/10 hover:bg-[#1ED760]/20 text-[#1ED760] border border-[#1ED760]/20 font-medium flex items-center gap-3 transition-colors cursor-pointer mt-4"
                 >
-                  <span className="text-xl">🎮</span>
+                  <FiPlayCircle className="w-5 h-5" />
                   <span>Simulator</span>
                 </Link>
 

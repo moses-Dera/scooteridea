@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FaClockRotateLeft, FaMapLocation, FaCoins } from 'react-icons/fa6';
+import { FiArrowRight, FiArrowLeft, FiAlertTriangle } from 'react-icons/fi';
 
 interface Ride {
   id: string;
@@ -181,7 +182,7 @@ export function RideTableComponent() {
                               <div>
                                 <p className="text-xs text-slate-400">Dock Route</p>
                                 <p className="text-white">
-                                  {ride.start_dock_id} → {ride.end_dock_id || '(Not ended)'}
+                                  {ride.start_dock_id} <FiArrowRight className="inline mx-2" /> {ride.end_dock_id || '(Not ended)'}
                                 </p>
                               </div>
                             </div>
@@ -189,8 +190,8 @@ export function RideTableComponent() {
 
                           {ride.status === 'disputed' && (
                             <div className="mt-4 p-3 bg-red-900 rounded-lg">
-                              <p className="text-red-200 text-sm">
-                                ⚠️ This ride has been disputed. Review flagged for further
+                              <p className="text-red-200 text-sm flex items-center gap-2">
+                                <FiAlertTriangle /> This ride has been disputed. Review flagged for further
                                 investigation.
                               </p>
                               <button className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-bold">
@@ -220,14 +221,14 @@ export function RideTableComponent() {
             disabled={page === 1}
             className="px-3 py-1 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white rounded text-sm font-bold transition-colors"
           >
-            ← Previous
+            <FiArrowLeft className="inline mr-1" /> Previous
           </button>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
             className="px-3 py-1 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white rounded text-sm font-bold transition-colors"
           >
-            Next →
+            Next <FiArrowRight className="inline ml-1" />
           </button>
         </div>
       </div>

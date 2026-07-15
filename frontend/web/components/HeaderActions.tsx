@@ -11,6 +11,7 @@ import {
   FiBatteryCharging,
   FiSettings,
   FiBarChart2,
+  FiPlayCircle,
 } from 'react-icons/fi';
 import { MdDirectionsBike } from 'react-icons/md';
 import { signOut, useSession } from 'next-auth/react';
@@ -90,7 +91,7 @@ export default function HeaderActions({ session }: { session: any }) {
               onClick={() => setMobileMenuOpen(false)}
               className="px-4 py-3 rounded-lg bg-[#1ED760]/10 hover:bg-[#1ED760]/20 text-[#1ED760] border border-[#1ED760]/20 font-medium flex items-center gap-3 transition-colors mt-2"
             >
-              <span className="text-xl">🎮</span> Simulator
+              <FiPlayCircle className="w-5 h-5" /> Simulator
             </Link>
 
             {(session?.user as any)?.role === 'ADMIN' && (

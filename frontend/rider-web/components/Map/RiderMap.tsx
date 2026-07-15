@@ -125,12 +125,14 @@ export default function RiderMap() {
     }
   }, [userLocation, isNavigating, routeGeoJSON]);
 
+  // Trigger GPS lock ONLY when navigation starts or camera lock is re-enabled
   useEffect(() => {
-    if (isNavigating) {
-      // Programmatically trigger the native geolocation tracking
+    if (isNavigating && isCameraLocked) {
       geoControlRef.current?.trigger();
     }
+  }, [isNavigating, isCameraLocked]);
 
+  useEffect(() => {
     if (isNavigating && userLocation && destination && mapRef.current && isCameraLocked) {
       // Use the device heading or direction of travel, fallback to current camera bearing
       const targetBearing = userLocation.heading ?? mapRef.current.getBearing();
@@ -146,7 +148,7 @@ export default function RiderMap() {
         easing: (t) => t * (2 - t), // Smooth cubic easing
       });
     }
-  }, [isNavigating, userLocation, destination?.lat, destination?.lng, isCameraLocked]);
+  }, [isNavigating, userLocation, destination?.lat, destination?.lng, isCameraLocked, snappedLocation]);
 
   const handleFocusLocation = () => {
     if (!userLocation) return;

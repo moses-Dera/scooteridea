@@ -62,7 +62,6 @@ export function QRScannerOverlay({ isOpen, onClose, onManualEntryClick }: QRScan
     setError('Camera access denied or unavailable.');
   };
 
-  return (
   if (!mounted) return null;
 
   return createPortal(

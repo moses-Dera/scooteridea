@@ -16,6 +16,7 @@ import {
   Unlock,
   AlertTriangle,
   ShieldAlert,
+  ArrowRight,
 } from 'lucide-react';
 
 // Set mapbox token (use environment variable in production)
@@ -27,7 +28,7 @@ export default function SimulatorPage() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const { bikes } = useFleetSocket({});
+  const { bikes, bikesMap } = useFleetSocket({});
 
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
   const [battery, setBattery] = useState<number>(100);
@@ -158,7 +159,7 @@ export default function SimulatorPage() {
   // Update selected bike state if it changes externally
   useEffect(() => {
     if (selectedBikeId) {
-      const bike = bikes.find((b) => b.id === selectedBikeId);
+      const bike = bikesMap.get(selectedBikeId);
       if (bike) {
         if (Math.abs(bike.battery_pct - battery) > 5) {
           setBattery(bike.battery_pct); // Only update slider if diverged significantly from server to avoid slider jumping while dragging
@@ -201,7 +202,7 @@ export default function SimulatorPage() {
     setBattery(val);
 
     if (selectedBikeId) {
-      const bike = bikes.find((b) => b.id === selectedBikeId);
+      const bike = bikesMap.get(selectedBikeId);
       if (bike) {
         await updateBikeTelemetry(bike.id, bike.lat, bike.lng, val, hardwareState);
       }
@@ -210,7 +211,7 @@ export default function SimulatorPage() {
 
   const toggleLock = async () => {
     if (!selectedBikeId) return;
-    const bike = bikes.find((b) => b.id === selectedBikeId);
+    const bike = bikesMap.get(selectedBikeId);
     if (!bike) return;
 
     const newState = hardwareState === 'LOCKED' ? 'UNLOCKED' : 'LOCKED';
@@ -222,7 +223,7 @@ export default function SimulatorPage() {
     const query = e.target.value;
     setSearchQuery(query);
     if (query.length > 2) {
-      const bike = bikes.find((b) => b.id === selectedBikeId);
+      const bike = selectedBikeId ? bikesMap.get(selectedBikeId) : undefined;
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&proximity=${bike?.lng || 0},${bike?.lat || 0}`,
       );
@@ -234,7 +235,7 @@ export default function SimulatorPage() {
   };
 
   const startSimulation = async (destLng: number, destLat: number) => {
-    const bike = bikes.find((b) => b.id === selectedBikeId);
+    const bike = selectedBikeId ? bikesMap.get(selectedBikeId) : undefined;
     if (!bike) return;
     setSearchResults([]);
     setSearchQuery('');
@@ -307,7 +308,7 @@ export default function SimulatorPage() {
     }
   };
 
-  const selectedBike = bikes.find((b) => b.id === selectedBikeId);
+  const selectedBike = selectedBikeId ? bikesMap.get(selectedBikeId) : undefined;
 
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-4 md:-m-8">
@@ -567,14 +568,47 @@ export default function SimulatorPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-60">
-            <div className="w-16 h-16 rounded-full bg-surface border border-white/10 flex items-center justify-center mb-4">
-              <ShieldAlert className="w-8 h-8 text-slate-500" />
+          <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 px-2">
+              Available Hardware
             </div>
-            <div className="text-lg font-bold text-white mb-2">No Target Selected</div>
-            <p className="text-sm text-slate-400 max-w-[200px]">
-              Click any vehicle on the map to access its hardware interface.
-            </p>
+            {bikes.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
+                <div className="w-16 h-16 rounded-full bg-surface border border-white/10 flex items-center justify-center mb-4">
+                  <ShieldAlert className="w-8 h-8 text-slate-500" />
+                </div>
+                <div className="text-lg font-bold text-white mb-2">No Vehicles</div>
+                <p className="text-sm text-slate-400 max-w-[200px]">
+                  Double-click the map to spawn a new test vehicle.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {bikes.map((b) => (
+                  <div
+                    key={b.id}
+                    onClick={() => setSelectedBikeId(b.id)}
+                    className="bg-surface/30 hover:bg-surface/60 border border-white/5 rounded-xl p-4 cursor-pointer transition-colors flex justify-between items-center"
+                  >
+                    <div>
+                      <div className="font-mono font-bold text-white mb-1">{b.id}</div>
+                      <div className="flex items-center gap-2 text-xs font-medium">
+                        <span className={b.battery_pct > 20 ? 'text-primary' : 'text-warning'}>
+                          {b.battery_pct}% Batt
+                        </span>
+                        <span className="text-slate-500">•</span>
+                        <span className={b.lock_status === 'UNLOCKED' ? 'text-[#00D4FF]' : 'text-slate-400'}>
+                          {b.lock_status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400">
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

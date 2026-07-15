@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { FiCheck, FiZap, FiCircle } from 'react-icons/fi';
+import { MdCircle } from 'react-icons/md';
 
 interface DockSlot {
   id: string;
@@ -102,7 +104,7 @@ export function DockGridComponent() {
                     }`}
                     title={`Slot ${slot.id}: ${slot.available ? 'Empty' : slot.charging ? 'Charging' : 'Occupied'}`}
                   >
-                    {slot.bike_id ? '✓' : slot.charging ? '⚡' : ''}
+                    {slot.bike_id ? <FiCheck className="w-3 h-3" /> : slot.charging ? <FiZap className="w-3 h-3" /> : ''}
                   </div>
                 ))}
               </div>
@@ -171,7 +173,7 @@ export function DockGridComponent() {
                   }`}
                   title={`${slot.id}: ${slot.available ? 'Empty' : slot.charging ? 'Charging' : 'Occupied'}`}
                 >
-                  {slot.available ? '○' : slot.charging ? '⚡' : '●'}
+                  {slot.available ? <FiCircle className="w-4 h-4" /> : slot.charging ? <FiZap className="w-4 h-4" /> : <MdCircle className="w-4 h-4" />}
                 </div>
               ))}
             </div>
