@@ -133,24 +133,24 @@ export function DockGridComponent() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-6">
             <div className="bg-slate-700 rounded-lg p-3 text-center">
-              <p className="text-slate-400 text-sm">Total Slots</p>
-              <p className="text-2xl font-bold text-white">{selectedDock.total_slots}</p>
+              <p className="text-slate-400 text-xs md:text-sm">Total Slots</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{selectedDock.total_slots}</p>
             </div>
             <div className="bg-green-900 rounded-lg p-3 text-center">
-              <p className="text-slate-400 text-sm">Available</p>
-              <p className="text-2xl font-bold text-green-400">{selectedDock.available_slots}</p>
+              <p className="text-slate-400 text-xs md:text-sm">Available</p>
+              <p className="text-xl md:text-2xl font-bold text-green-400">{selectedDock.available_slots}</p>
             </div>
             <div className="bg-blue-900 rounded-lg p-3 text-center">
-              <p className="text-slate-400 text-sm">Charging</p>
-              <p className="text-2xl font-bold text-blue-400">
+              <p className="text-slate-400 text-xs md:text-sm">Charging</p>
+              <p className="text-xl md:text-2xl font-bold text-blue-400">
                 {selectedDock.slots?.filter((s) => s.charging).length || 0}
               </p>
             </div>
             <div className="bg-slate-900 rounded-lg p-3 text-center">
-              <p className="text-slate-400 text-sm">In Use</p>
-              <p className="text-2xl font-bold text-slate-300">
+              <p className="text-slate-400 text-xs md:text-sm">In Use</p>
+              <p className="text-xl md:text-2xl font-bold text-slate-300">
                 {selectedDock.slots?.filter((s) => s.bike_id && !s.charging).length || 0}
               </p>
             </div>
@@ -159,7 +159,7 @@ export function DockGridComponent() {
           {/* Full slot grid */}
           <div>
             <div className="font-bold text-white mb-3">All Slots</div>
-            <div className="grid grid-cols-10 gap-2">
+            <div className="grid grid-cols-5 md:grid-cols-10 gap-1 md:gap-2">
               {selectedDock.slots?.map((slot) => (
                 <div
                   key={slot.id}
