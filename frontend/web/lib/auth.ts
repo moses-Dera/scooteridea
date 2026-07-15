@@ -89,7 +89,7 @@ export const authOptions: NextAuthOptions = {
             const exp = decodedPayload.exp * 1000;
 
             // If token expires in less than 5 minutes, refresh it
-            if (Date.now() > exp - 5 * 60 * 1000) {
+            if (!token.error && Date.now() > exp - 5 * 60 * 1000) {
               console.log('[NextAuth] Access token expired/expiring, refreshing...');
               const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
               const refreshRes = await fetch(`${backendUrl}/auth/refresh`, {
@@ -104,17 +104,25 @@ export const authOptions: NextAuthOptions = {
                   token.accessToken = refreshedTokens.data.accessToken;
                   token.refreshToken = refreshedTokens.data.refreshToken;
                   console.log('[NextAuth] Successfully refreshed access token!');
+                } else {
+                  token.error = "RefreshAccessTokenError";
                 }
+              } else {
+                token.error = "RefreshAccessTokenError";
               }
             }
           }
         } catch (e) {
           console.error('[NextAuth] Error parsing token payload for expiration check:', e);
+          token.error = "RefreshAccessTokenError";
         }
       }
       return token;
     },
     async session({ session, token }) {
+      if (token?.error === "RefreshAccessTokenError") {
+        (session as any).error = "RefreshAccessTokenError";
+      }
       if (token && session.user) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;

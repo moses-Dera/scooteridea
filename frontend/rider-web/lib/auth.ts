@@ -199,7 +199,7 @@ export const authOptions: NextAuthOptions = {
             const exp = decodedPayload.exp * 1000;
 
             // If token expires in less than 5 minutes, refresh it
-            if (Date.now() > exp - 5 * 60 * 1000) {
+            if (!token.error && Date.now() > exp - 5 * 60 * 1000) {
               console.log('[NextAuth] Access token expired/expiring, refreshing...');
               const refreshRes = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/refresh`,

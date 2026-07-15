@@ -17,6 +17,7 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
   const bikesMap = useRef<Map<string, LiveBike>>(new Map());
   const subscribedBikes = useRef<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
+  const pendingUpdateRef = useRef<boolean>(false);
 
   // 1. WebSocket Connection Lifecycle
   useEffect(() => {
@@ -54,8 +55,14 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
               };
               bikesMap.current.set(msg.bikeId, updated);
 
-              // Trigger React render so the bikes physically glide on the Map!
-              setBikes(Array.from(bikesMap.current.values()));
+              // Batch React renders using requestAnimationFrame to avoid O(n^2) update lag
+              if (!pendingUpdateRef.current) {
+                pendingUpdateRef.current = true;
+                requestAnimationFrame(() => {
+                  setBikes(Array.from(bikesMap.current.values()));
+                  pendingUpdateRef.current = false;
+                });
+              }
             }
           } catch (err) {
             console.error('Failed to parse WS message:', err);

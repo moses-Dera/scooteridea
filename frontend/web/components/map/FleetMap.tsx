@@ -144,7 +144,7 @@ export function FleetMapComponent({
     }
 
     return () => clearInterval(interval);
-  }, [selectedBike, docks.length]);
+  }, [selectedBike?.id, docks.length]);
 
   // Historical Route focus
   useEffect(() => {

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { X, Smartphone, Keyboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 interface QRScannerOverlayProps {
   isOpen: boolean;
@@ -15,6 +16,11 @@ interface QRScannerOverlayProps {
 export function QRScannerOverlay({ isOpen, onClose, onManualEntryClick }: QRScannerOverlayProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleScan = (result: any) => {
     if (result && result.length > 0) {
@@ -57,6 +63,9 @@ export function QRScannerOverlay({ isOpen, onClose, onManualEntryClick }: QRScan
   };
 
   return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -64,7 +73,7 @@ export function QRScannerOverlay({ isOpen, onClose, onManualEntryClick }: QRScan
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-md"
+          className="fixed inset-0 z-[100] pointer-events-auto flex flex-col bg-black/90 backdrop-blur-md"
         >
           {/* Header */}
           <div className="flex justify-between items-center p-6 mt-safe">
@@ -129,6 +138,7 @@ export function QRScannerOverlay({ isOpen, onClose, onManualEntryClick }: QRScan
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

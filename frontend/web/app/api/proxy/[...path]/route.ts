@@ -14,6 +14,10 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
 
   const headers: HeadersInit = {};
 
+  if ((session as any)?.error === 'RefreshAccessTokenError') {
+    return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
+  }
+
   if ((session as any)?.accessToken) {
     headers['Authorization'] = `Bearer ${(session as any).accessToken}`;
   }
@@ -54,6 +58,10 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
   const backendUrl = `${baseUrl}${targetPath}`;
 
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
+
+  if ((session as any)?.error === 'RefreshAccessTokenError') {
+    return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
+  }
 
   if ((session as any)?.accessToken) {
     headers['Authorization'] = `Bearer ${(session as any).accessToken}`;
@@ -98,6 +106,10 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
 
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
 
+  if ((session as any)?.error === 'RefreshAccessTokenError') {
+    return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
+  }
+
   if ((session as any)?.accessToken) {
     headers['Authorization'] = `Bearer ${(session as any).accessToken}`;
   }
@@ -140,6 +152,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { path: str
   const backendUrl = `${baseUrl}${targetPath}`;
 
   const headers: HeadersInit = {};
+
+  if ((session as any)?.error === 'RefreshAccessTokenError') {
+    return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
+  }
 
   if ((session as any)?.accessToken) {
     headers['Authorization'] = `Bearer ${(session as any).accessToken}`;
