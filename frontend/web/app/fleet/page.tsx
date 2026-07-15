@@ -52,9 +52,6 @@ export default function FleetMapPage() {
         <div className="flex justify-between items-start pointer-events-auto">
           <div className="bg-slate-900/80 backdrop-blur p-3 md:p-4 rounded-xl border border-slate-700 shadow-xl">
             <div className="text-lg md:text-2xl font-bold text-white">Live Fleet</div>
-            <p className="hidden sm:block text-xs md:text-sm text-slate-400">
-              Real-time tracking & zones
-            </p>
           </div>
 
           <div className="flex flex-col items-end gap-2 ml-auto">

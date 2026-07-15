@@ -108,6 +108,16 @@ export default function HeaderActions({ session }: { session: any }) {
               </div>
             )}
           </nav>
+          
+          <div className="p-6 border-t border-white/10 mt-auto">
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors font-bold text-sm border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+            >
+              <FiLogOut className="w-5 h-5" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       )}
 

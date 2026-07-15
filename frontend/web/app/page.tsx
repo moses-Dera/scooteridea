@@ -125,20 +125,7 @@ export default function DashboardOverview() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-6 border-b border-white/5">
         <div>
-          <div className="text-3xl font-black text-white tracking-tight">Fleet Command</div>
-          <p className="text-sm text-slate-400 mt-1 font-medium">
-            Real-time system telemetry and operational status
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <button className="w-full sm:w-auto px-4 py-2.5 bg-surfaceLight hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10 flex items-center justify-center gap-2 shadow-lg">
-            <BarChart className="w-5 h-5" />
-            Generate Report
-          </button>
-          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 rounded-xl shadow-[0_0_15px_rgba(30, 215, 96,0.1)]">
-            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(30, 215, 96,0.8)]"></div>
-            <span className="text-sm font-bold text-primary">System Live</span>
-          </div>
+          <div className="text-3xl font-black text-white tracking-tight">Overview</div>
         </div>
       </div>
 
