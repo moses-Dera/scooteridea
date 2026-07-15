@@ -1,10 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -179,5 +180,13 @@ export default function LoginPage() {
       </div>
       <p className="text-slate-500 text-sm mt-8">Secure BFF Access Portal</p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex flex-col items-center justify-center text-white">Loading Operator Portal...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
