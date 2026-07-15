@@ -138,6 +138,6 @@ export function QRScannerOverlay({ isOpen, onClose, onManualEntryClick }: QRScan
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body
+    document.body,
   );
 }

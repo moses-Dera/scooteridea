@@ -96,7 +96,4 @@ authRouter.post(
 );
 
 // Paystack Asynchronous Webhook
-authRouter.post(
-  '/wallet/webhook/paystack',
-  asyncHandler(AuthController.paystackWebhook),
-);
+authRouter.post('/wallet/webhook/paystack', asyncHandler(AuthController.paystackWebhook));

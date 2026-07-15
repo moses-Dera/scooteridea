@@ -10,7 +10,9 @@ function SessionErrorWatcher({ children }: { children: React.ReactNode }) {
     if ((session as any)?.error === 'RefreshAccessTokenError') {
       console.error('Session refresh failed. Forcing signout...');
       signOut({ redirect: false }).then(() => {
-        window.dispatchEvent(new CustomEvent('auth-required', { detail: { feature: 'your account' } }));
+        window.dispatchEvent(
+          new CustomEvent('auth-required', { detail: { feature: 'your account' } }),
+        );
       });
     }
   }, [session]);

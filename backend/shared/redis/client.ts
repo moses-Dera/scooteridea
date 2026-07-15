@@ -114,7 +114,7 @@ export async function redisGetWaypoints(
         return null;
       }
     })
-    .filter((Boolean as any)) as Array<{ lat: number; lng: number }>;
+    .filter(Boolean as any) as Array<{ lat: number; lng: number }>;
 }
 
 /**

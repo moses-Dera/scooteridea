@@ -148,7 +148,14 @@ export default function RiderMap() {
         easing: (t) => t * (2 - t), // Smooth cubic easing
       });
     }
-  }, [isNavigating, userLocation, destination?.lat, destination?.lng, isCameraLocked, snappedLocation]);
+  }, [
+    isNavigating,
+    userLocation,
+    destination?.lat,
+    destination?.lng,
+    isCameraLocked,
+    snappedLocation,
+  ]);
 
   const handleFocusLocation = () => {
     if (!userLocation) return;

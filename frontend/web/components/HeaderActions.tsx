@@ -109,7 +109,7 @@ export default function HeaderActions({ session }: { session: any }) {
               </div>
             )}
           </nav>
-          
+
           <div className="p-6 border-t border-white/10 mt-auto">
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}

@@ -46,14 +46,19 @@ export const authOptions: NextAuthOptions = {
             data = await response.json();
           } else {
             const text = await response.text();
-            console.error(`[NextAuth] Expected JSON but got ${contentType}:`, text.substring(0, 100));
+            console.error(
+              `[NextAuth] Expected JSON but got ${contentType}:`,
+              text.substring(0, 100),
+            );
             throw new Error(`API Endpoint Misconfigured. Contact Support.`);
           }
 
           if (data.success && data.data?.accessToken) {
             // Decode JWT to get user ID
             const payloadBase64 = data.data.accessToken.split('.')[1];
-            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const decodedPayload = JSON.parse(
+              Buffer.from(payloadBase64, 'base64').toString('utf-8'),
+            );
             const userId = decodedPayload.sub;
 
             return {
@@ -145,10 +150,12 @@ export const authOptions: NextAuthOptions = {
             if (data.success && data.data) {
               token.accessToken = data.data.accessToken;
               token.refreshToken = data.data.refreshToken;
-              
+
               // Decode JWT to get database UUID
               const payloadBase64 = data.data.accessToken.split('.')[1];
-              const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+              const decodedPayload = JSON.parse(
+                Buffer.from(payloadBase64, 'base64').toString('utf-8'),
+              );
               token.id = decodedPayload.sub;
 
               console.log('[NextAuth] Tokens successfully attached to jwt token');

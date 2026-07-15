@@ -104,7 +104,13 @@ export function DockGridComponent() {
                     }`}
                     title={`Slot ${slot.id}: ${slot.available ? 'Empty' : slot.charging ? 'Charging' : 'Occupied'}`}
                   >
-                    {slot.bike_id ? <FiCheck className="w-3 h-3" /> : slot.charging ? <FiZap className="w-3 h-3" /> : ''}
+                    {slot.bike_id ? (
+                      <FiCheck className="w-3 h-3" />
+                    ) : slot.charging ? (
+                      <FiZap className="w-3 h-3" />
+                    ) : (
+                      ''
+                    )}
                   </div>
                 ))}
               </div>
@@ -141,7 +147,9 @@ export function DockGridComponent() {
             </div>
             <div className="bg-green-900 rounded-lg p-3 text-center">
               <p className="text-slate-400 text-xs md:text-sm">Available</p>
-              <p className="text-xl md:text-2xl font-bold text-green-400">{selectedDock.available_slots}</p>
+              <p className="text-xl md:text-2xl font-bold text-green-400">
+                {selectedDock.available_slots}
+              </p>
             </div>
             <div className="bg-blue-900 rounded-lg p-3 text-center">
               <p className="text-slate-400 text-xs md:text-sm">Charging</p>
@@ -173,7 +181,13 @@ export function DockGridComponent() {
                   }`}
                   title={`${slot.id}: ${slot.available ? 'Empty' : slot.charging ? 'Charging' : 'Occupied'}`}
                 >
-                  {slot.available ? <FiCircle className="w-4 h-4" /> : slot.charging ? <FiZap className="w-4 h-4" /> : <MdCircle className="w-4 h-4" />}
+                  {slot.available ? (
+                    <FiCircle className="w-4 h-4" />
+                  ) : slot.charging ? (
+                    <FiZap className="w-4 h-4" />
+                  ) : (
+                    <MdCircle className="w-4 h-4" />
+                  )}
                 </div>
               ))}
             </div>

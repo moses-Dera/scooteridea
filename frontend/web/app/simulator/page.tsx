@@ -177,21 +177,18 @@ export default function SimulatorPage() {
     lockStatus: string,
   ) => {
     try {
-      await fetch(
-        `/api/proxy/fleet/simulator/telemetry`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bikeId: id,
-            lat,
-            lng,
-            battery_pct: batt,
-            speed_kmh: 0,
-            lock_status: lockStatus,
-          }),
-        },
-      );
+      await fetch(`/api/proxy/fleet/simulator/telemetry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bikeId: id,
+          lat,
+          lng,
+          battery_pct: batt,
+          speed_kmh: 0,
+          lock_status: lockStatus,
+        }),
+      });
     } catch (err) {
       console.error('Failed to update telemetry', err);
     }
@@ -597,7 +594,11 @@ export default function SimulatorPage() {
                           {b.battery_pct}% Batt
                         </span>
                         <span className="text-slate-500">•</span>
-                        <span className={b.lock_status === 'UNLOCKED' ? 'text-[#00D4FF]' : 'text-slate-400'}>
+                        <span
+                          className={
+                            b.lock_status === 'UNLOCKED' ? 'text-[#00D4FF]' : 'text-slate-400'
+                          }
+                        >
                           {b.lock_status}
                         </span>
                       </div>

@@ -65,7 +65,7 @@ app.use(
     verify: (req: any, res, buf) => {
       req.rawBody = buf;
     },
-  })
+  }),
 );
 app.use(standardRateLimiter);
 app.use(userRateLimiter);

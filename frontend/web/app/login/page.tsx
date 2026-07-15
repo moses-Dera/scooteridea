@@ -185,7 +185,13 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background flex flex-col items-center justify-center text-white">Loading Operator Portal...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex flex-col items-center justify-center text-white">
+          Loading Operator Portal...
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

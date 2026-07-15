@@ -182,7 +182,8 @@ export function RideTableComponent() {
                               <div>
                                 <p className="text-xs text-slate-400">Dock Route</p>
                                 <p className="text-white">
-                                  {ride.start_dock_id} <FiArrowRight className="inline mx-2" /> {ride.end_dock_id || '(Not ended)'}
+                                  {ride.start_dock_id} <FiArrowRight className="inline mx-2" />{' '}
+                                  {ride.end_dock_id || '(Not ended)'}
                                 </p>
                               </div>
                             </div>
@@ -191,8 +192,8 @@ export function RideTableComponent() {
                           {ride.status === 'disputed' && (
                             <div className="mt-4 p-3 bg-red-900 rounded-lg">
                               <p className="text-red-200 text-sm flex items-center gap-2">
-                                <FiAlertTriangle /> This ride has been disputed. Review flagged for further
-                                investigation.
+                                <FiAlertTriangle /> This ride has been disputed. Review flagged for
+                                further investigation.
                               </p>
                               <button className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-bold">
                                 View Dispute Details

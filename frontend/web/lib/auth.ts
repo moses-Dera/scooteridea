@@ -30,7 +30,10 @@ export const authOptions: NextAuthOptions = {
             json = await res.json();
           } else {
             const text = await res.text();
-            console.error(`[NextAuth] Expected JSON but got ${contentType}:`, text.substring(0, 100));
+            console.error(
+              `[NextAuth] Expected JSON but got ${contentType}:`,
+              text.substring(0, 100),
+            );
             throw new Error(`API Endpoint Misconfigured. Contact Support.`);
           }
 
@@ -39,7 +42,9 @@ export const authOptions: NextAuthOptions = {
 
             // Decode JWT to get role and user ID
             const payloadBase64 = accessToken.split('.')[1];
-            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const decodedPayload = JSON.parse(
+              Buffer.from(payloadBase64, 'base64').toString('utf-8'),
+            );
             const userRole = decodedPayload.role;
             const userId = decodedPayload.sub;
 
@@ -115,13 +120,13 @@ export const authOptions: NextAuthOptions = {
         console.log('[NextAuth] Successfully refreshed access token!');
       } catch (e) {
         console.error('[NextAuth] Token refresh error:', e);
-        token.error = "RefreshAccessTokenError";
+        token.error = 'RefreshAccessTokenError';
       }
       return token;
     },
     async session({ session, token }) {
-      if (token?.error === "RefreshAccessTokenError") {
-        (session as any).error = "RefreshAccessTokenError";
+      if (token?.error === 'RefreshAccessTokenError') {
+        (session as any).error = 'RefreshAccessTokenError';
       }
       if (token && session.user) {
         (session.user as any).id = token.id;

@@ -17,8 +17,18 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [auth-service, fleet-service, ride-service, pricing-service, payment-service, notification-service, websocket-hub, dock-service]
-    
+        service:
+          [
+            auth-service,
+            fleet-service,
+            ride-service,
+            pricing-service,
+            payment-service,
+            notification-service,
+            websocket-hub,
+            dock-service,
+          ]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -87,38 +97,38 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_PASSPHRASE }}
-          command_timeout: "30m"
+          command_timeout: '30m'
           script: |
             # 0. Server Initialization & Cleanup
             # Initialize Swarm if not already active (ignore error if already active)
             docker swarm init || true
             # Aggressively delete all unused containers, networks, images, and volumes to free space
             docker system prune -a --volumes -f
-            
+
             # 1. Navigate to the project directory
             cd /var/www/scooteridea
-            
+
             # 2. Pull the latest code (for docker-compose.yml updates)
             git pull origin main
             cd backend/infra
-            
+
             # 3. Pull the pre-built images from GitHub Container Registry
             # Provide the repository owner name as an environment variable for docker-compose
             export GITHUB_REPOSITORY_OWNER=moses-dera
-            
+
             # Since the packages might be private initially, we need to login
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
+
             # Load environment variables from .env file for docker stack
             if [ -f .env ]; then
               export $(cat .env | grep -v '#' | awk '/=/ {print $1}')
             fi
-            
+
             docker compose pull
-            
+
             # 4. Apply Zero-Downtime update using Docker Swarm
             docker stack deploy -c docker-compose.yml scooter_stack
-            
+
             # 5. Run Prisma Database Migrations inside the newly started container
             echo "Waiting for auth-service to start..."
             sleep 10
@@ -128,6 +138,6 @@ jobs:
             else
               echo "Warning: Auth container not found. Migration skipped."
             fi
-            
+
             # 6. Force reload Nginx to resolve new upstream container IPs
             docker service update --force scooter_stack_nginx

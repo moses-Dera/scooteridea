@@ -437,7 +437,10 @@ export class AuthService {
         },
       });
 
-      logger.info({ userId: user.id, amountCents, reference }, '[Auth] Wallet topped up via webhook');
+      logger.info(
+        { userId: user.id, amountCents, reference },
+        '[Auth] Wallet topped up via webhook',
+      );
     }
   }
 }

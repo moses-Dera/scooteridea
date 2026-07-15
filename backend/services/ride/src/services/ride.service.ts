@@ -158,7 +158,10 @@ export class RideService {
         const loc = JSON.parse(locationRaw);
         batteryStartPct = loc.battery_pct ?? null;
       } catch (err) {
-        logger.warn({ err, bikeId: ride.bikeId }, '[Ride] Failed to parse starting location from Redis');
+        logger.warn(
+          { err, bikeId: ride.bikeId },
+          '[Ride] Failed to parse starting location from Redis',
+        );
       }
     }
 
