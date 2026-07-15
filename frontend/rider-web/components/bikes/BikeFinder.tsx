@@ -77,6 +77,8 @@ export function BikeFinder() {
 
     fetchBikes();
     const interval = setInterval(fetchBikes, 10000);
+
+    return () => clearInterval(interval);
   }, [userCoords]);
 
   const getBatteryIcon = (pct: number) => {
