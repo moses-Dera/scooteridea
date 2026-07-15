@@ -189,46 +189,51 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Check if access token is expired (or close to expiring)
-      if (token.accessToken && typeof token.accessToken === 'string') {
-        try {
-          const payloadBase64 = token.accessToken.split('.')[1];
-          if (payloadBase64) {
-            const decodedPayload = JSON.parse(
-              Buffer.from(payloadBase64, 'base64').toString('utf-8'),
-            );
-            const exp = decodedPayload.exp * 1000;
+      if (!token.accessToken || typeof token.accessToken !== 'string' || token.error) {
+        return token;
+      }
 
-            // If token expires in less than 5 minutes, refresh it
-            if (!token.error && Date.now() > exp - 5 * 60 * 1000) {
-              console.log('[NextAuth] Access token expired/expiring, refreshing...');
-              const refreshRes = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/refresh`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ refreshToken: token.refreshToken }),
-                },
-              );
+      try {
+        const payloadBase64 = token.accessToken.split('.')[1];
+        if (!payloadBase64) return token;
 
-              if (refreshRes.ok) {
-                const refreshedTokens = await refreshRes.json();
-                if (refreshedTokens.success && refreshedTokens.data) {
-                  token.accessToken = refreshedTokens.data.accessToken;
-                  token.refreshToken = refreshedTokens.data.refreshToken;
-                  console.log('[NextAuth] Successfully refreshed access token!');
-                }
-              } else {
-                console.error(
-                  '[NextAuth] Failed to refresh token, backend returned:',
-                  refreshRes.status,
-                );
-                token.error = 'RefreshAccessTokenError';
-              }
-            }
-          }
-        } catch (e) {
-          console.error('[NextAuth] Error parsing token payload for expiration check:', e);
+        const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+        const exp = decodedPayload.exp * 1000;
+
+        // If token expires in less than 5 minutes, refresh it
+        if (Date.now() <= exp - 5 * 60 * 1000) {
+          return token;
         }
+
+        console.log('[NextAuth] Access token expired/expiring, refreshing...');
+        const refreshRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/refresh`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: token.refreshToken }),
+          },
+        );
+
+        if (!refreshRes.ok) {
+          console.error('[NextAuth] Failed to refresh token, backend returned:', refreshRes.status);
+          token.error = 'RefreshAccessTokenError';
+          return token;
+        }
+
+        const refreshedTokens = await refreshRes.json();
+        if (!refreshedTokens.success || !refreshedTokens.data) {
+          console.error('[NextAuth] Missing token data in response');
+          token.error = 'RefreshAccessTokenError';
+          return token;
+        }
+
+        token.accessToken = refreshedTokens.data.accessToken;
+        token.refreshToken = refreshedTokens.data.refreshToken;
+        console.log('[NextAuth] Successfully refreshed access token!');
+      } catch (e) {
+        console.error('[NextAuth] Error parsing token payload for expiration check:', e);
+        token.error = 'RefreshAccessTokenError';
       }
 
       return token;
