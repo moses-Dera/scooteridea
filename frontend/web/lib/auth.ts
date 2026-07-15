@@ -35,18 +35,24 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (res.ok && json.success && json.data?.accessToken) {
-            const { user, accessToken, refreshToken } = json.data;
+            const { accessToken, refreshToken } = json.data;
+
+            // Decode JWT to get role and user ID
+            const payloadBase64 = accessToken.split('.')[1];
+            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const userRole = decodedPayload.role;
+            const userId = decodedPayload.sub;
 
             // Only allow Operators and Admins
-            if (user.role !== 'OPERATOR' && user.role !== 'ADMIN') {
+            if (userRole !== 'OPERATOR' && userRole !== 'ADMIN') {
               throw new Error('Access Denied: You do not have operator privileges.');
             }
 
             return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
+              id: userId,
+              email: credentials.email,
+              name: credentials.email.split('@')[0],
+              role: userRole,
               accessToken,
               refreshToken,
             };

@@ -51,8 +51,13 @@ export const authOptions: NextAuthOptions = {
           }
 
           if (data.success && data.data?.accessToken) {
+            // Decode JWT to get user ID
+            const payloadBase64 = data.data.accessToken.split('.')[1];
+            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const userId = decodedPayload.sub;
+
             return {
-              id: credentials.email,
+              id: userId,
               email: credentials.email,
               name: credentials.email.split('@')[0],
               accessToken: data.data.accessToken,
