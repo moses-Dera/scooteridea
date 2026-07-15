@@ -25,20 +25,25 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
 
   const handleBikesUpdate = useCallback(
     (updatedBikes: Bike[]) => {
-      const newMap = new Map(bikes);
-      updatedBikes.forEach((bike) => newMap.set(bike.id, bike));
-      setBikes(newMap);
+      setBikes((prevBikes) => {
+        const newMap = new Map(prevBikes);
+        updatedBikes.forEach((bike) => newMap.set(bike.id, bike));
+        return newMap;
+      });
       if (onBikesUpdate) onBikesUpdate(updatedBikes);
     },
-    [bikes, onBikesUpdate],
+    [onBikesUpdate],
   );
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let isMounted = true;
 
     const pollFleet = async () => {
+      if (!isMounted) return;
       try {
         const res = await fetch(`/api/proxy/fleet/bikes`);
+        if (!isMounted) return;
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
@@ -51,6 +56,7 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
           setError(`HTTP Error: ${res.status}`);
         }
       } catch (err) {
+        if (!isMounted) return;
         setConnected(false);
         setError('Network Error fetching fleet data');
       }
@@ -62,7 +68,10 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
     // Then poll every 3 seconds
     interval = setInterval(pollFleet, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [handleBikesUpdate]);
 
   return {
