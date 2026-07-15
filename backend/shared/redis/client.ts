@@ -25,7 +25,12 @@ export async function disconnectRedis(): Promise<void> {
 export async function redisGetJson<T>(key: string): Promise<T | null> {
   const raw = await (await getRedisClient()).get(key);
   if (!raw) return null;
-  return JSON.parse(raw) as T;
+  try {
+    return JSON.parse(raw) as T;
+  } catch (err) {
+    process.stderr.write(`[Redis] JSON parse error for key ${key}: ${String(err)}\n`);
+    return null;
+  }
 }
 
 /** Set a JSON-serialised value, with optional TTL in seconds. */
@@ -101,7 +106,15 @@ export async function redisGetWaypoints(
 ): Promise<Array<{ lat: number; lng: number }>> {
   const r = await getRedisClient();
   const raw = await r.lRange(`ride:${rideId}:waypoints`, 0, -1);
-  return raw.map((s) => JSON.parse(s) as { lat: number; lng: number });
+  return raw
+    .map((s) => {
+      try {
+        return JSON.parse(s) as { lat: number; lng: number };
+      } catch {
+        return null;
+      }
+    })
+    .filter((Boolean as any)) as Array<{ lat: number; lng: number }>;
 }
 
 /**

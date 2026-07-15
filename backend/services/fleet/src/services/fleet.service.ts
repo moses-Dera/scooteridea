@@ -17,14 +17,22 @@ export class FleetService {
     getMqttClient(); // ensure connection
 
     subscribeToTopic('bikes/+/telemetry', async (topic, raw) => {
-      const bikeId = topic.split('/')[1];
-      const payload = JSON.parse(raw) as BikeTelemetryPayload;
-      await FleetService.handleBikeTelemetry(bikeId, payload);
+      try {
+        const bikeId = topic.split('/')[1];
+        const payload = JSON.parse(raw) as BikeTelemetryPayload;
+        await FleetService.handleBikeTelemetry(bikeId, payload);
+      } catch (err) {
+        logger.error({ err, topic }, '[Fleet] Failed to process bike telemetry');
+      }
     });
 
     subscribeToTopic('bikes/+/alerts', async (topic, raw) => {
-      const bikeId = topic.split('/')[1];
-      await FleetService.handleBikeAlert(bikeId, JSON.parse(raw));
+      try {
+        const bikeId = topic.split('/')[1];
+        await FleetService.handleBikeAlert(bikeId, JSON.parse(raw));
+      } catch (err) {
+        logger.error({ err, topic }, '[Fleet] Failed to process bike alert');
+      }
     });
 
     logger.info('[Fleet] MQTT subscriptions active');

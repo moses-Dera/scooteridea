@@ -154,8 +154,12 @@ export class RideService {
     let batteryStartPct = null;
     const locationRaw = await redis.get(`bike:${ride.bikeId}:location`);
     if (locationRaw) {
-      const loc = JSON.parse(locationRaw);
-      batteryStartPct = loc.battery_pct ?? null;
+      try {
+        const loc = JSON.parse(locationRaw);
+        batteryStartPct = loc.battery_pct ?? null;
+      } catch (err) {
+        logger.warn({ err, bikeId: ride.bikeId }, '[Ride] Failed to parse starting location from Redis');
+      }
     }
 
     await prisma.ride.update({

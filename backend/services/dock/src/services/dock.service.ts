@@ -11,9 +11,13 @@ export class DockService {
     getMqttClient();
 
     subscribeToTopic('docks/+/status', async (topic, raw) => {
-      const dockId = topic.split('/')[1];
-      const payload = JSON.parse(raw) as DockTelemetryPayload;
-      await DockService.handleDockTelemetry(dockId, payload);
+      try {
+        const dockId = topic.split('/')[1];
+        const payload = JSON.parse(raw) as DockTelemetryPayload;
+        await DockService.handleDockTelemetry(dockId, payload);
+      } catch (err) {
+        console.error(`[Dock] Failed to process dock status for ${topic}`, err);
+      }
     });
 
     console.log('[Dock] MQTT subscriptions active');
