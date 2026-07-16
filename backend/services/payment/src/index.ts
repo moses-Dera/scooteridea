@@ -39,6 +39,8 @@ import {
 } from '@ebike/events';
 import type { KafkaPaymentChargeEvent } from '@ebike/types';
 
+import crypto from 'crypto';
+
 const app = express();
 const PORT = Number(process.env.PORT ?? 3006);
 process.env.SERVICE_NAME = 'payment-service';
@@ -47,6 +49,100 @@ app.use(requestId);
 app.use(httpLogger);
 app.use(express.json());
 app.use(healthRouter());
+
+// ── Paystack API Endpoints ────────────────────────────────────────────────────
+
+// 1. Generate Checkout Link
+app.post('/payments/initialize', async (req, res, next) => {
+  try {
+    const { email, amountCents } = req.body;
+    if (!email || !amountCents) {
+      return res.status(400).json({ success: false, message: 'email and amountCents required' });
+    }
+
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecret) {
+      return res.status(500).json({ success: false, message: 'Paystack secret not configured' });
+    }
+
+    const response = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${paystackSecret}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        amount: amountCents, // Paystack expects amount in lowest denomination (kobo)
+        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/wallet/topup/callback`,
+      }),
+    });
+
+    const data = (await response.json()) as any;
+    if (!response.ok || !data.status) {
+      throw new Error(data.message || 'Failed to initialize payment');
+    }
+
+    res.json({ success: true, data: data.data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 2. Webhook to receive payment success
+app.post('/payments/webhook', async (req, res, next) => {
+  try {
+    const secret = process.env.PAYSTACK_SECRET_KEY!;
+    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+
+    if (hash !== req.headers['x-paystack-signature']) {
+      logger.warn('[Payment] Invalid Paystack signature');
+      return res.status(401).json({ success: false, message: 'Invalid signature' });
+    }
+
+    const event = req.body;
+
+    // When a user successfully tops up their wallet
+    if (event.event === 'charge.success') {
+      const { customer, amount, authorization, reference } = event.data;
+
+      const user = await prisma.user.findUnique({ where: { email: customer.email } });
+
+      if (user) {
+        await prisma.$transaction(async (tx) => {
+          // Add funds to wallet and save auth code for auto-billing
+          await tx.user.update({
+            where: { id: user.id },
+            data: {
+              walletCents: { increment: amount },
+              paystackAuthCode: authorization.authorization_code,
+            },
+          });
+
+          await tx.payment.create({
+            data: {
+              userId: user.id,
+              amountCents: amount,
+              currency: 'NGN',
+              status: 'success',
+              provider: 'paystack',
+              providerRef: reference,
+            },
+          });
+        });
+
+        logger.info({ userId: user.id, amount }, '[Payment] Wallet topped up via Paystack webhook');
+      }
+    }
+
+    // Acknowledge receipt to Paystack
+    res.sendStatus(200);
+  } catch (err) {
+    logger.error({ err }, '[Payment] Webhook processing failed');
+    res.sendStatus(500);
+  }
+});
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 

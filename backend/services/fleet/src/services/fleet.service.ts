@@ -1,4 +1,5 @@
 import { getMqttClient, subscribeToTopic, bikeCommander } from '@ebike/mqtt';
+import { IoTParser } from './iot.parser';
 import {
   getRedisClient,
   geoAdd,
@@ -32,6 +33,19 @@ export class FleetService {
         await FleetService.handleBikeAlert(bikeId, JSON.parse(raw));
       } catch (err) {
         logger.error({ err, topic }, '[Fleet] Failed to process bike alert');
+      }
+    });
+
+    // Handle RAW Hex from Physical IoT Trackers
+    subscribeToTopic('iot/trackers/raw', async (topic, raw) => {
+      try {
+        const decoded = IoTParser.parseHexPayload(raw.toString());
+        if (decoded) {
+          // Feed the translated JSON straight into the main simulator pipeline
+          await FleetService.handleBikeTelemetry(decoded.bikeId, decoded.payload);
+        }
+      } catch (err) {
+        logger.error({ err }, '[Fleet] Failed to ingest physical bike payload');
       }
     });
 

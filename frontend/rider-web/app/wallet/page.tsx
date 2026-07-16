@@ -1,12 +1,46 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CreditCard, Plus, History, ChevronRight } from 'lucide-react';
+import { ArrowLeft, CreditCard, Plus, History, ChevronRight, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 export default function WalletPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+
+  const handleTopUp = async () => {
+    if (!session?.user?.email) {
+      alert('Please log in first');
+      return;
+    }
+
+    try {
+      setIsTopUpLoading(true);
+      const res = await fetch('/api/proxy/payments/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: session.user.email,
+          amountCents: 1000 * 100, // Top up ₦1,000 (Paystack expects kobo/cents)
+        }),
+      });
+
+      const json = await res.json();
+
+      if (json.success && json.data?.authorization_url) {
+        // Redirect browser to Paystack's secure checkout page
+        window.location.href = json.data.authorization_url;
+      } else {
+        alert(json.message || 'Failed to initialize payment');
+      }
+    } catch (e) {
+      alert('Network error while initializing payment.');
+    } finally {
+      setIsTopUpLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0D14] text-white">
@@ -32,8 +66,17 @@ export default function WalletPage() {
             ₦ 2,500.00
           </h1>
 
-          <button className="mt-6 w-full py-4 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
-            <Plus className="w-5 h-5" /> Top Up Balance
+          <button
+            onClick={handleTopUp}
+            disabled={isTopUpLoading}
+            className="mt-6 w-full py-4 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
+          >
+            {isTopUpLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Plus className="w-5 h-5" />
+            )}
+            {isTopUpLoading ? 'Initializing...' : 'Top Up ₦1,000'}
           </button>
         </div>
 
