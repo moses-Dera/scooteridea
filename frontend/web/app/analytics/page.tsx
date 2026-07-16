@@ -101,22 +101,18 @@ export default function AnalyticsOverview() {
         <StatCard
           label="Total Rides"
           value={loading ? '-' : analytics?.total_rides?.toLocaleString() || '0'}
-          trend={{ value: 12, direction: 'up' }}
         />
         <StatCard
           label="Total Revenue"
           value={loading ? '-' : `₦${(analytics?.total_revenue || 0).toLocaleString()}`}
-          trend={{ value: 8, direction: 'up' }}
         />
         <StatCard
           label="Active Users"
           value={loading ? '-' : (analytics?.active_users || 0).toLocaleString()}
-          trend={{ value: 5, direction: 'up' }}
         />
         <StatCard
           label="Fleet Utilization"
           value={loading ? '-' : `${analytics?.fleet_utilization || 0}%`}
-          trend={{ value: 3, direction: 'down' }}
         />
       </div>
 
@@ -126,18 +122,15 @@ export default function AnalyticsOverview() {
           label="Avg Ride Duration"
           value={loading ? '-' : (analytics?.avg_ride_duration || 0).toFixed(1)}
           unit="min"
-          trend={{ value: 2, direction: 'up' }}
         />
         <StatCard
           label="Avg Ride Distance"
           value={loading ? '-' : (analytics?.avg_ride_distance || 0).toFixed(1)}
           unit="km"
-          trend={{ value: 1, direction: 'down' }}
         />
         <StatCard
           label="Bikes Active"
           value={loading ? '-' : `${analytics?.bikes_active || 0} / ${analytics?.bikes_total || 0}`}
-          trend={{ value: 4, direction: 'up' }}
         />
       </div>
 
