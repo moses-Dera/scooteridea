@@ -98,9 +98,9 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
                 speed_kmh: current?.speed_kmh ?? 0,
                 lock_status: current?.lock_status ?? 'LOCKED',
               };
-              
+
               bikesMap.current.set(msg.bikeId, updatedBike);
-              
+
               // Batch updates using requestAnimationFrame
               requestAnimationFrame(() => {
                 setBikes(new Map(bikesMap.current));
