@@ -34,11 +34,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" className={`dark ${outfit.variable}`}>
-      <body className="min-h-screen bg-background text-white antialiased flex flex-col md:flex-row font-sans">
+      <body className="h-[100dvh] overflow-hidden bg-background text-white antialiased flex flex-col md:flex-row font-sans">
         <SessionWatcher sessionError={(session as any)?.error} />
         {!session ? (
           /* Render full screen for login page */
-          <main className="flex-1 w-full h-screen">{children}</main>
+          <main className="flex-1 w-full h-full overflow-y-auto">{children}</main>
         ) : (
           /* Render authenticated dashboard layout */
           <>
@@ -147,8 +147,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
-              <header className="h-16 border-b border-white/10 flex items-center justify-between px-4 md:px-8 bg-surface z-20 sticky top-0">
+            <main className="flex-1 flex flex-col h-full overflow-hidden">
+              <header className="h-16 shrink-0 border-b border-white/10 flex items-center justify-between px-4 md:px-8 bg-surface z-20">
                 <div className="hidden md:block text-lg font-semibold">Dashboard Overview</div>
                 <div className="md:hidden flex items-center">
                   <img

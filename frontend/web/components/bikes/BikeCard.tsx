@@ -139,7 +139,7 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
               <FaXmark size={12} />
               Disable
             </button>
-            
+
             <button
               onClick={(e) => {
                 e.stopPropagation();

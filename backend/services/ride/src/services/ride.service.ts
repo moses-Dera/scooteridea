@@ -398,47 +398,49 @@ export class RideService {
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }
 
-    const [
-      totalRides,
-      totalRevenue,
-      activeUsers,
-      avgDistance,
-      bikesTotal,
-      bikesActive,
-      completedRides,
-    ] = await Promise.all([
-      prisma.ride.count({
-        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
-      }),
-      prisma.ride.aggregate({
-        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
-        _sum: { fareCents: true },
-      }),
-      prisma.ride.findMany({
-        where: { createdAt: { gte: startDate } },
-        distinct: ['userId'],
-        select: { userId: true },
-      }),
-      prisma.ride.aggregate({
-        where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
-        _avg: { distanceKm: true },
-      }),
-      prisma.bike.count(),
-      prisma.bike.count({ where: { status: 'in_use' } }),
-      prisma.ride.findMany({
-        where: {
-          createdAt: { gte: startDate },
-          status: 'COMPLETED',
-          startedAt: { not: null },
-          endedAt: { not: null },
-        },
-        select: { startedAt: true, endedAt: true },
-      }),
-    ]);
+    const [totalRides, totalRevenue, activeUsers, avgDistance, bikesTotal, bikesActive, ridesData] =
+      await Promise.all([
+        prisma.ride.count({
+          where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
+        }),
+        prisma.ride.aggregate({
+          where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
+          _sum: { fareCents: true },
+        }),
+        prisma.ride.findMany({
+          where: { createdAt: { gte: startDate } },
+          distinct: ['userId'],
+          select: { userId: true },
+        }),
+        prisma.ride.aggregate({
+          where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
+          _avg: { distanceKm: true },
+        }),
+        prisma.bike.count(),
+        prisma.bike.count({ where: { status: 'in_use' } }),
+        prisma.ride.findMany({
+          where: {
+            createdAt: { gte: startDate },
+          },
+          select: {
+            startedAt: true,
+            endedAt: true,
+            createdAt: true,
+            fareCents: true,
+            status: true,
+            userId: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        }),
+      ]);
 
     const avgDistanceKm = avgDistance._avg?.distanceKm
       ? Math.round(Number(avgDistance._avg.distanceKm) * 10) / 10
       : 0;
+
+    const completedRides = ridesData.filter(
+      (r) => r.status === 'COMPLETED' && r.startedAt && r.endedAt,
+    );
 
     // Compute avg ride duration in minutes from actual startedAt/endedAt timestamps
     const avgRideDurationMins =
@@ -455,6 +457,53 @@ export class RideService {
 
     const fleetUtilization = bikesTotal > 0 ? Math.round((bikesActive / bikesTotal) * 100) : 0;
 
+    // Build time-series for charts
+    // Group into 7 buckets (e.g., 7 days for a week, 7 intervals for today, etc.)
+    const buckets = 7;
+    const stepMs = Math.max((now.getTime() - startDate.getTime()) / buckets, 1);
+
+    const revenueTrend = Array.from({ length: buckets }).map((_, i) => {
+      const bucketStart = new Date(startDate.getTime() + i * stepMs);
+      const bucketEnd = new Date(startDate.getTime() + (i + 1) * stepMs);
+      const label =
+        timeRange === 'today'
+          ? bucketStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : bucketStart.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return { time: label, revenue: 0, rides: 0 };
+    });
+
+    const userGrowth = Array.from({ length: buckets }).map((_, i) => {
+      const bucketStart = new Date(startDate.getTime() + i * stepMs);
+      const label =
+        timeRange === 'today'
+          ? bucketStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : bucketStart.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return { time: label, users: 0 };
+    });
+
+    const uniqueUsersPerBucket = new Array(buckets).fill(0).map(() => new Set<string>());
+
+    for (const ride of ridesData) {
+      const rideTime = ride.createdAt.getTime();
+      const bucketIndex = Math.min(
+        Math.floor((rideTime - startDate.getTime()) / stepMs),
+        buckets - 1,
+      );
+      if (bucketIndex >= 0 && bucketIndex < buckets) {
+        if (ride.status === 'COMPLETED') {
+          revenueTrend[bucketIndex].revenue += (ride.fareCents || 0) / 100;
+          revenueTrend[bucketIndex].rides += 1;
+        }
+        uniqueUsersPerBucket[bucketIndex].add(ride.userId);
+      }
+    }
+
+    let cumulativeUsers = 0;
+    for (let i = 0; i < buckets; i++) {
+      cumulativeUsers += uniqueUsersPerBucket[i].size; // approximation of growth
+      userGrowth[i].users = cumulativeUsers;
+    }
+
     return {
       total_rides: totalRides,
       total_revenue: Math.round((totalRevenue._sum?.fareCents ?? 0) / 100),
@@ -464,6 +513,8 @@ export class RideService {
       avg_ride_distance: avgDistanceKm,
       bikes_active: bikesActive,
       bikes_total: bikesTotal,
+      revenueTrend,
+      userGrowth,
     };
   }
 }

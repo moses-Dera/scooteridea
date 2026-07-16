@@ -33,6 +33,7 @@ export default function SimulatorPage() {
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
   const [battery, setBattery] = useState<number>(100);
   const [hardwareState, setHardwareState] = useState<'LOCKED' | 'UNLOCKED'>('LOCKED');
+  const [showPanel, setShowPanel] = useState<boolean>(false);
 
   // Auto-Navigation State
   const [searchQuery, setSearchQuery] = useState('');
@@ -161,9 +162,10 @@ export default function SimulatorPage() {
     if (selectedBikeId) {
       const bike = bikesMap.get(selectedBikeId);
       if (bike) {
-        if (Math.abs(bike.battery_pct - battery) > 5) {
-          setBattery(bike.battery_pct); // Only update slider if diverged significantly from server to avoid slider jumping while dragging
-        }
+        setBattery((prev) => {
+          if (Math.abs(bike.battery_pct - prev) > 5) return bike.battery_pct;
+          return prev;
+        });
         setHardwareState(bike.lock_status as 'LOCKED' | 'UNLOCKED');
       }
     }
@@ -214,6 +216,11 @@ export default function SimulatorPage() {
     const newState = hardwareState === 'LOCKED' ? 'UNLOCKED' : 'LOCKED';
     setHardwareState(newState);
     await updateBikeTelemetry(bike.id, bike.lat, bike.lng, battery, newState);
+  };
+
+  const triggerAlarm = async () => {
+    if (!selectedBikeId) return;
+    alert(`ALARM TRIGGERED FOR ${selectedBikeId}! (Simulated)`);
   };
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -308,9 +315,9 @@ export default function SimulatorPage() {
   const selectedBike = selectedBikeId ? bikesMap.get(selectedBikeId) : undefined;
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden -m-4 md:-m-8">
+    <div className="flex h-[calc(100dvh-64px)] overflow-hidden -m-4 md:-m-8 relative">
       {/* Map Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative bg-slate-900">
         <div ref={mapContainer} className="absolute inset-0" />
 
         {/* Top Info Bar */}
@@ -342,18 +349,49 @@ export default function SimulatorPage() {
         {/* Map Instructions */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 glass-panel px-6 py-3 rounded-full text-sm font-medium text-slate-300 flex items-center gap-3 shadow-2xl pointer-events-auto backdrop-blur-xl border-white/5">
           <MapPin className="w-4 h-4 text-primary" />
-          Double-click map to spawn a new bike
+          <span className="hidden md:inline">Double-click map to spawn</span>
+          <span className="md:hidden">Double-tap to spawn</span>
+        </div>
+
+        {/* Mobile Panel Toggle */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 md:hidden z-20">
+          <button
+            onClick={() => setShowPanel(true)}
+            className="bg-primary text-black font-bold px-6 py-3 rounded-full shadow-lg border border-primary/20 flex items-center gap-2"
+          >
+            <Cpu className="w-5 h-5" />
+            Open Hardware
+          </button>
         </div>
       </div>
 
       {/* Hardware Control Panel Sidebar */}
-      <div className="w-[400px] bg-background border-l border-white/10 flex flex-col overflow-y-auto relative z-10 shadow-[-20px_0_40px_rgba(0,0,0,0.5)]">
+      <div
+        className={`absolute inset-0 md:static w-full md:w-[400px] bg-background border-l border-white/10 flex flex-col overflow-y-auto z-30 shadow-[-20px_0_40px_rgba(0,0,0,0.5)] transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          showPanel ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-white/5 bg-surface/30 sticky top-0 backdrop-blur-md z-20">
-          <div className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            Hardware Interface
+        <div className="p-6 border-b border-white/5 bg-surface/30 sticky top-0 backdrop-blur-md z-20 flex justify-between items-center">
+          <div>
+            <div className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+              Hardware Interface
+            </div>
+            <p className="text-sm text-slate-400 mt-1">Select a vehicle on the map to interact</p>
           </div>
-          <p className="text-sm text-slate-400 mt-1">Select a vehicle on the map to interact</p>
+          <button
+            onClick={() => setShowPanel(false)}
+            className="md:hidden p-2 bg-white/5 rounded-full text-white hover:bg-white/10 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
         {selectedBikeId && selectedBike ? (
@@ -499,7 +537,10 @@ export default function SimulatorPage() {
                   </span>
                 </button>
 
-                <button className="p-3 rounded-xl bg-surface/50 border border-white/10 hover:bg-white/5 text-slate-300 flex flex-col items-center justify-center gap-2 transition-colors">
+                <button
+                  onClick={triggerAlarm}
+                  className="p-3 rounded-xl bg-surface/50 border border-white/10 hover:bg-white/5 text-slate-300 flex flex-col items-center justify-center gap-2 transition-colors"
+                >
                   <AlertTriangle className="w-5 h-5 text-warning" />
                   <span className="text-xs font-bold">Trigger Alarm</span>
                 </button>

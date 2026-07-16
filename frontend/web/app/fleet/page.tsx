@@ -46,7 +46,7 @@ export default function FleetMapPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] -m-4 md:-m-8 relative">
+    <div className="flex flex-col h-[calc(100dvh-64px)] -m-4 md:-m-8 relative">
       {/* Header overlaid on top */}
       <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none">
         <div className="flex justify-between items-start pointer-events-auto">
@@ -135,11 +135,7 @@ export default function FleetMapPage() {
             {activeTab === 'live' ? (
               <>
                 {bikes.map((bike) => (
-                  <BikeCard 
-                    key={bike.id} 
-                    bike={bike} 
-                    onSelect={() => handleSelectBike(bike.id)} 
-                  />
+                  <BikeCard key={bike.id} bike={bike} onSelect={() => handleSelectBike(bike.id)} />
                 ))}
                 {bikes.length === 0 && (
                   <div className="text-center py-12 text-slate-400">

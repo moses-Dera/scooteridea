@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
 import { TrendingUp, BarChart, Star, Wrench, ClipboardList } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart as ReBarChart,
+  Bar,
+} from 'recharts';
 
 interface Analytics {
   total_rides: number;
@@ -13,6 +24,8 @@ interface Analytics {
   avg_ride_distance: number;
   bikes_active: number;
   bikes_total: number;
+  revenueTrend: { time: string; revenue: number; rides: number }[];
+  userGrowth: { time: string; users: number }[];
 }
 
 export default function AnalyticsOverview() {
@@ -130,15 +143,57 @@ export default function AnalyticsOverview() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Placeholder for charts */}
         <Card>
           <CardHeader title="Revenue Trend" />
           <CardContent>
-            <div className="h-64 rounded-lg bg-neutral-900 border border-dashed border-neutral-700 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2 text-neutral-500">
-                <TrendingUp className="w-6 h-6" />
-                <p>Revenue chart will render here</p>
-              </div>
+            <div className="h-72 w-full pt-4">
+              {loading ? (
+                <div className="w-full h-full flex items-center justify-center text-neutral-500">
+                  <LoadingSpinner />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analytics?.revenueTrend || []}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                    <XAxis
+                      dataKey="time"
+                      stroke="#525252"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#525252"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `₦${value}`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#171717',
+                        borderColor: '#262626',
+                        color: '#fff',
+                      }}
+                      itemStyle={{ color: '#10b981' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorRevenue)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -146,11 +201,36 @@ export default function AnalyticsOverview() {
         <Card>
           <CardHeader title="User Growth" />
           <CardContent>
-            <div className="h-64 rounded-lg bg-neutral-900 border border-dashed border-neutral-700 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2 text-neutral-500">
-                <BarChart className="w-6 h-6" />
-                <p>Growth chart will render here</p>
-              </div>
+            <div className="h-72 w-full pt-4">
+              {loading ? (
+                <div className="w-full h-full flex items-center justify-center text-neutral-500">
+                  <LoadingSpinner />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ReBarChart data={analytics?.userGrowth || []} barSize={24}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                    <XAxis
+                      dataKey="time"
+                      stroke="#525252"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis stroke="#525252" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#171717',
+                        borderColor: '#262626',
+                        color: '#fff',
+                      }}
+                      itemStyle={{ color: '#3b82f6' }}
+                      cursor={{ fill: '#262626' }}
+                    />
+                    <Bar dataKey="users" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </ReBarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
