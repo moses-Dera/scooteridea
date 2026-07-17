@@ -1,10 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MessageCircle, HelpCircle, PhoneCall } from 'lucide-react';
+import { ArrowLeft, MessageCircle, HelpCircle, PhoneCall, CheckCircle2 } from 'lucide-react';
 
 export default function HelpPage() {
   const router = useRouter();
+
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const faqs = [
     {
@@ -20,6 +27,35 @@ export default function HelpPage() {
       a: "If the battery dies mid-ride, please park it safely on the sidewalk and end the ride in the app. You won't be charged extra.",
     },
   ];
+
+  const handleSubmitTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subject || !message) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/proxy/auth/user/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, message }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSubmitSuccess(true);
+        setSubject('');
+        setMessage('');
+      } else {
+        setError(data.error || 'Failed to submit ticket');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0D14] text-white">
@@ -38,17 +74,67 @@ export default function HelpPage() {
       <div className="px-6 py-6 space-y-8">
         {/* Contact Support */}
         <div>
-          <h2 className="text-lg font-bold mb-4 text-slate-200">Contact Us</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <button className="glass-panel p-4 rounded-2xl border border-white/5 hover:bg-white/5 transition-colors flex flex-col items-center justify-center gap-2 text-center">
-              <MessageCircle className="w-6 h-6 text-primary" />
-              <span className="font-bold text-sm">Live Chat</span>
-            </button>
-            <button className="glass-panel p-4 rounded-2xl border border-white/5 hover:bg-white/5 transition-colors flex flex-col items-center justify-center gap-2 text-center">
-              <PhoneCall className="w-6 h-6 text-primary" />
-              <span className="font-bold text-sm">Call Support</span>
-            </button>
-          </div>
+          <h2 className="text-lg font-bold mb-4 text-slate-200">Submit a Request</h2>
+          {submitSuccess ? (
+            <div className="glass-panel p-6 rounded-2xl border border-primary/20 flex flex-col items-center justify-center text-center gap-3">
+              <CheckCircle2 className="w-10 h-10 text-primary" />
+              <div>
+                <h3 className="font-bold text-white text-lg">Ticket Submitted</h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  Our team will review your request and contact you shortly.
+                </p>
+              </div>
+              <button
+                onClick={() => setSubmitSuccess(false)}
+                className="mt-2 text-primary font-bold text-sm"
+              >
+                Submit another request
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmitTicket}
+              className="glass-panel p-5 rounded-2xl border border-white/5 space-y-4"
+            >
+              {error && (
+                <div className="p-3 rounded-lg bg-danger/10 text-danger text-sm font-medium border border-danger/20">
+                  {error}
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full bg-[#0A0D14] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                  placeholder="E.g., Issue with billing"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">
+                  Message
+                </label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full bg-[#0A0D14] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors h-32 resize-none"
+                  placeholder="Describe your issue in detail..."
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting || !subject || !message}
+                className="w-full bg-primary text-black font-bold py-3.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-primary/90"
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* FAQs */}

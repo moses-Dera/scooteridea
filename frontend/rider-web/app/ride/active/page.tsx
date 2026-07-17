@@ -36,7 +36,7 @@ export default function ActiveRide() {
   const liveBike = state.activeRide?.bikeId
     ? bikes.find((b) => b.id === state.activeRide?.bikeId)
     : null;
-  const { docks } = useNearbyDocks(liveBike?.lat || 6.5244, liveBike?.lng || 3.3792);
+  const { docks } = useNearbyDocks(liveBike?.lat, liveBike?.lng);
   const nearestDock = docks.length > 0 ? docks[0] : null;
 
   // Developer Feature: Tether Bike to Phone's GPS

@@ -51,7 +51,10 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
           Account
         </div>
-        <div className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer">
+        <div
+          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'profile' }))}
+          className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer"
+        >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center">
               <User className="w-5 h-5 text-slate-300" />
@@ -96,19 +99,37 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
           Security
         </div>
-        <div
-          onClick={() =>
-            toast.success(
-              'A secure password reset link has been sent to your registered email address.',
-            )
-          }
-          className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-center hover:bg-white/5 cursor-pointer"
+        <button
+          onClick={() => toast('Password update coming soon!', { icon: '🚧' })}
+          className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer"
         >
-          <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-slate-300" />
-            <div className="font-bold text-white text-sm">Send Password Reset Link</div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center">
+              <Lock className="w-5 h-5 text-slate-300" />
+            </div>
+            <div className="text-left">
+              <div className="font-bold text-white">Password & Security</div>
+              <div className="text-xs text-slate-400">Update your password</div>
+            </div>
           </div>
-        </div>
+          <ChevronRight className="w-5 h-5 text-slate-500" />
+        </button>
+
+        <button
+          onClick={() => toast('Two-Factor Auth coming soon!', { icon: '🚧' })}
+          className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center">
+              <Shield className="w-5 h-5 text-slate-300" />
+            </div>
+            <div className="text-left">
+              <div className="font-bold text-white">Two-Factor Auth</div>
+              <div className="text-xs text-slate-400">Add extra security</div>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-500" />
+        </button>
       </div>
     </div>
   );

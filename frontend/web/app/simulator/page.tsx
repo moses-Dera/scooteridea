@@ -48,36 +48,39 @@ export default function SimulatorPage() {
     const mapboxgl = require('mapbox-gl'); // loaded lazily — browser only
 
     try {
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11',
-        center: [3.37, 6.52], // Lagos (Default fallback)
-        zoom: 13,
-      });
+      const initMap = (lng: number, lat: number) => {
+        if (!mapContainer.current) return;
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/dark-v11',
+          center: [lng, lat],
+          zoom: 16,
+        });
 
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-      // Request actual user location to make spawning realistic
+        // Add click handler to map to create new bikes
+        map.current.on('dblclick', async (e: any) => {
+          e.preventDefault();
+          const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
+          await updateBikeTelemetry(newId, e.lngLat.lat, e.lngLat.lng, 100, 'LOCKED');
+        });
+      };
+
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            map.current?.flyTo({
-              center: [position.coords.longitude, position.coords.latitude],
-              zoom: 16,
-              essential: true,
-            });
+          (position) => initMap(position.coords.longitude, position.coords.latitude),
+          (err) => {
+            console.log('Geolocation denied, sticking to default.', err);
+            initMap(3.37, 6.52);
           },
-          (err) => console.log('Geolocation denied, sticking to default.', err),
         );
+      } else {
+        initMap(3.37, 6.52);
       }
 
-      // Add click handler to map to create new bikes
-      map.current.on('dblclick', async (e: any) => {
-        e.preventDefault();
-        const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
-        await updateBikeTelemetry(newId, e.lngLat.lat, e.lngLat.lng, 100, 'LOCKED');
-      });
+      // Duplicate removed
     } catch (err) {
       console.error('Failed to initialize map:', err);
     }
@@ -203,6 +206,7 @@ export default function SimulatorPage() {
   const handleBatteryChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value);
     setBattery(val);
+    commandSentAt.current = Date.now();
 
     if (selectedBikeId) {
       const bike = bikesMap.get(selectedBikeId);

@@ -27,14 +27,20 @@ export default function SettingsPage() {
             Account
           </h3>
           <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-            <div className="p-4 border-b border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors">
+            <div
+              onClick={() => router.push('/settings/profile')}
+              className="p-4 border-b border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <User className="w-5 h-5 text-slate-400" />
                 <span className="font-semibold text-slate-200">Personal Information</span>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-500" />
             </div>
-            <div className="p-4 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors">
+            <div
+              onClick={() => router.push('/settings/security')}
+              className="p-4 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5 text-slate-400" />
                 <span className="font-semibold text-slate-200">Security & Password</span>
@@ -50,16 +56,22 @@ export default function SettingsPage() {
             Preferences
           </h3>
           <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
-            <div className="p-4 border-b border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors">
+            <div
+              onClick={() => router.push('/settings/notifications')}
+              className="p-4 border-b border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <Bell className="w-5 h-5 text-slate-400" />
                 <span className="font-semibold text-slate-200">Push Notifications</span>
               </div>
-              <div className="w-10 h-6 bg-primary rounded-full relative">
+              <div className="w-10 h-6 bg-primary rounded-full relative pointer-events-none">
                 <div className="absolute right-1 top-1 w-4 h-4 bg-black rounded-full"></div>
               </div>
             </div>
-            <div className="p-4 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors">
+            <div
+              onClick={() => router.push('/settings/language')}
+              className="p-4 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-slate-400" />
                 <span className="font-semibold text-slate-200">Language</span>

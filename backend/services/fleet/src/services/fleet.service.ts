@@ -49,6 +49,32 @@ export class FleetService {
       }
     });
 
+    // Handle Demo Spawns
+    subscribeToTopic('system/demo/spawn', async (topic, raw) => {
+      try {
+        const payload = JSON.parse(raw.toString());
+        const { lat, lng, count, radius } = payload;
+
+        for (let i = 0; i < (count || 10); i++) {
+          const newId = `BK-${Math.floor(Math.random() * 90000) + 10000}`;
+          const bLat = lat + (Math.random() - 0.5) * ((radius || 2) * 0.01);
+          const bLng = lng + (Math.random() - 0.5) * ((radius || 2) * 0.01);
+
+          await FleetService.handleBikeTelemetry(newId, {
+            lat: bLat,
+            lng: bLng,
+            battery_pct: 100,
+            speed_kmh: 0,
+            docked_at: null,
+            lock_status: 'LOCKED',
+          });
+        }
+        logger.info(`[Fleet] Spawned ${count} demo bikes near ${lat}, ${lng}`);
+      } catch (err) {
+        logger.error({ err }, '[Fleet] Failed to spawn demo bikes');
+      }
+    });
+
     logger.info('[Fleet] MQTT subscriptions active');
   }
 
@@ -59,7 +85,11 @@ export class FleetService {
     const { lat, lng, battery_pct, speed_kmh, lock_status, docked_at } = payload;
 
     // 1. Write live location to Redis (TTL 30s — stale auto-purge)
-    await redisSetJson(`bike:${bikeId}:location`, { lat, lng, battery_pct, speed_kmh }, 30);
+    await redisSetJson(
+      `bike:${bikeId}:location`,
+      { lat, lng, battery_pct, speed_kmh, lock_status },
+      30,
+    );
 
     // 2. Update geospatial index
     await geoAdd('fleet:available', lng, lat, bikeId);
@@ -101,6 +131,7 @@ export class FleetService {
       lng,
       batteryPct: battery_pct,
       status,
+      lock_status,
       zoneIds,
       ts: Date.now(),
     });
@@ -211,9 +242,13 @@ export class FleetService {
         const bikeId = key.split(':')[1];
         const [status, location, zonesRaw] = await Promise.all([
           redis.get(`bike:${bikeId}:status`),
-          redisGetJson<{ lat: number; lng: number; battery_pct: number; speed_kmh: number }>(
-            `bike:${bikeId}:location`,
-          ),
+          redisGetJson<{
+            lat: number;
+            lng: number;
+            battery_pct: number;
+            speed_kmh: number;
+            lock_status?: string;
+          }>(`bike:${bikeId}:location`),
           redis.get(`bike:${bikeId}:zones`),
         ]);
         return {
@@ -221,6 +256,7 @@ export class FleetService {
           bikeId,
           status,
           ...(location || {}),
+          lock_status: location?.lock_status || 'LOCKED',
           zoneIds: zonesRaw ? JSON.parse(zonesRaw) : [],
         };
       }),
@@ -249,10 +285,15 @@ export class FleetService {
           lng: number;
           battery_pct: number;
           speed_kmh: number;
+          lock_status?: string;
         }>(`bike:${bikeId}:location`);
         // Only show bikes to riders if battery > 15%
         if (location && location.battery_pct > 15) {
-          availableBikes.push({ bikeId, ...location });
+          availableBikes.push({
+            bikeId,
+            ...location,
+            lock_status: location.lock_status || 'LOCKED',
+          });
         }
       }
     }

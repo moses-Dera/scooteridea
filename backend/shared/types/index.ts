@@ -224,6 +224,7 @@ export interface KafkaFleetTelemetryEvent {
   lng: number;
   batteryPct: number;
   status: BikeStatus;
+  lock_status: 'LOCKED' | 'UNLOCKED';
   zoneIds?: string[];
   ts: number;
 }
@@ -298,6 +299,7 @@ export interface WsBikeLocationUpdate {
   lng: number;
   battery: number;
   status: BikeStatus;
+  lockStatus?: 'LOCKED' | 'UNLOCKED';
   zoneIds?: string[];
 }
 
@@ -320,8 +322,19 @@ export interface WsRideEndedEvent {
   fareCents: number;
 }
 
+export interface WsSupportTicketCreated {
+  event: 'support_ticket_created';
+  ticketId: string;
+  userId: string;
+  subject: string;
+}
+
 export type WsServerEvent =
-  WsBikeLocationUpdate | WsDockStatusUpdate | WsSurgeUpdate | WsRideEndedEvent;
+  | WsBikeLocationUpdate
+  | WsDockStatusUpdate
+  | WsSurgeUpdate
+  | WsRideEndedEvent
+  | WsSupportTicketCreated;
 
 // ── API Responses ────────────────────────────
 

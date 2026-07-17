@@ -9,8 +9,9 @@ import { authOptions } from '@/lib/auth';
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
-  const backendUrl = `${baseUrl}${targetPath}`;
+  const queryString = req.nextUrl.search || '';
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
   const headers: HeadersInit = {};
 
@@ -54,8 +55,9 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
 export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
-  const backendUrl = `${baseUrl}${targetPath}`;
+  const queryString = req.nextUrl.search || '';
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
 
@@ -101,8 +103,9 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
 export async function PUT(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
-  const backendUrl = `${baseUrl}${targetPath}`;
+  const queryString = req.nextUrl.search || '';
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
 
@@ -148,8 +151,9 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
 export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
   const targetPath = '/' + (params.path || []).join('/');
-  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
-  const backendUrl = `${baseUrl}${targetPath}`;
+  const queryString = req.nextUrl.search || '';
+  const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
+  const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
   const headers: HeadersInit = {};
 

@@ -134,7 +134,8 @@ function broadcastEvent(event: WsServerEvent) {
       (event.event === 'dock_status_update' &&
         (state.subscriptions.has(`dock:${event.dockId}`) || state.subscriptions.has('dock:all'))) ||
       (event.event === 'surge_update' && state.subscriptions.has('surge:all')) ||
-      (event.event === 'ride_ended' && state.subscriptions.has(`ride:${event.rideId}`));
+      (event.event === 'ride_ended' && state.subscriptions.has(`ride:${event.rideId}`)) ||
+      (event.event === 'support_ticket_created' && state.subscriptions.has('support:all'));
 
     if (shouldSend) {
       state.ws.send(payload);
@@ -153,7 +154,7 @@ async function startEventsConsumer() {
 
   const consumer = createConsumer('ws-hub-consumer');
   await consumer.subscribe(
-    [TOPICS.FLEET_TELEMETRY, TOPICS.DOCK_STATUS, TOPICS.RIDE_ENDED],
+    [TOPICS.FLEET_TELEMETRY, TOPICS.DOCK_STATUS, TOPICS.RIDE_ENDED, TOPICS.SUPPORT_TICKET_CREATED],
     async (payload: any) => {
       let event: WsServerEvent | null = null;
 
@@ -165,6 +166,7 @@ async function startEventsConsumer() {
           lng: payload.lng,
           battery: payload.batteryPct,
           status: payload.status,
+          lockStatus: payload.lock_status,
           zoneIds: payload.zoneIds,
         };
       } else if (payload.dockId) {
@@ -180,6 +182,14 @@ async function startEventsConsumer() {
           rideId: payload.rideId,
           fareCents: payload.fareCents,
           userId: payload.userId,
+        };
+      } else if (payload.ticketId && payload.subject) {
+        // SUPPORT_TICKET_CREATED
+        event = {
+          event: 'support_ticket_created',
+          ticketId: payload.ticketId,
+          userId: payload.userId,
+          subject: payload.subject,
         };
       }
 

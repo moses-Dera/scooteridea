@@ -5,6 +5,7 @@ import Map, { GeolocateControl, Source, Layer, MapRef } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
 import { useNavigationEngine, NavigationProfile } from '@/hooks/useNavigationEngine';
+import { useSession } from 'next-auth/react';
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
 
@@ -42,6 +43,7 @@ export function FleetMapComponent({
   onSelectBikeId,
   historicalRoute,
 }: FleetMapProps = {}) {
+  const { data: session } = useSession();
   const mapRef = useRef<MapRef>(null);
 
   const [internalSelectedBike, setInternalSelectedBike] = useState<Bike | null>(null);
@@ -64,20 +66,37 @@ export function FleetMapComponent({
   };
 
   const [viewState, setViewState] = useState({
-    latitude: 6.4541,
-    longitude: 3.3792,
-    zoom: 12,
+    latitude: 0,
+    longitude: 0,
+    zoom: 2,
     pitch: 0,
   });
 
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    setMounted(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setViewState((prev) => ({
+            ...prev,
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            zoom: 14,
+          }));
+        },
+        (err) => console.warn('Geolocation error:', err),
+        { enableHighAccuracy: true },
+      );
+    }
+  }, []);
 
   // Fetch docks
   useEffect(() => {
     const fetchDocks = async () => {
       try {
-        const token = localStorage.getItem('token') || '';
+        const token = (session as any)?.accessToken || '';
         const res = await fetch(`/api/proxy/fleet/docks`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
@@ -86,22 +105,13 @@ export function FleetMapComponent({
           const fetchedDocks =
             data.success && data.data ? data.data : Array.isArray(data) ? data : [];
           setDocks(fetchedDocks);
-
-          if (fetchedDocks.length > 0) {
-            setViewState((prev) => ({
-              ...prev,
-              latitude: fetchedDocks[0].lat,
-              longitude: fetchedDocks[0].lng,
-              zoom: 14,
-            }));
-          }
         }
       } catch (err) {
         console.error('Failed to fetch docks:', err);
       }
     };
-    fetchDocks();
-  }, []);
+    if (session) fetchDocks();
+  }, [session]);
 
   const [bikeTrail, setBikeTrail] = useState<{ lat: number; lng: number; ts: number }[]>([]);
 
@@ -117,7 +127,7 @@ export function FleetMapComponent({
 
     const fetchTrail = async () => {
       try {
-        const token = localStorage.getItem('token') || '';
+        const token = (session as any)?.accessToken || '';
         const res = await fetch(`/api/proxy/fleet/bikes/${selectedBike.id}/trail`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
@@ -144,7 +154,7 @@ export function FleetMapComponent({
     }
 
     return () => clearInterval(interval);
-  }, [selectedBike?.id, docks.length]);
+  }, [selectedBike?.id, docks.length, session]);
 
   // Historical Route focus
   useEffect(() => {

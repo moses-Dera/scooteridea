@@ -178,7 +178,16 @@ mqttClient.on('message', (topic, message) => {
   const match = topic.match(/bikes\/(.+)\/commands/);
   if (match) {
     const bikeId = match[1];
-    manager.handleCommand(bikeId, message.toString());
+    let cmdString = message.toString();
+    try {
+      const parsed = JSON.parse(cmdString);
+      if (parsed.command) {
+        cmdString = parsed.command;
+      }
+    } catch (e) {
+      // Ignore
+    }
+    manager.handleCommand(bikeId, cmdString);
   }
 });
 
@@ -252,7 +261,10 @@ wss.on('connection', (ws) => {
           if (data.bikeId && data.command) {
             manager.handleCommand(data.bikeId, data.command);
             if (mqttClient.connected) {
-              mqttClient.publish(`bikes/${data.bikeId}/commands`, data.command);
+              mqttClient.publish(
+                `bikes/${data.bikeId}/commands`,
+                JSON.stringify({ command: data.command, ts: Date.now() }),
+              );
             }
             manager.broadcast(manager.getStatus());
           }
