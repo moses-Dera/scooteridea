@@ -34,13 +34,6 @@ export default function RiderMap() {
   const mapRef = useRef<MapRef>(null);
   const hasInitialLock = useRef(false);
 
-  const [viewState, setViewState] = useState({
-    latitude: 6.4541,
-    longitude: 3.3792,
-    zoom: 13.5, // slightly zoomed out to see more bikes
-    pitch: 45,
-  });
-
   const [navProfile, setNavProfile] = useState<NavigationProfile>('cycling');
 
   // Real user geolocation
@@ -191,10 +184,9 @@ export default function RiderMap() {
   }, [isDestinationPreview, destination?.lat, destination?.lng]);
 
   // Search center tracks where we fetch bikes/docks from.
-  // Starts null so we don't spam Lagos requests before we know the user's location.
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const searchLat = searchCenter?.lat ?? 6.4541;
-  const searchLng = searchCenter?.lng ?? 3.3792;
+  const searchLat = searchCenter?.lat ?? 0;
+  const searchLng = searchCenter?.lng ?? 0;
 
   const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng, 10);
 
@@ -205,60 +197,38 @@ export default function RiderMap() {
   const { docks } = useNearbyDocks(searchLat, searchLng);
 
   const [initialLocation, setInitialLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Prevent hydration mismatch and acquire initial GPS lock before rendering map
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
 
-    let resolved = false;
-
-    // Hard fallback: If the browser's geolocation API hangs (common indoors or on some OS),
-    // force-load the map after 3 seconds so the user isn't stuck.
-    const fallbackTimer = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        console.warn('Geolocation API took too long, using fallback location.');
-        setInitialLocation({ lat: 6.4541, lng: 3.3792 });
-        setSearchCenter({ lat: 6.4541, lng: 3.3792 });
-      }
-    }, 3000);
-
     // Attempt to get user's location immediately before rendering map
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(fallbackTimer);
-            setInitialLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-            setSearchCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
-          }
+          setInitialLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+          setSearchCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
         (error) => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(fallbackTimer);
-            console.warn('Geolocation failed or denied, defaulting to Lagos.');
-            setInitialLocation({ lat: 6.4541, lng: 3.3792 });
-            setSearchCenter({ lat: 6.4541, lng: 3.3792 });
+          console.warn('Geolocation error:', error);
+          if (error.code === error.PERMISSION_DENIED) {
+            setLocationError(
+              'Location access denied. Please enable location permissions to use Scooterfy.',
+            );
+          } else {
+            setLocationError(
+              'Unable to determine your location. Please check your connection or GPS.',
+            );
           }
         },
-        // IMPORTANT: Use enableHighAccuracy: false for the initial load.
-        // This instantly returns a WiFi/Cell-tower location so the map loads immediately.
-        // Mapbox's GeolocateControl will grab the HighAccuracy GPS lock after the map mounts!
-        { enableHighAccuracy: false, timeout: 3000, maximumAge: 10000 },
+        // Wait up to 15s for the initial lock. We must have a location to start the app.
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 },
       );
     } else {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(fallbackTimer);
-        setInitialLocation({ lat: 6.4541, lng: 3.3792 });
-        setSearchCenter({ lat: 6.4541, lng: 3.3792 });
-      }
+      setLocationError('Geolocation is not supported by your browser.');
     }
-
-    return () => clearTimeout(fallbackTimer);
   }, []);
 
   // GeolocateControl is auto-triggered in onMapLoad — no duplicate trigger here
@@ -344,7 +314,56 @@ export default function RiderMap() {
     }, 500);
   }, []);
 
-  if (!mounted || !initialLocation) return <div className="w-full h-full bg-[#0A0D14]" />;
+  if (!mounted) return <div className="w-full h-full bg-[#0A0D14]" />;
+
+  if (locationError) {
+    return (
+      <div className="w-full h-full bg-[#0A0D14] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4 border border-red-500/30">
+          <svg
+            className="w-8 h-8 text-red-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h2 className="text-white text-xl font-bold mb-2">Location Required</h2>
+        <p className="text-slate-400 text-sm max-w-[280px]">{locationError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-6 px-6 py-2.5 bg-primary text-[#0A0D14] font-bold rounded-xl hover:bg-primary/90 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (!initialLocation) {
+    return (
+      <div className="w-full h-full bg-[#0A0D14] flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5"></div>
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="w-20 h-20 mb-6 relative flex items-center justify-center">
+            <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <LocateFixed className="w-8 h-8 text-primary animate-pulse" />
+          </div>
+          <h2 className="text-white text-lg font-bold tracking-tight">Locating you...</h2>
+          <p className="text-primary/70 text-xs font-semibold uppercase tracking-wider mt-2">
+            Acquiring GPS Lock
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full relative">

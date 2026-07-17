@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function SplashScreen() {
   const [show, setShow] = useState(true);
@@ -25,21 +26,28 @@ export default function SplashScreen() {
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0A0D14] transition-opacity duration-500">
-      <div className="relative flex flex-col items-center">
+      <div className="relative flex flex-col items-center w-64 h-64 sm:w-80 sm:h-80">
         {/* Dim Base Logo */}
-        <img
+        <Image
           src="/wordmark-transparent.png"
           alt="Scooterfy Base"
-          className="w-64 h-64 sm:w-80 sm:h-80 object-contain opacity-30"
+          fill
+          priority
+          sizes="(max-width: 640px) 256px, 320px"
+          className="object-contain opacity-30"
         />
 
         {/* Bright Colored Logo (Reveals from left to right) */}
-        <img
-          src="/wordmark-transparent.png"
-          alt="Scooterfy Loading"
-          className="absolute top-0 left-0 w-64 h-64 sm:w-80 sm:h-80 object-contain"
-          style={{ clipPath: `inset(0 ${100 - progress}% 0 0)` }}
-        />
+        <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - progress}% 0 0)` }}>
+          <Image
+            src="/wordmark-transparent.png"
+            alt="Scooterfy Loading"
+            fill
+            priority
+            sizes="(max-width: 640px) 256px, 320px"
+            className="object-contain"
+          />
+        </div>
       </div>
     </div>
   );

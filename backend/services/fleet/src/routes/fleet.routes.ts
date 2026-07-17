@@ -54,10 +54,12 @@ fleetRouter.get('/bikes', jwtGuard, async (req: Request, res: Response) => {
 
       const allowedZoneIds = user?.assignedZones.map((z) => z.id) || [];
 
-      // Filter out bikes that don't have at least one zone intersecting with allowedZoneIds
-      bikes = bikes.filter((bike) =>
-        bike.zoneIds.some((id: string) => allowedZoneIds.includes(id)),
-      );
+      if (allowedZoneIds.length > 0) {
+        // Filter out bikes that don't have at least one zone intersecting with allowedZoneIds
+        bikes = bikes.filter((bike) =>
+          bike.zoneIds.some((id: string) => allowedZoneIds.includes(id)),
+        );
+      }
     }
 
     res.json({ success: true, data: bikes });
@@ -266,5 +268,101 @@ fleetRouter.post('/demo/spawn', async (req, res) => {
     res.json({ success: true, message: `Demo spawn triggered at ${lat}, ${lng}` });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to trigger demo spawn' });
+  }
+});
+
+// ==========================================
+// Admin: Geofence Zone Management
+// ==========================================
+
+// GET /fleet/zones — list all geofence zones
+fleetRouter.get('/zones', jwtGuard, requireRole('ADMIN', 'OPERATOR'), async (req, res) => {
+  try {
+    const zones = await prisma.geofence.findMany({
+      include: { operators: { select: { id: true, name: true, email: true } } },
+      orderBy: { name: 'asc' },
+    });
+    res.json({ success: true, data: zones });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch zones' });
+  }
+});
+
+// GET /fleet/zones/transitions — fetch latest zone transitions for heatmap
+fleetRouter.get(
+  '/zones/transitions',
+  jwtGuard,
+  requireRole('ADMIN', 'OPERATOR'),
+  async (req, res) => {
+    try {
+      const limit = Number(req.query.limit) || 500;
+      const transitions = await prisma.zoneTransition.findMany({
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, lat: true, lng: true, type: true, createdAt: true },
+      });
+      res.json({ success: true, data: transitions });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to fetch zone transitions' });
+    }
+  },
+);
+
+// POST /fleet/zones — create a new geofence zone
+fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { name, type, lat, lng, radiusKm, speedCap, baseFareOverride, perMinuteOverride } =
+      req.body;
+    if (!name || !type || lat === undefined || lng === undefined || !radiusKm) {
+      res.status(400).json({ success: false, error: 'name, type, lat, lng, radiusKm required' });
+      return;
+    }
+    const zone = await prisma.geofence.create({
+      data: {
+        name,
+        type,
+        speedCap: speedCap ?? null,
+        boundary: { type: 'circle', lat, lng, radiusKm },
+        baseFareOverride: baseFareOverride ?? null,
+        perMinuteOverride: perMinuteOverride ?? null,
+      },
+    });
+    res.status(201).json({ success: true, data: zone });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to create zone' });
+  }
+});
+
+// PUT /fleet/zones/:id — update a geofence zone
+fleetRouter.put('/zones/:id', jwtGuard, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, lat, lng, radiusKm, speedCap, baseFareOverride, perMinuteOverride } =
+      req.body;
+    const zone = await prisma.geofence.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(type && { type }),
+        ...(lat !== undefined && { boundary: { type: 'circle', lat, lng, radiusKm } }),
+        ...(speedCap !== undefined && { speedCap }),
+        ...(baseFareOverride !== undefined && { baseFareOverride }),
+        ...(perMinuteOverride !== undefined && { perMinuteOverride }),
+      },
+    });
+    res.json({ success: true, data: zone });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to update zone' });
+  }
+});
+
+// DELETE /fleet/zones/:id — delete a geofence zone
+fleetRouter.delete('/zones/:id', jwtGuard, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.geofence.delete({ where: { id } });
+    res.json({ success: true, message: 'Zone deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to delete zone' });
   }
 });

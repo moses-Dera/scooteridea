@@ -174,11 +174,19 @@ function startBikeFleet() {
 
     const parts = topic.split('/');
     const bikeId = parts[1];
-    const command = message.toString();
+    let cmdString = message.toString();
+    try {
+      const parsed = JSON.parse(cmdString);
+      if (parsed.command) {
+        cmdString = parsed.command;
+      }
+    } catch (e) {
+      // Handle as raw string
+    }
 
     const bike = bikes.find((b) => b.bikeId === bikeId);
     if (bike) {
-      bike.handleCommand(command);
+      bike.handleCommand(cmdString);
     }
   });
 

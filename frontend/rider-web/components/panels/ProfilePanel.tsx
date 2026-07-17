@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { toast } from 'react-hot-toast';
 
 interface ProfilePanelProps {
   onClose: () => void;
@@ -194,10 +195,16 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
             Edit Profile
           </button>
         )}
-        <button className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]">
+        <button
+          onClick={() => toast('Payment Methods coming soon!', { icon: '🚧' })}
+          className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]"
+        >
           Payment Methods
         </button>
-        <button className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]">
+        <button
+          onClick={() => toast('Privacy settings coming soon!', { icon: '🚧' })}
+          className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]"
+        >
           Privacy & Security
         </button>
       </div>

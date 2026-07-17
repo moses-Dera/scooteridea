@@ -20,6 +20,7 @@ export const TOPICS = {
   PAYMENT_RESULT: 'payment.result',
   OPS_ALERT: 'ops.alert',
   FLEET_COMMAND: 'fleet.command',
+  SUPPORT_TICKET_CREATED: 'support.ticket.created',
 } as const;
 
 // ── Redis instance (singleton) ────────────────────────────────────────────────
@@ -58,4 +59,6 @@ export const kafka = {
   paymentResult: (e: KafkaPaymentResultEvent) => publish(TOPICS.PAYMENT_RESULT, e, e.rideId),
   opsAlert: (e: KafkaOpsAlertEvent) => publish(TOPICS.OPS_ALERT, e),
   fleetCommand: (e: KafkaFleetCommandEvent) => publish(TOPICS.FLEET_COMMAND, e, e.bikeId),
+  supportTicketCreated: (e: { ticketId: string; userId: string; subject: string }) =>
+    publish(TOPICS.SUPPORT_TICKET_CREATED, e),
 };

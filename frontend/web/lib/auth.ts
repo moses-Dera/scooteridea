@@ -140,6 +140,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login',
   },
+  secret: process.env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-operator-token`,
@@ -151,7 +152,16 @@ export const authOptions: NextAuthOptions = {
       },
     },
     callbackUrl: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.callback-url`,
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}scooter-operator-callback`,
+      options: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      },
+    },
+    csrfToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Host-' : ''}scooter-operator-csrf`,
       options: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

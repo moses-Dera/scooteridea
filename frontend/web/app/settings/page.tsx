@@ -1,41 +1,202 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FiUsers, FiDollarSign, FiMap, FiPercent, FiSave } from 'react-icons/fi';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  FiUsers,
+  FiDollarSign,
+  FiMap,
+  FiPercent,
+  FiSave,
+  FiTrash2,
+  FiPlus,
+  FiX,
+  FiEdit2,
+  FiSearch,
+  FiMapPin,
+  FiMessageSquare,
+} from 'react-icons/fi';
+import Map, { Source, Layer, Marker } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import PricingTab from '@/components/settings/PricingTab';
+import UsersTab from '@/components/settings/UsersTab';
+import FinanceTab from '@/components/settings/FinanceTab';
+import GeofencingTab from '@/components/settings/GeofencingTab';
+import SupportTab from '@/components/settings/SupportTab';
+
+// Helper to generate a circle Polygon GeoJSON
+function createGeoJSONCircle(
+  centerLng: number,
+  centerLat: number,
+  radiusInKm: number,
+  points = 64,
+) {
+  const distanceX = radiusInKm / (111.32 * Math.cos((centerLat * Math.PI) / 180));
+  const distanceY = radiusInKm / 110.574;
+
+  const ret = [];
+  for (let i = 0; i < points; i++) {
+    const theta = (i / points) * (2 * Math.PI);
+    const x = distanceX * Math.cos(theta);
+    const y = distanceY * Math.sin(theta);
+    ret.push([centerLng + x, centerLat + y]);
+  }
+  ret.push(ret[0]);
+
+  return {
+    type: 'Feature',
+    geometry: { type: 'Polygon', coordinates: [ret] },
+  };
+}
 
 export default function AdminSettings() {
-  const [activeTab, setActiveTab] = useState<'users' | 'finance' | 'geofencing' | 'pricing'>(
-    'pricing',
-  );
+  const [activeTab, setActiveTab] = useState<
+    'users' | 'finance' | 'geofencing' | 'pricing' | 'support'
+  >('geofencing');
 
+  // Pricing State
   const [config, setConfig] = useState({
     unlockFeeCents: 10000,
     perMinuteCents: 2000,
     maxSurgeMult: 2.5,
     outOfDockFeeCents: 50000,
   });
+
+  // Data States
+  const [users, setUsers] = useState<any[]>([]);
+  const [wallets, setWallets] = useState<any[]>([]);
+  const [zones, setZones] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [transitions, setTransitions] = useState<any[]>([]);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Map Editor State
+  const [newZoneMarker, setNewZoneMarker] = useState<{ lng: number; lat: number } | null>(null);
+  const [newZoneData, setNewZoneData] = useState({
+    name: '',
+    type: 'operational',
+    radiusKm: 2,
+    speedCap: '',
+  });
+
+  // Zone Assignment State
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [tempAssignedZones, setTempAssignedZones] = useState<string[]>([]);
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Toast Notification State
+  const [toastMsg, setToastMsg] = useState<{ title: string; message: string } | null>(null);
+
+  // Fetch all admin data
   useEffect(() => {
-    const fetchConfig = async () => {
+    const fetchAllData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`/api/proxy/fleet/config`);
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data) {
-            setConfig(json.data);
-          }
+        const [configRes, usersRes, walletsRes, zonesRes, ticketsRes, transitionsRes] =
+          await Promise.all([
+            fetch(`/api/proxy/fleet/config`),
+            fetch(`/api/proxy/auth/admin/users`),
+            fetch(`/api/proxy/auth/admin/finance/wallets?limit=50`),
+            fetch(`/api/proxy/fleet/zones`),
+            fetch(`/api/proxy/auth/admin/support`),
+            fetch(`/api/proxy/fleet/zones/transitions`),
+          ]);
+
+        if (configRes.ok) {
+          const json = await configRes.json();
+          if (json.success && json.data) setConfig(json.data);
+        }
+        if (usersRes.ok) {
+          const json = await usersRes.json();
+          if (json.success && json.data) setUsers(json.data);
+        }
+        if (walletsRes.ok) {
+          const json = await walletsRes.json();
+          if (json.success && json.data) setWallets(json.data);
+        }
+        if (zonesRes.ok) {
+          const json = await zonesRes.json();
+          if (json.success && json.data) setZones(json.data);
+        }
+        if (ticketsRes.ok) {
+          const json = await ticketsRes.json();
+          if (json.success && json.data) setTickets(json.data);
+        }
+        if (transitionsRes.ok) {
+          const json = await transitionsRes.json();
+          if (json.success && json.data) setTransitions(json.data);
         }
       } catch (err) {
-        console.error('Failed to fetch config', err);
+        console.error('Failed to fetch admin data', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchConfig();
+    fetchAllData();
   }, []);
 
+  // WebSocket connection for real-time support tickets
+  useEffect(() => {
+    if (loading) return; // Wait until initial load is complete
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    let ws: WebSocket;
+    let reconnectTimeout: NodeJS.Timeout;
+
+    const connect = () => {
+      try {
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3008';
+        ws = new WebSocket(`${wsUrl}?token=${token}`);
+
+        ws.onopen = () => {
+          // Subscribe to global support tickets channel
+          ws.send(JSON.stringify({ subscribe: ['support:all'] }));
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.event === 'support_ticket_created') {
+              // Show notification instantly
+              setToastMsg({
+                title: 'New Support Ticket',
+                message: `Ticket "${msg.subject}" was just submitted.`,
+              });
+              setTimeout(() => setToastMsg(null), 6000);
+
+              // Refetch the tickets list silently to update the table
+              fetch(`/api/proxy/auth/admin/support`).then((res) => {
+                if (res.ok) {
+                  res.json().then((json) => {
+                    if (json.success && json.data) setTickets(json.data);
+                  });
+                }
+              });
+            }
+          } catch (e) {}
+        };
+
+        ws.onclose = () => {
+          reconnectTimeout = setTimeout(connect, 3000);
+        };
+      } catch (err) {}
+    };
+
+    connect();
+
+    return () => {
+      if (ws) ws.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    };
+  }, [loading]);
+
+  // PRICING
   const handleSavePricing = async () => {
     setSaving(true);
     try {
@@ -44,11 +205,8 @@ export default function AdminSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
-      if (res.ok) {
-        alert('Pricing Configuration Saved Successfully!');
-      } else {
-        alert('Failed to save config.');
-      }
+      if (res.ok) alert('Pricing Configuration Saved Successfully!');
+      else alert('Failed to save config.');
     } catch (err) {
       console.error(err);
       alert('Error saving config.');
@@ -57,256 +215,312 @@ export default function AdminSettings() {
     }
   };
 
+  // USERS
+  const handleAddOperator = async () => {
+    const email = prompt('Enter new operator email:');
+    const name = prompt('Enter new operator name:');
+    const password = prompt('Enter initial password:');
+    if (!email || !name || !password) return;
+
+    try {
+      const res = await fetch(`/api/proxy/auth/admin/operators`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, password, role: 'OPERATOR' }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setUsers([json.data, ...users]);
+        alert('Operator created!');
+      } else {
+        const err = await res.json();
+        alert(`Failed: ${err.error}`);
+      }
+    } catch (e) {
+      alert('Error creating operator');
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    try {
+      const res = await fetch(`/api/proxy/auth/admin/users/${id}`, { method: 'DELETE' });
+      if (res.ok) setUsers(users.filter((u) => u.id !== id));
+    } catch (e) {
+      alert('Failed to delete user');
+    }
+  };
+
+  const handleSaveUserZones = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/proxy/auth/admin/users/${userId}/zones`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zoneIds: tempAssignedZones }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setUsers(
+          users.map((u) =>
+            u.id === userId ? { ...u, assignedZones: json.data.assignedZones } : u,
+          ),
+        );
+        setEditingUser(null);
+        alert('Zones updated successfully!');
+      } else {
+        alert('Failed to update zones');
+      }
+    } catch (e) {
+      alert('Error updating zones');
+    }
+  };
+
+  // FINANCE
+  const handleAdjustWallet = async (id: string, name: string) => {
+    const amountStr = prompt(
+      `Enter amount in Naira (₦) to ADD to ${name}'s wallet (use negative to deduct):`,
+    );
+    if (!amountStr) return;
+    const amountCents = parseInt(amountStr) * 100;
+    if (isNaN(amountCents)) return alert('Invalid amount');
+
+    try {
+      const res = await fetch(`/api/proxy/auth/admin/finance/wallets/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amountCents, reason: 'Admin Manual Adjustment' }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setWallets(
+          wallets.map((w) => (w.id === id ? { ...w, walletCents: json.data.walletCents } : w)),
+        );
+        alert('Wallet adjusted successfully');
+      }
+    } catch (e) {
+      alert('Failed to adjust wallet');
+    }
+  };
+
+  // SUPPORT
+  const handleToggleTicketStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'RESOLVED' ? 'OPEN' : 'RESOLVED';
+    try {
+      const res = await fetch(`/api/proxy/auth/admin/support/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setTickets(tickets.map((t) => (t.id === id ? { ...t, status: newStatus } : t)));
+      } else {
+        alert('Failed to update ticket');
+      }
+    } catch (e) {
+      alert('Error updating ticket');
+    }
+  };
+
+  // GEOFENCING MAP EDITOR
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+  const handleMapClick = (e: any) => {
+    if (newZoneMarker) return; // if already editing a new zone, ignore
+    setNewZoneMarker({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+  };
+
+  const handleSaveNewZone = async () => {
+    if (!newZoneMarker || !newZoneData.name) return alert('Name is required');
+
+    try {
+      const payload = {
+        name: newZoneData.name,
+        type: newZoneData.type,
+        lat: newZoneMarker.lat,
+        lng: newZoneMarker.lng,
+        radiusKm: Number(newZoneData.radiusKm),
+        speedCap: newZoneData.speedCap ? Number(newZoneData.speedCap) : undefined,
+      };
+
+      const res = await fetch(`/api/proxy/fleet/zones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        setZones([json.data, ...zones]);
+        setNewZoneMarker(null);
+        setNewZoneData({ name: '', type: 'operational', radiusKm: 2, speedCap: '' });
+      } else {
+        alert('Failed to create zone');
+      }
+    } catch (e) {
+      alert('Error creating zone');
+    }
+  };
+
+  const handleDeleteZone = async (id: string) => {
+    if (!confirm('Delete this zone?')) return;
+    try {
+      const res = await fetch(`/api/proxy/fleet/zones/${id}`, { method: 'DELETE' });
+      if (res.ok) setZones(zones.filter((z) => z.id !== id));
+    } catch (e) {
+      alert('Failed to delete zone');
+    }
+  };
+
+  const geoJsonZones = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: zones.map((z) => {
+        const feature = createGeoJSONCircle(z.boundary.lng, z.boundary.lat, z.boundary.radiusKm);
+        return {
+          ...feature,
+          properties: { id: z.id, type: z.type, name: z.name },
+        };
+      }),
+    };
+  }, [zones]);
+
+  const previewGeoJson = useMemo(() => {
+    if (!newZoneMarker) return null;
+    return {
+      type: 'FeatureCollection',
+      features: [createGeoJSONCircle(newZoneMarker.lng, newZoneMarker.lat, newZoneData.radiusKm)],
+    };
+  }, [newZoneMarker, newZoneData.radiusKm]);
+
+  const heatmapGeoJson = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: transitions.map((t) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [t.lng, t.lat] },
+        properties: { type: t.type },
+      })),
+    };
+  }, [transitions]);
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-20">
+    <div className="space-y-6 max-w-7xl mx-auto pb-20 h-full flex flex-col">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white tracking-tight">System Settings</h1>
         <p className="text-slate-400 mt-1">Configure global operational parameters (Admin Only)</p>
       </div>
 
-      {/* Mobile/Desktop Tabs */}
-      <div className="flex overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 gap-2 border-b border-white/10 hide-scrollbar">
-        <button
-          onClick={() => setActiveTab('pricing')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
-            activeTab === 'pricing'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-slate-400 hover:text-white'
-          }`}
-        >
-          <FiPercent />
-          Pricing Engine
-        </button>
-        <button
-          onClick={() => setActiveTab('geofencing')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
-            activeTab === 'geofencing'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-slate-400 hover:text-white'
-          }`}
-        >
-          <FiMap />
-          Geofencing Zones
-        </button>
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
-            activeTab === 'users'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-slate-400 hover:text-white'
-          }`}
-        >
-          <FiUsers />
-          User Management
-        </button>
-        <button
-          onClick={() => setActiveTab('finance')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
-            activeTab === 'finance'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-slate-400 hover:text-white'
-          }`}
-        >
-          <FiDollarSign />
-          Financial Ledgers
-        </button>
+      {/* Tabs */}
+      <div className="flex overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 gap-2 border-b border-white/10 hide-scrollbar shrink-0">
+        {[
+          { id: 'pricing', label: 'Pricing Engine', icon: FiPercent },
+          { id: 'geofencing', label: 'Geofencing Zones', icon: FiMap },
+          { id: 'users', label: 'User Management', icon: FiUsers },
+          { id: 'finance', label: 'Financial Ledgers', icon: FiDollarSign },
+          { id: 'support', label: 'Customer Support', icon: FiMessageSquare },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex items-center gap-2 px-4 py-3 font-medium whitespace-nowrap transition-colors border-b-2 ${
+              activeTab === tab.id
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <tab.icon />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Tab Contents */}
-      <div className="mt-6">
-        {/* Pricing Engine Config */}
-        {activeTab === 'pricing' && (
-          <div className="space-y-6">
-            {loading ? (
-              <div className="text-slate-400">Loading Configuration...</div>
-            ) : (
-              <>
-                <div className="glass-panel p-6 rounded-xl border border-white/10">
-                  <h2 className="text-xl font-bold text-white mb-4">Base Fares</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">Unlock Fee (₦)</label>
-                      <input
-                        type="number"
-                        value={config.unlockFeeCents / 100}
-                        onChange={(e) =>
-                          setConfig({ ...config, unlockFeeCents: Number(e.target.value) * 100 })
-                        }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                      />
-                      <p className="text-xs text-slate-500">
-                        Charged immediately upon unlocking a bike.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">
-                        Per-Minute Rate (₦)
-                      </label>
-                      <input
-                        type="number"
-                        value={config.perMinuteCents / 100}
-                        onChange={(e) =>
-                          setConfig({ ...config, perMinuteCents: Number(e.target.value) * 100 })
-                        }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                      />
-                      <p className="text-xs text-slate-500">
-                        Charged for every minute the ride is active.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="glass-panel p-6 rounded-xl border border-white/10">
-                  <h2 className="text-xl font-bold text-white mb-4">Surge & Penalties</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">
-                        Max Surge Multiplier
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={config.maxSurgeMult}
-                        onChange={(e) =>
-                          setConfig({ ...config, maxSurgeMult: Number(e.target.value) })
-                        }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                      />
-                      <p className="text-xs text-slate-500">
-                        Maximum fare multiplier during high-demand.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-400">
-                        Out-of-Dock Penalty (₦)
-                      </label>
-                      <input
-                        type="number"
-                        value={config.outOfDockFeeCents / 100}
-                        onChange={(e) =>
-                          setConfig({ ...config, outOfDockFeeCents: Number(e.target.value) * 100 })
-                        }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                      />
-                      <p className="text-xs text-slate-500">
-                        Fee for ending a ride outside an approved dock.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <button
-                    onClick={handleSavePricing}
-                    disabled={saving}
-                    className="flex items-center gap-2 bg-primary text-black font-bold px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors w-full md:w-auto justify-center disabled:opacity-50"
-                  >
-                    <FiSave />
-                    {saving ? 'Saving...' : 'Save Pricing Config'}
-                  </button>
-                </div>
-              </>
+      <div className="mt-4 flex-1">
+        {loading ? (
+          <div className="text-slate-400 text-center py-20">Loading Settings...</div>
+        ) : (
+          <>
+            {/* PRICING TAB */}
+            {activeTab === 'pricing' && (
+              <PricingTab
+                config={config}
+                setConfig={setConfig}
+                saving={saving}
+                handleSavePricing={handleSavePricing}
+              />
             )}
-          </div>
-        )}
 
-        {/* Geofencing Config */}
-        {activeTab === 'geofencing' && (
-          <div className="glass-panel p-6 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center py-20">
-            <FiMap className="w-16 h-16 text-slate-600 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Operational Boundary Maps</h3>
-            <p className="text-slate-400 max-w-md mx-auto">
-              Configure allowed riding zones, speed-limited areas, and restricted zones using the
-              interactive map editor.
-            </p>
-            <button className="mt-6 px-6 py-3 border border-slate-600 rounded-lg text-white font-medium hover:bg-slate-800 transition-colors">
-              Launch Map Editor
-            </button>
-          </div>
-        )}
+            {/* USERS TAB */}
+            {activeTab === 'users' && (
+              <UsersTab
+                users={users}
+                setUsers={setUsers}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                editingUser={editingUser}
+                setEditingUser={setEditingUser}
+                tempAssignedZones={tempAssignedZones}
+                setTempAssignedZones={setTempAssignedZones}
+                zones={zones}
+                handleAddOperator={handleAddOperator}
+                handleDeleteUser={handleDeleteUser}
+                handleSaveUserZones={handleSaveUserZones}
+              />
+            )}
 
-        {/* User Management */}
-        {activeTab === 'users' && (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-              <p className="text-slate-400">
-                Manage dashboard access and operator zone assignments.
-              </p>
-              <button className="w-full md:w-auto bg-slate-800 hover:bg-slate-700 text-white font-medium px-4 py-2 rounded-lg transition-colors border border-slate-600">
-                + Add Operator
-              </button>
-            </div>
+            {/* FINANCE TAB */}
+            {activeTab === 'finance' && (
+              <FinanceTab wallets={wallets} handleAdjustWallet={handleAdjustWallet} />
+            )}
 
-            <div className="glass-panel rounded-xl border border-white/10 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-900/50 border-b border-slate-800">
-                    <tr>
-                      <th className="px-6 py-4 font-medium text-slate-300">User</th>
-                      <th className="px-6 py-4 font-medium text-slate-300">Role</th>
-                      <th className="px-6 py-4 font-medium text-slate-300">Assigned Zone</th>
-                      <th className="px-6 py-4 font-medium text-slate-300 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/50">
-                    <tr className="hover:bg-slate-800/20 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-white">Admin Default</div>
-                        <div className="text-slate-500 text-xs">admin@scooter.com</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
-                          ADMIN
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-400">Global</td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-blue-400 hover:underline text-xs font-medium">
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-slate-800/20 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-white">Lagos Operator</div>
-                        <div className="text-slate-500 text-xs">ops-lagos@scooter.com</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded text-xs font-bold">
-                          OPERATOR
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-400">Lagos Mainland, Island</td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-blue-400 hover:underline text-xs font-medium">
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+            {/* GEOFENCING TAB (MAP EDITOR) */}
+            {activeTab === 'geofencing' && (
+              <GeofencingTab
+                mapboxToken={mapboxToken}
+                zones={zones}
+                geoJsonZones={geoJsonZones}
+                previewGeoJson={previewGeoJson}
+                heatmapGeoJson={heatmapGeoJson}
+                showHeatmap={showHeatmap}
+                setShowHeatmap={setShowHeatmap}
+                newZoneMarker={newZoneMarker}
+                setNewZoneMarker={setNewZoneMarker}
+                newZoneData={newZoneData}
+                setNewZoneData={setNewZoneData}
+                handleMapClick={handleMapClick}
+                handleSaveNewZone={handleSaveNewZone}
+                handleDeleteZone={handleDeleteZone}
+              />
+            )}
 
-        {/* Financial Ledgers */}
-        {activeTab === 'finance' && (
-          <div className="glass-panel p-6 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center py-20">
-            <FiDollarSign className="w-16 h-16 text-slate-600 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Ledger & Dispute Resolution</h3>
-            <p className="text-slate-400 max-w-md mx-auto">
-              Manually override rider wallet balances, issue refunds, and investigate ledger
-              anomalies.
-            </p>
-            <button className="mt-6 px-6 py-3 border border-slate-600 rounded-lg text-white font-medium hover:bg-slate-800 transition-colors">
-              Access Ledger Logs
-            </button>
-          </div>
+            {/* SUPPORT TAB */}
+            {activeTab === 'support' && (
+              <SupportTab tickets={tickets} handleToggleTicketStatus={handleToggleTicketStatus} />
+            )}
+          </>
         )}
       </div>
+
+      {/* Custom Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 bg-slate-800 border border-primary text-white p-4 rounded-xl shadow-2xl z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/20 p-2 rounded-full text-primary">
+              <FiMessageSquare size={20} />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm">{toastMsg.title}</h4>
+              <p className="text-xs text-slate-300">{toastMsg.message}</p>
+            </div>
+            <button
+              onClick={() => setToastMsg(null)}
+              className="ml-4 text-slate-500 hover:text-white transition-colors"
+            >
+              <FiX size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

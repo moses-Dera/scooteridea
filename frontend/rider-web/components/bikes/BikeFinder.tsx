@@ -19,6 +19,8 @@ export function BikeFinder() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   // 1. Get real user location once
   useEffect(() => {
     if (navigator.geolocation) {
@@ -30,13 +32,14 @@ export function BikeFinder() {
           });
         },
         (err) => {
-          console.warn('Geolocation denied, using fallback.');
-          // Fallback to simulator center if denied
-          setUserCoords({ lat: 6.4541, lng: 3.3792 });
+          console.warn('Geolocation denied or failed.');
+          setErrorMsg('Location access denied or failed.');
+          setLoading(false);
         },
       );
     } else {
-      setUserCoords({ lat: 6.4541, lng: 3.3792 });
+      setErrorMsg('Geolocation not supported.');
+      setLoading(false);
     }
   }, []);
 
@@ -92,6 +95,7 @@ export function BikeFinder() {
     bike.id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  if (errorMsg) return <div className="text-center text-red-400 p-4">{errorMsg}</div>;
   if (loading) return <div className="text-center text-slate-400">Finding bikes near you...</div>;
 
   return (

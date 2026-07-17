@@ -27,6 +27,7 @@ model User {
   rides         Ride[]
   payments      Payment[]
   assignedZones Geofence[] @relation("UserAssignedZones")
+  supportTickets SupportTicket[]
 
   @@map("users")
 }
@@ -213,4 +214,26 @@ model SystemConfig {
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("system_config")
+}
+
+// ── Customer Support ───────────────────────────────────────────────────────────
+model SupportTicket {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  subject     String
+  message     String
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("support_tickets")
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
 }

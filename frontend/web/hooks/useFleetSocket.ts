@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface Bike {
   id: string;
@@ -19,6 +20,7 @@ interface UseFleetSocketProps {
 }
 
 export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetSocketProps) {
+  const { data: session } = useSession();
   const [bikes, setBikes] = useState<Map<string, Bike>>(new Map());
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,10 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
     let isMounted = true;
     const fetchInitialFleet = async () => {
       try {
-        const res = await fetch(`/api/proxy/fleet/bikes`);
+        const token = (session as any)?.accessToken || '';
+        const res = await fetch(`/api/proxy/fleet/bikes`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
         if (!isMounted) return;
         if (res.ok) {
           const json = await res.json();
@@ -58,15 +63,17 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
         console.error('Initial fleet fetch failed', err);
       }
     };
-    fetchInitialFleet();
+    if (session) {
+      fetchInitialFleet();
+    }
     return () => {
       isMounted = false;
     };
-  }, [handleBikesUpdate]);
+  }, [handleBikesUpdate, session]);
 
   // 2. Real-time WebSocket connection
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = (session as any)?.accessToken;
     if (!token) return;
 
     let reconnectTimeout: NodeJS.Timeout;
@@ -96,7 +103,7 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
                 battery_pct: msg.battery ?? current?.battery_pct ?? 100,
                 status: msg.status ?? current?.status ?? 'available',
                 speed_kmh: current?.speed_kmh ?? 0,
-                lock_status: current?.lock_status ?? 'LOCKED',
+                lock_status: msg.lockStatus ?? current?.lock_status ?? 'LOCKED',
               };
 
               bikesMap.current.set(msg.bikeId, updatedBike);

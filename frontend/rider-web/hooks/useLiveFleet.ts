@@ -96,19 +96,24 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
-            // Demo mode logic
-            if (
-              json.data.length === 0 &&
-              !window.sessionStorage.getItem(`demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`)
-            ) {
+            // Demo mode logic - Respawn if empty and it's been at least 60 seconds
+            const lastSpawnTime = Number(
+              window.sessionStorage.getItem(`demo_spawn_ts_${lat.toFixed(2)}_${lng.toFixed(2)}`) ||
+                '0',
+            );
+            const now = Date.now();
+            if (json.data.length === 0 && now - lastSpawnTime > 60000) {
               window.sessionStorage.setItem(
-                `demo_spawned_${lat.toFixed(2)}_${lng.toFixed(2)}`,
-                'true',
+                `demo_spawn_ts_${lat.toFixed(2)}_${lng.toFixed(2)}`,
+                now.toString(),
               );
               fetch('/api/proxy/fleet/demo/spawn', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ lat, lng, count: 12, radius: radius * 0.8 }),
+              }).then(() => {
+                // Fetch again after a delay to pick up the newly spawned bikes and subscribe to them
+                setTimeout(fetchNearbyBikes, 2000);
               });
             }
 
