@@ -28,13 +28,18 @@ function LoginContent() {
       });
 
       if (res?.error) {
-        setError(res.error);
+        // Map generic NextAuth error codes to user-friendly messages
+        if (res.error === 'CredentialsSignin') {
+          setError('Invalid email or password. Please try again.');
+        } else {
+          setError(res.error);
+        }
       } else {
         router.push('/');
         router.refresh();
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong.');
+      setError(err.message || 'Something went wrong while connecting to the server.');
     } finally {
       setLoading(false);
     }

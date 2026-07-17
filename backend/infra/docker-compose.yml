@@ -64,6 +64,7 @@ services:
       DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_REFRESH_EXPIRY: 30d
       JWT_ACCESS_EXPIRY: 15m
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}

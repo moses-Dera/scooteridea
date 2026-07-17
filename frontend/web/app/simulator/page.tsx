@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
+// mapboxgl is required lazily inside useEffect to avoid SSR crashes (browser APIs at init time)
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
 import {
@@ -26,8 +26,9 @@ const MAPBOX_TOKEN =
 
 export default function SimulatorPage() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const map = useRef<any>(null);
+  const markersRef = useRef<Map<string, any>>(new Map());
+  const commandSentAt = useRef<number>(0); // tracks last command time to prevent WebSocket override
   const { bikes, bikesMap } = useFleetSocket({});
 
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
@@ -43,7 +44,8 @@ export default function SimulatorPage() {
 
   // Initialize Map
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || typeof window === 'undefined') return;
+    const mapboxgl = require('mapbox-gl'); // loaded lazily — browser only
 
     try {
       mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -71,7 +73,7 @@ export default function SimulatorPage() {
       }
 
       // Add click handler to map to create new bikes
-      map.current.on('dblclick', async (e) => {
+      map.current.on('dblclick', async (e: any) => {
         e.preventDefault();
         const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
         await updateBikeTelemetry(newId, e.lngLat.lat, e.lngLat.lng, 100, 'LOCKED');
@@ -88,6 +90,7 @@ export default function SimulatorPage() {
   // Update markers
   useEffect(() => {
     if (!map.current) return;
+    const mapboxgl = require('mapbox-gl'); // loaded lazily — browser only
 
     bikes.forEach((bike) => {
       let marker = markersRef.current.get(bike.id);
@@ -157,9 +160,10 @@ export default function SimulatorPage() {
     });
   }, [bikes]);
 
-  // Update selected bike state if it changes externally
+  // Update selected bike state if it changes externally (from WebSocket)
+  // Skip update for 3s after a command to avoid reverting optimistic UI state
   useEffect(() => {
-    if (selectedBikeId) {
+    if (selectedBikeId && Date.now() - commandSentAt.current > 3000) {
       const bike = bikesMap.get(selectedBikeId);
       if (bike) {
         setBattery((prev) => {
@@ -214,6 +218,7 @@ export default function SimulatorPage() {
     if (!bike) return;
 
     const newState = hardwareState === 'LOCKED' ? 'UNLOCKED' : 'LOCKED';
+    commandSentAt.current = Date.now(); // mark command time before optimistic update
     setHardwareState(newState);
     await updateBikeTelemetry(bike.id, bike.lat, bike.lng, battery, newState);
   };
