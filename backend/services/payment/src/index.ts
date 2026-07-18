@@ -47,7 +47,13 @@ process.env.SERVICE_NAME = 'payment-service';
 
 app.use(requestId);
 app.use(httpLogger);
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req: any, res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 app.use(healthRouter());
 
 // ── Paystack API Endpoints ────────────────────────────────────────────────────
@@ -93,7 +99,10 @@ app.post('/payments/initialize', async (req, res, next) => {
 app.post('/payments/webhook', async (req, res, next) => {
   try {
     const secret = process.env.PAYSTACK_SECRET_KEY!;
-    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+    const hash = crypto
+      .createHmac('sha512', secret)
+      .update((req as any).rawBody)
+      .digest('hex');
 
     if (hash !== req.headers['x-paystack-signature']) {
       logger.warn('[Payment] Invalid Paystack signature');
@@ -109,29 +118,43 @@ app.post('/payments/webhook', async (req, res, next) => {
       const user = await prisma.user.findUnique({ where: { email: customer.email } });
 
       if (user) {
-        await prisma.$transaction(async (tx) => {
-          // Add funds to wallet and save auth code for auto-billing
-          await tx.user.update({
-            where: { id: user.id },
-            data: {
-              walletCents: { increment: amount },
-              paystackAuthCode: authorization.authorization_code,
-            },
-          });
+        try {
+          await prisma.$transaction(async (tx) => {
+            // Add funds to wallet and save auth code for auto-billing
+            await tx.user.update({
+              where: { id: user.id },
+              data: {
+                walletCents: { increment: amount },
+                paystackAuthCode: authorization.authorization_code,
+              },
+            });
 
-          await tx.payment.create({
-            data: {
-              userId: user.id,
-              amountCents: amount,
-              currency: 'NGN',
-              status: 'success',
-              provider: 'paystack',
-              providerRef: reference,
-            },
+            await tx.payment.create({
+              data: {
+                userId: user.id,
+                amountCents: amount,
+                currency: 'NGN',
+                status: 'success',
+                provider: 'paystack',
+                providerRef: reference,
+              },
+            });
           });
-        });
-
-        logger.info({ userId: user.id, amount }, '[Payment] Wallet topped up via Paystack webhook');
+          logger.info(
+            { userId: user.id, amount },
+            '[Payment] Wallet topped up via Paystack webhook',
+          );
+        } catch (dbErr: any) {
+          // P2002 is Prisma's Unique Constraint Violation error code
+          if (dbErr.code === 'P2002' && dbErr.meta?.target?.includes('provider_ref')) {
+            logger.info(
+              { reference },
+              '[Payment] Ignored duplicate Paystack webhook (idempotency)',
+            );
+          } else {
+            throw dbErr;
+          }
+        }
       }
     }
 
@@ -157,9 +180,11 @@ registerProbe(
 );
 
 // ── Payment Handler ───────────────────────────────────────────────────────────
-export async function processPaymentCharge(event: KafkaPaymentChargeEvent): Promise<void> {
-  const { userId, amount: amountCents, rideId } = event;
-  const log = logger.child({ userId, rideId, amountCents });
+export async function processPaymentCharge(
+  event: KafkaPaymentChargeEvent & { _traceId?: string },
+): Promise<void> {
+  const { userId, amount: amountCents, rideId, _traceId } = event;
+  const log = logger.child({ userId, rideId, amountCents, traceId: _traceId });
 
   log.info('[Payment] Processing charge');
 

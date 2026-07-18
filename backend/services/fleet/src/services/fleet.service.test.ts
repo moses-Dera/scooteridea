@@ -52,7 +52,7 @@ describe('FleetService', () => {
     jest.clearAllMocks();
     (getRedisClient as jest.Mock).mockClear();
     mockRedisClient = (getRedisClient as jest.Mock)();
-    
+
     // Mock default geofence check to return empty
     (prisma.$queryRaw as jest.Mock).mockResolvedValue([]);
     mockRedisClient.get.mockResolvedValue(null);
@@ -72,7 +72,8 @@ describe('FleetService', () => {
     it('processes telemetry for an in-use bike', async () => {
       // Mock that it is part of a ride
       mockRedisClient.get.mockImplementation((key: string) => {
-        if (key === `bike:${bikeId}:ride`) return Promise.resolve(JSON.stringify({ rideId: 'ride-1' }));
+        if (key === `bike:${bikeId}:ride`)
+          return Promise.resolve(JSON.stringify({ rideId: 'ride-1' }));
         return Promise.resolve(null);
       });
       (redisPushWaypoint as jest.Mock).mockResolvedValue(true);
@@ -83,7 +84,7 @@ describe('FleetService', () => {
       expect(redisSetJson).toHaveBeenCalledWith(
         `bike:${bikeId}:location`,
         expect.objectContaining({ lat: 51.505, lng: -0.09 }),
-        30
+        30,
       );
       expect(geoAdd).toHaveBeenCalledWith('fleet:available', -0.09, 51.505, bikeId);
 
@@ -93,7 +94,7 @@ describe('FleetService', () => {
       // Trails
       expect(mockRedisClient.lPush).toHaveBeenCalledWith(
         `bike:${bikeId}:trail`,
-        expect.stringContaining('"lat":51.505')
+        expect.stringContaining('"lat":51.505'),
       );
 
       // Ride waypoint
@@ -105,9 +106,9 @@ describe('FleetService', () => {
           bikeId,
           status: 'in_use',
           batteryPct: 50,
-        })
+        }),
       );
-      
+
       // No low battery alert
       expect(kafka.opsAlert).not.toHaveBeenCalled();
     });
@@ -118,14 +119,18 @@ describe('FleetService', () => {
     });
 
     it('infers charging status when docked', async () => {
-      await FleetService.handleBikeTelemetry(bikeId, { ...payload, lock_status: 'LOCKED', docked_at: 'dock-1' });
+      await FleetService.handleBikeTelemetry(bikeId, {
+        ...payload,
+        lock_status: 'LOCKED',
+        docked_at: 'dock-1',
+      });
       expect(mockRedisClient.set).toHaveBeenCalledWith(`bike:${bikeId}:status`, 'charging');
     });
 
     it('sends an opsAlert when battery is critically low', async () => {
       await FleetService.handleBikeTelemetry(bikeId, { ...payload, battery_pct: 10 });
       expect(kafka.opsAlert).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'LOW_BATTERY', bikeId })
+        expect.objectContaining({ type: 'LOW_BATTERY', bikeId }),
       );
     });
   });

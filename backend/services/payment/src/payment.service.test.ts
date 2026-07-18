@@ -89,10 +89,13 @@ describe('Payment Service - processPaymentCharge', () => {
     });
 
     // 3. Verify success event emitted
-    expect(publish).toHaveBeenCalledWith(TOPICS.PAYMENT_RESULT, expect.objectContaining({
-      rideId: 'ride-123',
-      status: 'success',
-    }));
+    expect(publish).toHaveBeenCalledWith(
+      TOPICS.PAYMENT_RESULT,
+      expect.objectContaining({
+        rideId: 'ride-123',
+        status: 'success',
+      }),
+    );
   });
 
   it('should record failure, emit failure, and throw error if balance is insufficient', async () => {
@@ -127,9 +130,12 @@ describe('Payment Service - processPaymentCharge', () => {
     });
 
     // 3. Verify failure event emitted
-    expect(publish).toHaveBeenCalledWith(TOPICS.PAYMENT_RESULT, expect.objectContaining({
-      rideId: 'ride-123',
-      status: 'failed',
-    }));
+    expect(publish).toHaveBeenCalledWith(
+      TOPICS.PAYMENT_RESULT,
+      expect.objectContaining({
+        rideId: 'ride-123',
+        status: 'failed',
+      }),
+    );
   });
 });

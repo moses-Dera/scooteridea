@@ -9,6 +9,7 @@ import rateLimit from 'express-rate-limit';
 import * as Sentry from '@sentry/node';
 import { AppError, ValidationError, isAppError, isOperationalError } from '../errors/AppError';
 import { logger } from '../logger';
+import { traceContext } from '../tracing';
 
 // ── 1. Request ID ─────────────────────────────────────────────────────────────
 //  Attaches a correlation ID to every request.
@@ -19,7 +20,9 @@ export function requestId(req: Request, res: Response, next: NextFunction): void
   const id = (req.headers['x-request-id'] as string) ?? uuidv4();
   req.headers['x-request-id'] = id;
   res.setHeader('X-Request-ID', id);
-  next();
+  traceContext.run({ traceId: id }, () => {
+    next();
+  });
 }
 
 // ── 2. Zod Request Validation ─────────────────────────────────────────────────

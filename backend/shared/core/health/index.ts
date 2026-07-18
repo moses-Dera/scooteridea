@@ -99,7 +99,7 @@ export function healthRouter(): Router {
   });
 
   // Readiness — checks all registered probes
-  router.get('/health/ready', async (_req, res) => {
+  const readyHandler = async (_req: any, res: any) => {
     const result = await runProbes();
     const httpStatus = result.status === 'down' ? 503 : 200;
     res.status(httpStatus).json({
@@ -107,7 +107,10 @@ export function healthRouter(): Router {
       ts: new Date().toISOString(),
       service: process.env.SERVICE_NAME ?? 'unknown',
     });
-  });
+  };
+
+  router.get('/health/ready', readyHandler);
+  router.get('/healthz', readyHandler);
 
   return router;
 }

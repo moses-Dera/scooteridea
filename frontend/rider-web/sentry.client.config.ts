@@ -6,8 +6,8 @@ if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
     // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-    // We recommend adjusting this value in production.
-    tracesSampleRate: 1.0,
+    // We recommend  // Adjust this value in production, or use tracesSampler for greater control
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     debug: false,
   });
 }

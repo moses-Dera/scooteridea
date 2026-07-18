@@ -22,7 +22,7 @@ import {
   redisGetWaypoints,
   redisDeleteWaypoints,
 } from '@ebike/redis';
-import { kafka, TOPICS } from '@ebike/events';
+import { TOPICS, kafka, publish } from '@ebike/events';
 import { bikeCommander } from '@ebike/mqtt';
 import Geohash from 'ngeohash';
 import { randomInt } from 'crypto';
@@ -365,7 +365,7 @@ export class RideService {
 
     // 2. Perform refund and cancellation atomically
     const refundAmount = ride.status === 'COMPLETED' ? (ride.fareCents ?? 0) : 0;
-    
+
     const [updatedRide] = await prisma.$transaction([
       prisma.ride.update({ where: { id: rideId }, data: { status: 'CANCELLED' } }),
       ...(refundAmount > 0
@@ -379,7 +379,7 @@ export class RideService {
     ]);
 
     // 3. Emit support ticket event for back-office tracking
-    await kafka.publish(TOPICS.SUPPORT_TICKET_CREATED, {
+    await publish(TOPICS.SUPPORT_TICKET_CREATED, {
       ticketId: `disp_${rideId}`,
       userId: ride.userId,
       subject: `Ride Dispute: ${rideId}`,
@@ -482,12 +482,14 @@ export class RideService {
       FROM "Ride"
       WHERE "createdAt" >= ${startDate} AND status = 'COMPLETED' AND "endedAt" IS NOT NULL AND "startedAt" IS NOT NULL
     `;
-    const avgRideDurationMins = durationRes.length > 0 ? Math.round(Number(durationRes[0].avg_duration) * 10) / 10 : 0;
+    const avgRideDurationMins =
+      durationRes.length > 0 ? Math.round(Number(durationRes[0].avg_duration) * 10) / 10 : 0;
 
     // 2. Time-series aggregation
     const truncType = timeRange === 'today' ? 'hour' : 'day';
-    
-    const revenueByDate: any[] = await prisma.$queryRawUnsafe(`
+
+    const revenueByDate: any[] = await prisma.$queryRawUnsafe(
+      `
       SELECT DATE_TRUNC($1, "createdAt") as time_bucket,
              SUM("fareCents") as revenue,
              COUNT(*) as rides
@@ -495,55 +497,69 @@ export class RideService {
       WHERE "createdAt" >= $2 AND status = 'COMPLETED'
       GROUP BY time_bucket
       ORDER BY time_bucket ASC
-    `, truncType, startDate);
+    `,
+      truncType,
+      startDate,
+    );
 
-    const usersByDate: any[] = await prisma.$queryRawUnsafe(`
+    const usersByDate: any[] = await prisma.$queryRawUnsafe(
+      `
       SELECT DATE_TRUNC($1, "createdAt") as time_bucket,
              COUNT(DISTINCT "userId") as users
       FROM "Ride"
       WHERE "createdAt" >= $2
       GROUP BY time_bucket
       ORDER BY time_bucket ASC
-    `, truncType, startDate);
+    `,
+      truncType,
+      startDate,
+    );
 
     // Build continuous buckets (fill gaps with 0)
     const bucketsCount = timeRange === 'today' ? 24 : timeRange === 'week' ? 7 : 30;
     const stepMs = timeRange === 'today' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-    
+
     // For 'today', we align buckets to the start of the day. For others, to 7/30 days ago.
-    const startBucketTime = timeRange === 'today' 
-      ? new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-      : new Date(now.getTime() - bucketsCount * stepMs).getTime();
+    const startBucketTime =
+      timeRange === 'today'
+        ? new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+        : new Date(now.getTime() - bucketsCount * stepMs).getTime();
 
     const revenueTrend = Array.from({ length: bucketsCount }).map((_, i) => {
       const bucketDate = new Date(startBucketTime + i * stepMs);
-      const label = timeRange === 'today'
+      const label =
+        timeRange === 'today'
           ? bucketDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : bucketDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      
+
       // Find matching SQL result
-      const match = revenueByDate.find(r => new Date(r.time_bucket).getTime() === bucketDate.getTime());
-      
-      return { 
-        time: label, 
-        revenue: match ? Number(match.revenue) / 100 : 0, 
-        rides: match ? Number(match.rides) : 0 
+      const match = revenueByDate.find(
+        (r) => new Date(r.time_bucket).getTime() === bucketDate.getTime(),
+      );
+
+      return {
+        time: label,
+        revenue: match ? Number(match.revenue) / 100 : 0,
+        rides: match ? Number(match.rides) : 0,
       };
     });
 
     let cumulativeUsers = 0;
     const userGrowth = Array.from({ length: bucketsCount }).map((_, i) => {
       const bucketDate = new Date(startBucketTime + i * stepMs);
-      const label = timeRange === 'today'
+      const label =
+        timeRange === 'today'
           ? bucketDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : bucketDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      
+
       // Find matching SQL result
-      const match = usersByDate.find(r => new Date(r.time_bucket).getTime() === bucketDate.getTime());
+      const match = usersByDate.find(
+        (r) => new Date(r.time_bucket).getTime() === bucketDate.getTime(),
+      );
       if (match) {
         cumulativeUsers += Number(match.users);
       }
-      
+
       return { time: label, users: cumulativeUsers };
     });
 

@@ -67,8 +67,13 @@ export class RideController {
 
   static async dispute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { reason } = req.body;
-      const ride = await RideService.disputeRide(req.params.id, req.user!.userId, req.user!.role, reason);
+      const reason = req.body.reason;
+      const ride = await RideService.disputeRide(
+        req.params.id,
+        req.user!.sub!,
+        (req.user as any).role,
+        reason,
+      );
       res.json({ success: true, data: ride });
     } catch (err) {
       next(err);
@@ -87,7 +92,7 @@ export class RideController {
 
   static async getAnalytics(req: Request, res: Response, next: NextFunction) {
     try {
-      const timeRange = (req.query.timeRange as string) || 'today';
+      const timeRange = (req.query.timeRange as 'today' | 'week' | 'month' | 'all') || 'today';
       const analytics = await RideService.getAnalytics(timeRange);
       res.json({ success: true, data: analytics });
     } catch (err) {

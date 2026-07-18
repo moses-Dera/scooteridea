@@ -233,7 +233,11 @@ export function FleetMapComponent({
   );
 
   // User Location & Navigation for Stakeholder Van
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+    heading?: number;
+  } | null>(null);
   const geoControlRef = useRef<mapboxgl.GeolocateControl>(null);
   const [navProfile, setNavProfile] = useState<NavigationProfile>('driving-traffic');
 
@@ -267,12 +271,22 @@ export function FleetMapComponent({
 
     // Fallback if they click navigate without a real device GPS
     navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) =>
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          heading: pos.coords.heading ?? undefined,
+        }),
       (err) => console.warn(err),
       { enableHighAccuracy: true },
     );
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) =>
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          heading: pos.coords.heading ?? undefined,
+        }),
       () => {},
       { enableHighAccuracy: true },
     );

@@ -8,3 +8,4 @@ export * from './middleware';
 export * from './shutdown';
 export * from './health';
 export * from './resilience';
+export * from './tracing';

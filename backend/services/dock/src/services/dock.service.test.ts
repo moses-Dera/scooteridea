@@ -36,7 +36,7 @@ describe('DockService', () => {
 
   describe('handleDockTelemetry', () => {
     const dockId = 'dock-123';
-    
+
     it('detects newly docked bikes and locks them', async () => {
       // Previous state: slot 1 had bike-old, slot 2 was empty
       mockRedisClient.hGetAll.mockResolvedValue({
@@ -49,7 +49,7 @@ describe('DockService', () => {
         slots: [
           { slot: 1, bikeId: 'bike-old', charging: true }, // Not new
           { slot: 2, bikeId: 'bike-new', charging: true }, // NEW!
-          { slot: 3, bikeId: null, charging: false },      // Empty
+          { slot: 3, bikeId: null, charging: false }, // Empty
         ],
       };
 
@@ -61,7 +61,7 @@ describe('DockService', () => {
         expect.objectContaining({
           bikeId: 'bike-new',
           command: 'LOCK',
-        })
+        }),
       );
     });
 
@@ -81,7 +81,9 @@ describe('DockService', () => {
         total_slots: '10',
       });
       // Since available > 0, it should be added to docks:available
-      expect(mockRedisClient.zAdd).toHaveBeenCalledWith('docks:available', [{ score: 0, value: dockId }]);
+      expect(mockRedisClient.zAdd).toHaveBeenCalledWith('docks:available', [
+        { score: 0, value: dockId },
+      ]);
     });
 
     it('removes dock from availability index when full', async () => {
@@ -98,7 +100,7 @@ describe('DockService', () => {
       expect(mockRedisClient.zRem).toHaveBeenCalledWith('docks:available', dockId);
       // Alerts because pct (0/10 = 0) <= 0.1
       expect(kafka.opsAlert).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'DOCK_FULL', dockId })
+        expect.objectContaining({ type: 'DOCK_FULL', dockId }),
       );
     });
 
@@ -115,7 +117,7 @@ describe('DockService', () => {
 
       // Alerts because pct (9/10 = 0.9) >= 0.9
       expect(kafka.opsAlert).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'DOCK_EMPTY', dockId })
+        expect.objectContaining({ type: 'DOCK_EMPTY', dockId }),
       );
     });
 
@@ -135,7 +137,7 @@ describe('DockService', () => {
           dockId,
           availableSlots: 5,
           totalSlots: 10,
-        })
+        }),
       );
     });
   });

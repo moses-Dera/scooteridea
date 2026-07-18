@@ -89,7 +89,7 @@ describe('PricingService', () => {
       mockRedisClient.get.mockResolvedValue('1.5'); // surge multiplier
 
       const result = await PricingService.estimateFare(1.0, 1.0, 5, 10);
-      
+
       // baseFare = 50
       // perMinute = 20 * 10 = 200
       // perKm = 30 * 5 = 150
@@ -115,9 +115,7 @@ describe('PricingService', () => {
     it('applies out of dock convenience fee when no docks nearby', async () => {
       // Mock intersecting zones (empty) -> queryRaw 1
       // Mock nearby docks (empty) -> queryRaw 2
-      (prisma.$queryRaw as jest.Mock)
-        .mockResolvedValueOnce([]) 
-        .mockResolvedValueOnce([]); 
+      (prisma.$queryRaw as jest.Mock).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       const result = await PricingService.estimateTrip(0, 0, 0.05, 0.05);
 
@@ -142,7 +140,9 @@ describe('PricingService', () => {
       // Mock intersecting zones with overrides -> queryRaw 1
       // Mock nearby docks (1 dock found) -> queryRaw 2
       (prisma.$queryRaw as jest.Mock)
-        .mockResolvedValueOnce([{ type: 'discount', base_fare_override: 1000, per_minute_override: 1000 }])
+        .mockResolvedValueOnce([
+          { type: 'discount', base_fare_override: 1000, per_minute_override: 1000 },
+        ])
         .mockResolvedValueOnce([{ id: 'dock-1' }]);
 
       const result = await PricingService.estimateTrip(0, 0, 0, 0); // 0 distance, 0 duration for simplicity
