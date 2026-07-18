@@ -13,20 +13,20 @@ datasource db {
 
 // ── Users ──────────────────────────────────────────────────────────────────────
 model User {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String   @unique
-  passwordHash String?  @map("password_hash")
-  name         String
-  phone        String?
-  pushToken    String?  @map("push_token")   // Expo push token — set by client on login
-  role         Role     @default(RIDER)
-  walletCents  Int      @default(0) @map("wallet_cents")
-  paystackAuthCode String? @map("paystack_auth_code") // Tokenized card for auto-deduct
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String   @unique
+  passwordHash     String?  @map("password_hash")
+  name             String
+  phone            String?
+  pushToken        String?  @map("push_token") // Expo push token — set by client on login
+  role             Role     @default(RIDER)
+  walletCents      Int      @default(0) @map("wallet_cents")
+  paystackAuthCode String?  @map("paystack_auth_code") // Tokenized card for auto-deduct
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  rides         Ride[]
-  payments      Payment[]
-  assignedZones Geofence[] @relation("UserAssignedZones")
+  rides          Ride[]
+  payments       Payment[]
+  assignedZones  Geofence[]      @relation("UserAssignedZones")
   supportTickets SupportTicket[]
 
   @@map("users")
@@ -40,17 +40,17 @@ enum Role {
 
 // ── Bikes ──────────────────────────────────────────────────────────────────────
 model Bike {
-  id         String     @id
-  status     BikeStatus @default(available)
-  batteryPct Int        @map("battery_pct")
-  currentPin String?    @map("current_pin") // 4-digit rolling PIN for hardware keypad access
-  locationLat Float?    @map("location_lat")
-  locationLng Float?    @map("location_lng")
-  dockId     String?    @map("dock_id")
-  lastSeen   DateTime?  @map("last_seen") @db.Timestamptz
+  id          String     @id
+  status      BikeStatus @default(available)
+  batteryPct  Int        @map("battery_pct")
+  currentPin  String?    @map("current_pin") // 4-digit rolling PIN for hardware keypad access
+  locationLat Float?     @map("location_lat")
+  locationLng Float?     @map("location_lng")
+  dockId      String?    @map("dock_id")
+  lastSeen    DateTime?  @map("last_seen") @db.Timestamptz
 
-  dock  Dock?  @relation(fields: [dockId], references: [id])
-  rides Ride[]
+  dock            Dock?            @relation(fields: [dockId], references: [id])
+  rides           Ride[]
   zoneTransitions ZoneTransition[]
 
   @@map("bikes")
@@ -87,31 +87,31 @@ model Dock {
 
 // ── Rides ──────────────────────────────────────────────────────────────────────
 model Ride {
-  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String     @map("user_id") @db.Uuid
-  bikeId        String     @map("bike_id")
-  startDockId   String?    @map("start_dock_id")
-  endDockId     String?    @map("end_dock_id")
-  status        RideStatus @default(RESERVED)
-  startLat      Float?     @map("start_lat")
-  startLng      Float?     @map("start_lng")
-  endLat        Float?     @map("end_lat")
-  endLng        Float?     @map("end_lng")
-  startedAt     DateTime?  @map("started_at") @db.Timestamptz
-  endedAt       DateTime?  @map("ended_at") @db.Timestamptz
-  fareCents     Int?       @map("fare_cents")
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String     @map("user_id") @db.Uuid
+  bikeId          String     @map("bike_id")
+  startDockId     String?    @map("start_dock_id")
+  endDockId       String?    @map("end_dock_id")
+  status          RideStatus @default(RESERVED)
+  startLat        Float?     @map("start_lat")
+  startLng        Float?     @map("start_lng")
+  endLat          Float?     @map("end_lat")
+  endLng          Float?     @map("end_lng")
+  startedAt       DateTime?  @map("started_at") @db.Timestamptz
+  endedAt         DateTime?  @map("ended_at") @db.Timestamptz
+  fareCents       Int?       @map("fare_cents")
   distanceKm      Decimal?   @map("distance_km") @db.Decimal(6, 2)
   batteryStartPct Int?       @map("battery_start_pct")
   batteryUsedPct  Int?       @map("battery_used_pct") // Added for battery efficiency tracking
-  routeGeometry   Json?      @map("route_geometry")   // Added to permanently save ride trails
+  routeGeometry   Json?      @map("route_geometry") // Added to permanently save ride trails
   surgeMult       Decimal    @default(1.0) @map("surge_mult") @db.Decimal(3, 2)
-  
-  // Locked pricing (prevents mid-ride pricing glitches if admin updates config)
-  lockedBaseFareCents   Int? @map("locked_base_fare_cents")
-  lockedPerMinCents     Int? @map("locked_per_min_cents")
-  lockedPerKmCents      Int? @map("locked_per_km_cents")
 
-  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  // Locked pricing (prevents mid-ride pricing glitches if admin updates config)
+  lockedBaseFareCents Int? @map("locked_base_fare_cents")
+  lockedPerMinCents   Int? @map("locked_per_min_cents")
+  lockedPerKmCents    Int? @map("locked_per_km_cents")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   user      User      @relation(fields: [userId], references: [id])
   bike      Bike      @relation(fields: [bikeId], references: [id])
@@ -119,6 +119,8 @@ model Ride {
   endDock   Dock?     @relation("EndDock", fields: [endDockId], references: [id])
   payments  Payment[]
 
+  @@index([userId])
+  @@index([bikeId])
   @@map("rides")
 }
 
@@ -139,12 +141,13 @@ model Payment {
   currency    String        @default("NGN")
   status      PaymentStatus @default(pending)
   provider    String
-  providerRef String?       @map("provider_ref")
+  providerRef String?       @unique @map("provider_ref")
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
 
   user User  @relation(fields: [userId], references: [id])
   ride Ride? @relation(fields: [rideId], references: [id])
 
+  @@index([userId])
   @@map("payments")
 }
 
@@ -157,10 +160,10 @@ enum PaymentStatus {
 
 // ── Geofences ──────────────────────────────────────────────────────────────────
 model Geofence {
-  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name     String
   type     ZoneType
-  speedCap Int?    @map("speed_cap")
+  speedCap Int?     @map("speed_cap")
   // Boundary stored as raw GeoJSON polygon string; index via PostGIS raw SQL
   boundary Json
 
@@ -169,7 +172,7 @@ model Geofence {
   perMinuteOverride Int? @map("per_minute_override")
   perKmOverride     Int? @map("per_km_override")
 
-  operators User[] @relation("UserAssignedZones")
+  operators       User[]           @relation("UserAssignedZones")
   zoneTransitions ZoneTransition[]
 
   @@map("geofences")
@@ -184,13 +187,13 @@ enum ZoneType {
 
 // ── Accountability & Logging ───────────────────────────────────────────────────
 model ZoneTransition {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bikeId    String   @map("bike_id")
-  zoneId    String   @map("zone_id") @db.Uuid
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bikeId    String         @map("bike_id")
+  zoneId    String         @map("zone_id") @db.Uuid
   type      TransitionType
   lat       Float
   lng       Float
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz
 
   bike Bike     @relation(fields: [bikeId], references: [id])
   zone Geofence @relation(fields: [zoneId], references: [id])
@@ -218,13 +221,13 @@ model SystemConfig {
 
 // ── Customer Support ───────────────────────────────────────────────────────────
 model SupportTicket {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  subject     String
-  message     String
-  status      TicketStatus @default(OPEN)
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  subject   String
+  message   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz
 
   user User @relation(fields: [userId], references: [id])
 

@@ -12,19 +12,27 @@ process.env.SERVICE_NAME = 'websocket-hub';
 
 const PORT = Number(process.env.PORT ?? 3008);
 
-// ── Client registry: userId → { ws, subscriptions } ─────────────────────────
+// ── Client registry: userId → Set<{ ws, subscriptions }> ────────────────────
+// Supports multiple concurrent connections per user (multiple tabs / devices).
 interface ClientState {
   ws: WebSocket;
   userId: string;
   subscriptions: Set<string>;
 }
 
-const clients = new Map<string, ClientState>();
+const clients = new Map<string, Set<ClientState>>();
+
+/** Total active WebSocket connections across all users. */
+function totalConnections(): number {
+  let n = 0;
+  for (const set of clients.values()) n += set.size;
+  return n;
+}
 
 // ── HTTP server + WSS ─────────────────────────────────────────────────────────
 const server = http.createServer((_req: http.IncomingMessage, res: http.ServerResponse) => {
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ status: 'ok', service: 'websocket-hub', clients: clients.size }));
+  res.end(JSON.stringify({ status: 'ok', service: 'websocket-hub', clients: totalConnections() }));
 });
 
 const wss = new WebSocketServer({ server });
@@ -50,9 +58,15 @@ wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
     userId: payload.sub,
     subscriptions: new Set(),
   };
-  clients.set(payload.sub, state);
 
-  logger.info({ userId: payload.sub, role: payload.role }, '[WS Hub] Client connected');
+  // Register this connection — multiple connections per user are supported
+  if (!clients.has(payload.sub)) clients.set(payload.sub, new Set());
+  clients.get(payload.sub)!.add(state);
+
+  logger.info(
+    { userId: payload.sub, role: payload.role, totalConns: totalConnections() },
+    '[WS Hub] Client connected',
+  );
 
   ws.on('message', (raw: Buffer) => {
     try {
@@ -82,7 +96,11 @@ wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
   });
 
   ws.on('close', (code, reason) => {
-    clients.delete(payload.sub);
+    const userConns = clients.get(payload.sub);
+    if (userConns) {
+      userConns.delete(state);
+      if (userConns.size === 0) clients.delete(payload.sub);
+    }
     logger.info(
       { userId: payload.sub, code, reason: reason.toString() },
       '[WS Hub] Client disconnected',
@@ -118,28 +136,31 @@ async function startRedisPubSub() {
   logger.info('[WS Hub] Redis pub/sub backplane active');
 }
 
-/** Route an event to all subscribed clients. */
+/** Route an event to all subscribed clients across all connections. */
 function broadcastEvent(event: WsServerEvent) {
   const payload = JSON.stringify(event);
   let sent = 0;
 
-  for (const [, state] of clients) {
-    if (state.ws.readyState !== WebSocket.OPEN) continue;
+  for (const [, connections] of clients) {
+    for (const state of connections) {
+      if (state.ws.readyState !== WebSocket.OPEN) continue;
 
-    const shouldSend =
-      (event.event === 'bike_location_update' &&
-        (state.subscriptions.has(`bike:${event.bikeId}`) ||
-          state.subscriptions.has('fleet:all') ||
-          (event.zoneIds && event.zoneIds.some((z) => state.subscriptions.has(`zone:${z}`))))) ||
-      (event.event === 'dock_status_update' &&
-        (state.subscriptions.has(`dock:${event.dockId}`) || state.subscriptions.has('dock:all'))) ||
-      (event.event === 'surge_update' && state.subscriptions.has('surge:all')) ||
-      (event.event === 'ride_ended' && state.subscriptions.has(`ride:${event.rideId}`)) ||
-      (event.event === 'support_ticket_created' && state.subscriptions.has('support:all'));
+      const shouldSend =
+        (event.event === 'bike_location_update' &&
+          (state.subscriptions.has(`bike:${event.bikeId}`) ||
+            state.subscriptions.has('fleet:all') ||
+            (event.zoneIds && event.zoneIds.some((z) => state.subscriptions.has(`zone:${z}`))))) ||
+        (event.event === 'dock_status_update' &&
+          (state.subscriptions.has(`dock:${event.dockId}`) ||
+            state.subscriptions.has('dock:all'))) ||
+        (event.event === 'surge_update' && state.subscriptions.has('surge:all')) ||
+        (event.event === 'ride_ended' && state.subscriptions.has(`ride:${event.rideId}`)) ||
+        (event.event === 'support_ticket_created' && state.subscriptions.has('support:all'));
 
-    if (shouldSend) {
-      state.ws.send(payload);
-      sent++;
+      if (shouldSend) {
+        state.ws.send(payload);
+        sent++;
+      }
     }
   }
 

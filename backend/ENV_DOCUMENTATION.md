@@ -332,7 +332,7 @@ Each microservice runs on its own port. Typically, you don't need to change thes
 AUTH_PORT=3001
 FLEET_PORT=3002
 RIDE_PORT=3003
-MATCHING_PORT=3004
+
 PRICING_PORT=3005
 PAYMENT_PORT=3006
 NOTIFICATION_PORT=3007

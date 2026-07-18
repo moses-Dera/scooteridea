@@ -32,7 +32,7 @@ export interface NavigationState {
 }
 
 export function useNavigationEngine(
-  startLocation: { lat: number; lng: number } | null,
+  startLocation: { lat: number; lng: number; heading?: number } | null,
   destination: { lat: number; lng: number } | null,
   profile: NavigationProfile = 'walking',
 ) {
@@ -63,7 +63,11 @@ export function useNavigationEngine(
         // We request steps=true to get turn-by-turn instructions
         // We request overview=full to get a smooth polyline
         // We allow ferries because crossing the Lagos harbour via bridge is a 17km detour!
-        const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startLocation.lng},${startLocation.lat};${destination.lng},${destination.lat}?geometries=geojson&steps=true&overview=full&access_token=${MAPBOX_TOKEN}`;
+        let url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${startLocation.lng},${startLocation.lat};${destination.lng},${destination.lat}?geometries=geojson&steps=true&overview=full&access_token=${MAPBOX_TOKEN}`;
+
+        if (startLocation.heading !== undefined) {
+          url += `&bearings=${startLocation.heading},45;`; // 45 degree tolerance
+        }
 
         const res = await fetch(url);
         const data = await res.json();

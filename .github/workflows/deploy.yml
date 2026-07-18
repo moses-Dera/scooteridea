@@ -98,12 +98,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_PASSPHRASE }}
           command_timeout: '30m'
+          envs: MQTT_PASSWORD,MQTT_USERNAME,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,GOOGLE_CLIENT_ID,PAYSTACK_SECRET_KEY,STRIPE_SECRET_KEY,FRONTEND_URL,EXPO_ACCESS_TOKEN,GRAFANA_ADMIN_PASSWORD
           script: |
             # 0. Server Initialization & Cleanup
-            # Initialize Swarm if not already active (ignore error if already active)
             docker swarm init || true
-            # Aggressively delete all unused containers, networks, images, and volumes to free space
-            docker system prune -a --volumes -f
+            docker system prune -a -f
 
             # 1. Navigate to the project directory
             cd /var/www/scooteridea
@@ -112,29 +111,50 @@ jobs:
             git pull origin main
             cd backend/infra
 
-            # 3. Pull the pre-built images from GitHub Container Registry
-            # Provide the repository owner name as an environment variable for docker-compose
-            export GITHUB_REPOSITORY_OWNER=moses-dera
-
-            # Since the packages might be private initially, we need to login
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Load environment variables from .env file for docker stack
-            if [ -f .env ]; then
-              export $(cat .env | grep -v '#' | awk '/=/ {print $1}')
+            # 2b. Ensure developer's local SSH key is authorized on this VPS.
+            #     Idempotent — only appends if not already present.
+            DEV_KEY="${{ secrets.DEV_SSH_PUBLIC_KEY }}"
+            if [ -n "$DEV_KEY" ]; then
+              grep -qxF "$DEV_KEY" ~/.ssh/authorized_keys 2>/dev/null \
+                || echo "$DEV_KEY" >> ~/.ssh/authorized_keys
             fi
+
+            # 3. Write .env from GitHub Secrets (source of truth — never rely on a file left on the VPS)
+            cat > .env <<'ENVEOF'
+            MQTT_USERNAME=${{ secrets.MQTT_USERNAME }}
+            MQTT_PASSWORD=${{ secrets.MQTT_PASSWORD }}
+            JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+            JWT_ACCESS_EXPIRY=15m
+            JWT_REFRESH_EXPIRY=30d
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            PAYSTACK_SECRET_KEY=${{ secrets.PAYSTACK_SECRET_KEY }}
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            EXPO_ACCESS_TOKEN=${{ secrets.EXPO_ACCESS_TOKEN }}
+            GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+            ENVEOF
+
+            export GITHUB_REPOSITORY_OWNER=moses-dera
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             docker compose pull
 
-            # 4. Apply Zero-Downtime update using Docker Swarm
+            # 3b. Auto-generate Mosquitto password file using a temp container.
+            #     Recreated on every deploy so it stays in sync with the secret.
+            docker run --rm eclipse-mosquitto:2 sh -c \
+              "mosquitto_passwd -c -b /tmp/p '${{ secrets.MQTT_USERNAME }}' '${{ secrets.MQTT_PASSWORD }}' && cat /tmp/p" \
+              > mosquitto.passwd
+
+            # 4. Deploy
             docker stack deploy -c docker-compose.yml scooter_stack
 
-            # 5. Run Prisma Database Migrations inside the newly started container
+            # 5. Run Prisma Database Migrations
             echo "Waiting for auth-service to start..."
             sleep 10
             AUTH_CONTAINER=$(docker ps -q -f name=scooter_stack_auth-service | head -n 1)
             if [ -n "$AUTH_CONTAINER" ]; then
-              docker exec -w /app/backend/shared/db $AUTH_CONTAINER npx prisma db push --accept-data-loss || true
+              docker exec -w /app/backend/shared/db $AUTH_CONTAINER npx prisma migrate deploy || true
             else
               echo "Warning: Auth container not found. Migration skipped."
             fi

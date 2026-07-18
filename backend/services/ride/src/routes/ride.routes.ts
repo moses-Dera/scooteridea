@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { jwtGuard, requireRole } from '@ebike/core';
+import { z } from 'zod';
+import { jwtGuard, requireRole, validate, asyncHandler } from '@ebike/core';
 import { RideController } from '../controllers/ride.controller';
 
 export const rideRouter = Router();
@@ -7,15 +8,30 @@ export const rideRouter = Router();
 // Apply jwtGuard to all ride routes
 rideRouter.use(jwtGuard);
 
-rideRouter.post('/', RideController.reserve);
-rideRouter.post('/:id/start', RideController.start);
-rideRouter.post('/:id/end', RideController.end);
-rideRouter.get('/history', RideController.history);
+const reserveSchema = z.object({ bikeId: z.string().min(1, 'bikeId is required') });
+const endSchema = z.object({ dockId: z.string().min(1, 'dockId is required') });
+
+rideRouter.post('/', validate({ body: reserveSchema }), asyncHandler(RideController.reserve));
+rideRouter.post('/:id/start', asyncHandler(RideController.start));
+rideRouter.post('/:id/end', validate({ body: endSchema }), asyncHandler(RideController.end));
+rideRouter.get('/history', asyncHandler(RideController.history));
 // Admin / Operator only
-rideRouter.get('/all-history', requireRole('ADMIN', 'OPERATOR'), RideController.allHistory);
-rideRouter.get('/riders/top', requireRole('ADMIN', 'OPERATOR'), RideController.getTopRiders);
-rideRouter.get('/analytics', requireRole('ADMIN', 'OPERATOR'), RideController.getAnalytics);
+rideRouter.get(
+  '/all-history',
+  requireRole('ADMIN', 'OPERATOR'),
+  asyncHandler(RideController.allHistory),
+);
+rideRouter.get(
+  '/riders/top',
+  requireRole('ADMIN', 'OPERATOR'),
+  asyncHandler(RideController.getTopRiders),
+);
+rideRouter.get(
+  '/analytics',
+  requireRole('ADMIN', 'OPERATOR'),
+  asyncHandler(RideController.getAnalytics),
+);
 
 // Dynamic routes with :id must be at the end to prevent shadowing
-rideRouter.get('/:id', RideController.getById);
-rideRouter.post('/:id/dispute', RideController.dispute);
+rideRouter.get('/:id', asyncHandler(RideController.getById));
+rideRouter.post('/:id/dispute', asyncHandler(RideController.dispute));

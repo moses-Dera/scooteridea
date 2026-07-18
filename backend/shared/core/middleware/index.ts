@@ -9,6 +9,7 @@ import rateLimit from 'express-rate-limit';
 import * as Sentry from '@sentry/node';
 import { AppError, ValidationError, isAppError, isOperationalError } from '../errors/AppError';
 import { logger } from '../logger';
+import { traceContext } from '../tracing';
 
 // ── 1. Request ID ─────────────────────────────────────────────────────────────
 //  Attaches a correlation ID to every request.
@@ -19,7 +20,9 @@ export function requestId(req: Request, res: Response, next: NextFunction): void
   const id = (req.headers['x-request-id'] as string) ?? uuidv4();
   req.headers['x-request-id'] = id;
   res.setHeader('X-Request-ID', id);
-  next();
+  traceContext.run({ traceId: id }, () => {
+    next();
+  });
 }
 
 // ── 2. Zod Request Validation ─────────────────────────────────────────────────
@@ -176,11 +179,11 @@ export const standardRateLimiter = rateLimit({
   skip: (req) => req.path === '/health',
 });
 
-/** Authenticated user rate limiter (per X-User-ID header). */
+/** Authenticated user rate limiter (keyed by IP — set by Nginx, not forgeable by clients). */
 export const userRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 500,
-  keyGenerator: (req) => (req.headers['x-user-id'] as string) ?? req.ip ?? 'unknown',
+  keyGenerator: (req) => req.ip ?? 'unknown',
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: 'RATE_LIMITED', message: 'Request limit reached.' },

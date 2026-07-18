@@ -97,16 +97,10 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
           const json = await res.json();
           if (json.success && json.data) {
             // Demo mode logic - Respawn if empty and it's been at least 60 seconds
-            const lastSpawnTime = Number(
-              window.sessionStorage.getItem(`demo_spawn_ts_${lat.toFixed(2)}_${lng.toFixed(2)}`) ||
-                '0',
-            );
+            const lastSpawnTime = Number(window.sessionStorage.getItem('demo_spawn_ts') || '0');
             const now = Date.now();
             if (json.data.length === 0 && now - lastSpawnTime > 60000) {
-              window.sessionStorage.setItem(
-                `demo_spawn_ts_${lat.toFixed(2)}_${lng.toFixed(2)}`,
-                now.toString(),
-              );
+              window.sessionStorage.setItem('demo_spawn_ts', now.toString());
               fetch('/api/proxy/fleet/demo/spawn', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

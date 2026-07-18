@@ -39,6 +39,8 @@ export async function disconnectProducer(): Promise<void> {
   }
 }
 
+import { getTraceId } from '@ebike/core';
+
 // ── Generic publish ───────────────────────────────────────────────────────────
 export async function publish<T extends object>(
   topic: string,
@@ -46,7 +48,11 @@ export async function publish<T extends object>(
   key?: string,
 ): Promise<void> {
   if (!redisClient) throw new Error('Redis publisher not connected');
-  await redisClient.publish(topic, JSON.stringify({ ...payload, ts: Date.now() }));
+  const traceId = getTraceId();
+  await redisClient.publish(
+    topic,
+    JSON.stringify({ ...payload, ts: Date.now(), _traceId: traceId }),
+  );
 }
 
 // ── Typed publishers ──────────────────────────────────────────────────────────

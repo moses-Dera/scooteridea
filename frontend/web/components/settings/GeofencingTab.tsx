@@ -35,9 +35,9 @@ export default function GeofencingTab({
   handleDeleteZone,
 }: GeofencingTabProps) {
   return (
-    <div className="h-[600px] flex flex-col md:flex-row gap-4">
+    <div className="min-h-[600px] md:h-[600px] flex flex-col md:flex-row gap-4">
       {/* Map Area */}
-      <div className="flex-1 rounded-xl overflow-hidden border border-white/10 relative">
+      <div className="flex-1 rounded-xl overflow-hidden border border-white/10 relative min-h-[400px] md:min-h-0">
         {!mapboxToken ? (
           <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-400">
             Missing NEXT_PUBLIC_MAPBOX_TOKEN

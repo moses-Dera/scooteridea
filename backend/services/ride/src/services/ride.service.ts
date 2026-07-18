@@ -22,9 +22,10 @@ import {
   redisGetWaypoints,
   redisDeleteWaypoints,
 } from '@ebike/redis';
-import { kafka } from '@ebike/events';
+import { TOPICS, kafka, publish } from '@ebike/events';
 import { bikeCommander } from '@ebike/mqtt';
 import Geohash from 'ngeohash';
+import { randomInt } from 'crypto';
 
 async function getConfig(bikeId?: string) {
   let globalConfig = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
@@ -82,50 +83,59 @@ export class RideService {
   // ── Reserve ──────────────────────────────────────────────────────────────────
   static async reserve(bikeId: string, userId: string) {
     const redis = await getRedisClient();
-    const status = await redis.get(`bike:${bikeId}:status`);
 
-    if (status !== 'available') {
-      throw new BikeUnavailableError(bikeId, status ?? 'unknown');
-    }
-
-    // Check user doesn't already have an active ride
+    // Check user doesn't already have an active ride (fast Redis check first)
     const existingSession = await redis.get(`session:${userId}`);
     if (existingSession) {
       throw new ConflictError('You already have an active ride', { userId });
     }
 
-    // Lock in the price for this ride at reservation time
-    const pricing = await getConfig(bikeId);
+    // Atomically verify + claim the bike in a DB transaction to prevent double-booking.
+    // This is the authoritative check; Redis status is a fast-read cache only.
+    const ride = await prisma.$transaction(async (tx) => {
+      const bike = await tx.bike.findUnique({ where: { id: bikeId }, include: { dock: true } });
+      if (!bike) throw new NotFoundError('Bike', bikeId);
+      if (bike.status !== 'available') throw new BikeUnavailableError(bikeId, bike.status);
 
-    // Verify User has enough funds to cover the base fare (minimum balance)
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundError('User', userId);
+      // Lock in the price for this ride at reservation time
+      const pricing = await getConfig(bikeId);
 
-    if (user.walletCents < pricing.baseFareCents) {
-      throw new InsufficientBalanceError(pricing.baseFareCents, user.walletCents);
-    }
+      // Verify User has enough funds to cover the base fare (minimum balance)
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) throw new NotFoundError('User', userId);
 
-    const ride = await prisma.ride.create({
-      data: {
-        userId,
-        bikeId,
-        status: 'RESERVED',
-        lockedBaseFareCents: pricing.baseFareCents,
-        lockedPerMinCents: pricing.perMinuteCents,
-        lockedPerKmCents: pricing.perKmCents,
-      },
-      include: { bike: true },
+      if (user.walletCents < pricing.baseFareCents) {
+        throw new InsufficientBalanceError(pricing.baseFareCents, user.walletCents);
+      }
+
+      // Mark bike as in_use atomically — any concurrent reservation hits the status check above
+      await tx.bike.update({ where: { id: bikeId }, data: { status: 'in_use' } });
+
+      return tx.ride.create({
+        data: {
+          userId,
+          bikeId,
+          status: 'RESERVED',
+          lockedBaseFareCents: pricing.baseFareCents,
+          lockedPerMinCents: pricing.perMinuteCents,
+          lockedPerKmCents: pricing.perKmCents,
+        },
+        include: { bike: true },
+      });
     });
 
     // If the bike doesn't have a PIN yet, generate one now
     if (!ride.bike.currentPin) {
-      const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+      const newPin = randomInt(1000, 10000).toString();
       await prisma.bike.update({
         where: { id: bikeId },
         data: { currentPin: newPin },
       });
       ride.bike.currentPin = newPin;
     }
+
+    // Sync Redis status to match DB
+    await redis.set(`bike:${bikeId}:status`, 'in_use');
 
     logger.info({ rideId: ride.id, bikeId, userId }, '[Ride] Reserved');
     return ride;
@@ -234,7 +244,7 @@ export class RideService {
     );
 
     // ── Generate Rolling PIN ────────────────────────────────────────────────
-    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+    const newPin = randomInt(1000, 10000).toString();
 
     // Update Bike with new PIN
     await prisma.bike.update({
@@ -343,10 +353,43 @@ export class RideService {
     return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
-  static async disputeRide(rideId: string, _reason: string) {
+  static async disputeRide(rideId: string, userId: string, role: string, reason: string) {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride) throw new NotFoundError('Ride', rideId);
-    return prisma.ride.update({ where: { id: rideId }, data: { status: 'CANCELLED' } });
+
+    // 1. Verify ownership or admin privileges
+    if (ride.userId !== userId && role !== 'ADMIN' && role !== 'OPERATOR') {
+      logger.warn({ rideId, userId, role }, 'Unauthorized dispute attempt');
+      throw new ForbiddenError('You can only dispute your own rides');
+    }
+
+    // 2. Perform refund and cancellation atomically
+    const refundAmount = ride.status === 'COMPLETED' ? (ride.fareCents ?? 0) : 0;
+
+    const [updatedRide] = await prisma.$transaction([
+      prisma.ride.update({ where: { id: rideId }, data: { status: 'CANCELLED' } }),
+      ...(refundAmount > 0
+        ? [
+            prisma.user.update({
+              where: { id: ride.userId },
+              data: { walletCents: { increment: refundAmount } },
+            }),
+          ]
+        : []),
+    ]);
+
+    // 3. Emit support ticket event for back-office tracking
+    await publish(TOPICS.SUPPORT_TICKET_CREATED, {
+      ticketId: `disp_${rideId}`,
+      userId: ride.userId,
+      subject: `Ride Dispute: ${rideId}`,
+      reason,
+      refundedCents: refundAmount,
+      timestamp: new Date().toISOString(),
+    });
+
+    logger.info({ rideId, userId, refundAmount, reason }, 'Ride disputed and cancelled');
+    return updatedRide;
   }
 
   static async getTopRiders(limit: number = 5) {
@@ -382,23 +425,30 @@ export class RideService {
     return riders;
   }
 
-  static async getAnalytics(timeRange: string = 'today') {
+  static async getAnalytics(
+    timeRange: 'today' | 'week' | 'month' | 'all' = 'week',
+  ): Promise<Record<string, any>> {
     const now = new Date();
     let startDate: Date;
 
     switch (timeRange) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
       case 'week':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
         break;
-      case 'today':
+      case 'all':
+        startDate = new Date(0);
+        break;
       default:
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }
 
-    const [totalRides, totalRevenue, activeUsers, avgDistance, bikesTotal, bikesActive, ridesData] =
+    const [totalRides, totalRevenue, activeUsers, avgDistance, bikesTotal, bikesActive] =
       await Promise.all([
         prisma.ride.count({
           where: { createdAt: { gte: startDate }, status: 'COMPLETED' },
@@ -418,91 +468,100 @@ export class RideService {
         }),
         prisma.bike.count(),
         prisma.bike.count({ where: { status: 'in_use' } }),
-        prisma.ride.findMany({
-          where: {
-            createdAt: { gte: startDate },
-          },
-          select: {
-            startedAt: true,
-            endedAt: true,
-            createdAt: true,
-            fareCents: true,
-            status: true,
-            userId: true,
-          },
-          orderBy: { createdAt: 'asc' },
-        }),
       ]);
 
     const avgDistanceKm = avgDistance._avg?.distanceKm
       ? Math.round(Number(avgDistance._avg.distanceKm) * 10) / 10
       : 0;
-
-    const completedRides = ridesData.filter(
-      (r) => r.status === 'COMPLETED' && r.startedAt && r.endedAt,
-    );
-
-    // Compute avg ride duration in minutes from actual startedAt/endedAt timestamps
-    const avgRideDurationMins =
-      completedRides.length > 0
-        ? Math.round(
-            (completedRides.reduce(
-              (sum, r) => sum + (r.endedAt!.getTime() - r.startedAt!.getTime()) / 60_000,
-              0,
-            ) /
-              completedRides.length) *
-              10,
-          ) / 10
-        : 0;
-
     const fleetUtilization = bikesTotal > 0 ? Math.round((bikesActive / bikesTotal) * 100) : 0;
 
-    // Build time-series for charts
-    // Group into 7 buckets (e.g., 7 days for a week, 7 intervals for today, etc.)
-    const buckets = 7;
-    const stepMs = Math.max((now.getTime() - startDate.getTime()) / buckets, 1);
+    // Use SQL for duration and time-series aggregation to avoid memory limits (M7)
+    // 1. Average Ride Duration
+    const durationRes: any[] = await prisma.$queryRaw`
+      SELECT COALESCE(AVG(EXTRACT(EPOCH FROM ("endedAt" - "startedAt")) / 60), 0) as avg_duration
+      FROM "Ride"
+      WHERE "createdAt" >= ${startDate} AND status = 'COMPLETED' AND "endedAt" IS NOT NULL AND "startedAt" IS NOT NULL
+    `;
+    const avgRideDurationMins =
+      durationRes.length > 0 ? Math.round(Number(durationRes[0].avg_duration) * 10) / 10 : 0;
 
-    const revenueTrend = Array.from({ length: buckets }).map((_, i) => {
-      const bucketStart = new Date(startDate.getTime() + i * stepMs);
-      const bucketEnd = new Date(startDate.getTime() + (i + 1) * stepMs);
+    // 2. Time-series aggregation
+    const truncType = timeRange === 'today' ? 'hour' : 'day';
+
+    const revenueByDate: any[] = await prisma.$queryRawUnsafe(
+      `
+      SELECT DATE_TRUNC($1, "createdAt") as time_bucket,
+             SUM("fareCents") as revenue,
+             COUNT(*) as rides
+      FROM "Ride"
+      WHERE "createdAt" >= $2 AND status = 'COMPLETED'
+      GROUP BY time_bucket
+      ORDER BY time_bucket ASC
+    `,
+      truncType,
+      startDate,
+    );
+
+    const usersByDate: any[] = await prisma.$queryRawUnsafe(
+      `
+      SELECT DATE_TRUNC($1, "createdAt") as time_bucket,
+             COUNT(DISTINCT "userId") as users
+      FROM "Ride"
+      WHERE "createdAt" >= $2
+      GROUP BY time_bucket
+      ORDER BY time_bucket ASC
+    `,
+      truncType,
+      startDate,
+    );
+
+    // Build continuous buckets (fill gaps with 0)
+    const bucketsCount = timeRange === 'today' ? 24 : timeRange === 'week' ? 7 : 30;
+    const stepMs = timeRange === 'today' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+
+    // For 'today', we align buckets to the start of the day. For others, to 7/30 days ago.
+    const startBucketTime =
+      timeRange === 'today'
+        ? new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+        : new Date(now.getTime() - bucketsCount * stepMs).getTime();
+
+    const revenueTrend = Array.from({ length: bucketsCount }).map((_, i) => {
+      const bucketDate = new Date(startBucketTime + i * stepMs);
       const label =
         timeRange === 'today'
-          ? bucketStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : bucketStart.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      return { time: label, revenue: 0, rides: 0 };
-    });
+          ? bucketDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : bucketDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-    const userGrowth = Array.from({ length: buckets }).map((_, i) => {
-      const bucketStart = new Date(startDate.getTime() + i * stepMs);
-      const label =
-        timeRange === 'today'
-          ? bucketStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : bucketStart.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      return { time: label, users: 0 };
-    });
-
-    const uniqueUsersPerBucket = new Array(buckets).fill(0).map(() => new Set<string>());
-
-    for (const ride of ridesData) {
-      const rideTime = ride.createdAt.getTime();
-      const bucketIndex = Math.min(
-        Math.floor((rideTime - startDate.getTime()) / stepMs),
-        buckets - 1,
+      // Find matching SQL result
+      const match = revenueByDate.find(
+        (r) => new Date(r.time_bucket).getTime() === bucketDate.getTime(),
       );
-      if (bucketIndex >= 0 && bucketIndex < buckets) {
-        if (ride.status === 'COMPLETED') {
-          revenueTrend[bucketIndex].revenue += (ride.fareCents || 0) / 100;
-          revenueTrend[bucketIndex].rides += 1;
-        }
-        uniqueUsersPerBucket[bucketIndex].add(ride.userId);
-      }
-    }
+
+      return {
+        time: label,
+        revenue: match ? Number(match.revenue) / 100 : 0,
+        rides: match ? Number(match.rides) : 0,
+      };
+    });
 
     let cumulativeUsers = 0;
-    for (let i = 0; i < buckets; i++) {
-      cumulativeUsers += uniqueUsersPerBucket[i].size; // approximation of growth
-      userGrowth[i].users = cumulativeUsers;
-    }
+    const userGrowth = Array.from({ length: bucketsCount }).map((_, i) => {
+      const bucketDate = new Date(startBucketTime + i * stepMs);
+      const label =
+        timeRange === 'today'
+          ? bucketDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : bucketDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+      // Find matching SQL result
+      const match = usersByDate.find(
+        (r) => new Date(r.time_bucket).getTime() === bucketDate.getTime(),
+      );
+      if (match) {
+        cumulativeUsers += Number(match.users);
+      }
+
+      return { time: label, users: cumulativeUsers };
+    });
 
     return {
       total_rides: totalRides,

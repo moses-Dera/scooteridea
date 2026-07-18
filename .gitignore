@@ -17,6 +17,8 @@ dist/
 build/
 .next/
 out/
+*.tsbuildinfo
+build.log
 
 # Logs
 logs/

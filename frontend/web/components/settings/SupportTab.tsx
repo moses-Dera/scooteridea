@@ -10,8 +10,8 @@ export default function SupportTab({ tickets, handleToggleTicketStatus }: Suppor
         <p className="text-slate-400">View and manage customer help requests and reports.</p>
       </div>
 
-      <div className="glass-panel rounded-xl border border-white/10 overflow-hidden">
-        <table className="w-full text-left text-sm">
+      <div className="glass-panel rounded-xl border border-white/10 overflow-x-auto">
+        <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-slate-900/50 border-b border-slate-800">
             <tr>
               <th className="px-6 py-4 font-medium text-slate-300">Ticket ID</th>
