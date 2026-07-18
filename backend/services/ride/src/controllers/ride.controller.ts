@@ -68,7 +68,7 @@ export class RideController {
   static async dispute(req: Request, res: Response, next: NextFunction) {
     try {
       const { reason } = req.body;
-      const ride = await RideService.disputeRide(req.params.id, reason);
+      const ride = await RideService.disputeRide(req.params.id, req.user!.userId, req.user!.role, reason);
       res.json({ success: true, data: ride });
     } catch (err) {
       next(err);

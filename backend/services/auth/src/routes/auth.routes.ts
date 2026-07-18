@@ -127,11 +127,17 @@ authRouter.post(
   asyncHandler(AuthController.registerPushToken),
 );
 
-// Wallet Top-up Verification (Manual Sync via Frontend)
+// Wallet Top-up Verification (Admin-only manual credit — riders use payment-service webhook)
 authRouter.post(
   '/wallet/topup',
   jwtGuard,
-  validate({ body: z.object({ reference: z.string().min(1, 'Reference is required') }) }),
+  requireRole('ADMIN'),
+  validate({
+    body: z.object({
+      reference: z.string().min(1, 'Reference is required'),
+      userId: z.string().uuid('userId must be a UUID').optional(),
+    }),
+  }),
   asyncHandler(AuthController.topUpWallet),
 );
 

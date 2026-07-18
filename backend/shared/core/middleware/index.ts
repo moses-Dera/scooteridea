@@ -176,11 +176,11 @@ export const standardRateLimiter = rateLimit({
   skip: (req) => req.path === '/health',
 });
 
-/** Authenticated user rate limiter (per X-User-ID header). */
+/** Authenticated user rate limiter (keyed by IP — set by Nginx, not forgeable by clients). */
 export const userRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 500,
-  keyGenerator: (req) => (req.headers['x-user-id'] as string) ?? req.ip ?? 'unknown',
+  keyGenerator: (req) => req.ip ?? 'unknown',
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: 'RATE_LIMITED', message: 'Request limit reached.' },

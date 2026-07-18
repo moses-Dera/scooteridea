@@ -157,7 +157,7 @@ registerProbe(
 );
 
 // ── Payment Handler ───────────────────────────────────────────────────────────
-async function processPaymentCharge(event: KafkaPaymentChargeEvent): Promise<void> {
+export async function processPaymentCharge(event: KafkaPaymentChargeEvent): Promise<void> {
   const { userId, amount: amountCents, rideId } = event;
   const log = logger.child({ userId, rideId, amountCents });
 
@@ -246,4 +246,8 @@ async function bootstrap(): Promise<void> {
   });
 }
 
-bootstrap();
+if (process.env.NODE_ENV !== 'test') {
+  bootstrap();
+}
+
+export { app };

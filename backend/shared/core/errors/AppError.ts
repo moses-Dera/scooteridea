@@ -125,35 +125,43 @@ export class GatewayTimeoutError extends AppError {
 
 // ── Domain-specific Errors ────────────────────────────────────────────────────
 
-export class RideNotActiveError extends ConflictError {
+export class RideNotActiveError extends AppError {
   constructor(rideId: string, currentStatus: string) {
     super(`Ride '${rideId}' is not active (status: ${currentStatus})`, {
-      rideId,
-      currentStatus,
+      statusCode: 409,
+      code: 'RIDE_NOT_ACTIVE',
+      context: { rideId, currentStatus },
     });
-    this.code; // inherited
-    Object.assign(this, { code: 'RIDE_NOT_ACTIVE' });
   }
 }
 
-export class BikeUnavailableError extends ConflictError {
+export class BikeUnavailableError extends AppError {
   constructor(bikeId: string, status: string) {
-    super(`Bike '${bikeId}' is not available (status: ${status})`, { bikeId, status });
-    Object.assign(this, { code: 'BIKE_UNAVAILABLE' });
+    super(`Bike '${bikeId}' is not available (status: ${status})`, {
+      statusCode: 409,
+      code: 'BIKE_UNAVAILABLE',
+      context: { bikeId, status },
+    });
   }
 }
 
-export class InsufficientBalanceError extends UnprocessableError {
+export class InsufficientBalanceError extends AppError {
   constructor(requiredCents: number, balanceCents: number) {
-    super('Insufficient wallet balance', { requiredCents, balanceCents });
-    Object.assign(this, { code: 'INSUFFICIENT_BALANCE' });
+    super('Insufficient wallet balance', {
+      statusCode: 422,
+      code: 'INSUFFICIENT_BALANCE',
+      context: { requiredCents, balanceCents },
+    });
   }
 }
 
-export class DockFullError extends ConflictError {
+export class DockFullError extends AppError {
   constructor(dockId: string) {
-    super(`Dock '${dockId}' has no available slots`, { dockId });
-    Object.assign(this, { code: 'DOCK_FULL' });
+    super(`Dock '${dockId}' has no available slots`, {
+      statusCode: 409,
+      code: 'DOCK_FULL',
+      context: { dockId },
+    });
   }
 }
 

@@ -26,7 +26,20 @@ export class AuthController {
   }
 
   static async logout(req: Request, res: Response): Promise<void> {
-    await AuthService.logout(req.user!.jti, req.user!.sub);
+    // Decode the refresh token (without verifying — we only need the jti claim)
+    // to target the correct per-device Redis key. The access token jti is blacklisted
+    // regardless, so even a tampered refresh body only causes that device's key to be missed.
+    const { refreshToken } = req.body as { refreshToken?: string };
+    let refreshJti = '';
+    if (refreshToken) {
+      try {
+        const decoded = require('jsonwebtoken').decode(refreshToken) as { jti?: string } | null;
+        refreshJti = decoded?.jti ?? '';
+      } catch {
+        // ignore — logout still succeeds for the access token
+      }
+    }
+    await AuthService.logout(req.user!.jti, req.user!.sub, refreshJti);
     res.json({ success: true, message: 'Logged out successfully' });
   }
 

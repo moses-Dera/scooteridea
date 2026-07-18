@@ -22,9 +22,10 @@ import {
   redisGetWaypoints,
   redisDeleteWaypoints,
 } from '@ebike/redis';
-import { kafka } from '@ebike/events';
+import { kafka, TOPICS } from '@ebike/events';
 import { bikeCommander } from '@ebike/mqtt';
 import Geohash from 'ngeohash';
+import { randomInt } from 'crypto';
 
 async function getConfig(bikeId?: string) {
   let globalConfig = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
@@ -82,50 +83,59 @@ export class RideService {
   // ── Reserve ──────────────────────────────────────────────────────────────────
   static async reserve(bikeId: string, userId: string) {
     const redis = await getRedisClient();
-    const status = await redis.get(`bike:${bikeId}:status`);
 
-    if (status !== 'available') {
-      throw new BikeUnavailableError(bikeId, status ?? 'unknown');
-    }
-
-    // Check user doesn't already have an active ride
+    // Check user doesn't already have an active ride (fast Redis check first)
     const existingSession = await redis.get(`session:${userId}`);
     if (existingSession) {
       throw new ConflictError('You already have an active ride', { userId });
     }
 
-    // Lock in the price for this ride at reservation time
-    const pricing = await getConfig(bikeId);
+    // Atomically verify + claim the bike in a DB transaction to prevent double-booking.
+    // This is the authoritative check; Redis status is a fast-read cache only.
+    const ride = await prisma.$transaction(async (tx) => {
+      const bike = await tx.bike.findUnique({ where: { id: bikeId }, include: { dock: true } });
+      if (!bike) throw new NotFoundError('Bike', bikeId);
+      if (bike.status !== 'available') throw new BikeUnavailableError(bikeId, bike.status);
 
-    // Verify User has enough funds to cover the base fare (minimum balance)
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundError('User', userId);
+      // Lock in the price for this ride at reservation time
+      const pricing = await getConfig(bikeId);
 
-    if (user.walletCents < pricing.baseFareCents) {
-      throw new InsufficientBalanceError(pricing.baseFareCents, user.walletCents);
-    }
+      // Verify User has enough funds to cover the base fare (minimum balance)
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) throw new NotFoundError('User', userId);
 
-    const ride = await prisma.ride.create({
-      data: {
-        userId,
-        bikeId,
-        status: 'RESERVED',
-        lockedBaseFareCents: pricing.baseFareCents,
-        lockedPerMinCents: pricing.perMinuteCents,
-        lockedPerKmCents: pricing.perKmCents,
-      },
-      include: { bike: true },
+      if (user.walletCents < pricing.baseFareCents) {
+        throw new InsufficientBalanceError(pricing.baseFareCents, user.walletCents);
+      }
+
+      // Mark bike as in_use atomically — any concurrent reservation hits the status check above
+      await tx.bike.update({ where: { id: bikeId }, data: { status: 'in_use' } });
+
+      return tx.ride.create({
+        data: {
+          userId,
+          bikeId,
+          status: 'RESERVED',
+          lockedBaseFareCents: pricing.baseFareCents,
+          lockedPerMinCents: pricing.perMinuteCents,
+          lockedPerKmCents: pricing.perKmCents,
+        },
+        include: { bike: true },
+      });
     });
 
     // If the bike doesn't have a PIN yet, generate one now
     if (!ride.bike.currentPin) {
-      const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+      const newPin = randomInt(1000, 10000).toString();
       await prisma.bike.update({
         where: { id: bikeId },
         data: { currentPin: newPin },
       });
       ride.bike.currentPin = newPin;
     }
+
+    // Sync Redis status to match DB
+    await redis.set(`bike:${bikeId}:status`, 'in_use');
 
     logger.info({ rideId: ride.id, bikeId, userId }, '[Ride] Reserved');
     return ride;
@@ -234,7 +244,7 @@ export class RideService {
     );
 
     // ── Generate Rolling PIN ────────────────────────────────────────────────
-    const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+    const newPin = randomInt(1000, 10000).toString();
 
     // Update Bike with new PIN
     await prisma.bike.update({
@@ -343,10 +353,43 @@ export class RideService {
     return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
-  static async disputeRide(rideId: string, _reason: string) {
+  static async disputeRide(rideId: string, userId: string, role: string, reason: string) {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride) throw new NotFoundError('Ride', rideId);
-    return prisma.ride.update({ where: { id: rideId }, data: { status: 'CANCELLED' } });
+
+    // 1. Verify ownership or admin privileges
+    if (ride.userId !== userId && role !== 'ADMIN' && role !== 'OPERATOR') {
+      logger.warn({ rideId, userId, role }, 'Unauthorized dispute attempt');
+      throw new ForbiddenError('You can only dispute your own rides');
+    }
+
+    // 2. Perform refund and cancellation atomically
+    const refundAmount = ride.status === 'COMPLETED' ? (ride.fareCents ?? 0) : 0;
+    
+    const [updatedRide] = await prisma.$transaction([
+      prisma.ride.update({ where: { id: rideId }, data: { status: 'CANCELLED' } }),
+      ...(refundAmount > 0
+        ? [
+            prisma.user.update({
+              where: { id: ride.userId },
+              data: { walletCents: { increment: refundAmount } },
+            }),
+          ]
+        : []),
+    ]);
+
+    // 3. Emit support ticket event for back-office tracking
+    await kafka.publish(TOPICS.SUPPORT_TICKET_CREATED, {
+      ticketId: `disp_${rideId}`,
+      userId: ride.userId,
+      subject: `Ride Dispute: ${rideId}`,
+      reason,
+      refundedCents: refundAmount,
+      timestamp: new Date().toISOString(),
+    });
+
+    logger.info({ rideId, userId, refundAmount, reason }, 'Ride disputed and cancelled');
+    return updatedRide;
   }
 
   static async getTopRiders(limit: number = 5) {
@@ -431,6 +474,9 @@ export class RideService {
             userId: true,
           },
           orderBy: { createdAt: 'asc' },
+          // Safety cap: prevents OOM on large date ranges.
+          // TODO: replace with SQL GROUP BY DATE_TRUNC when ride volume exceeds this.
+          take: 10_000,
         }),
       ]);
 

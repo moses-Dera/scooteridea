@@ -25,11 +25,15 @@ import { UserRepository } from '../repositories/user.repository';
 import type { LoginDto, RegisterDto, TokenPair, User, JwtPayload, UserRole } from '@ebike/types';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? process.env.JWT_ACCESS_SECRET!;
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY ?? '15m';
 const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY ?? '30d';
 const REFRESH_TTL_S = 30 * 24 * 60 * 60; // 30 days
 const BCRYPT_ROUNDS = 12;
+
+if (!ACCESS_SECRET) throw new Error('JWT_ACCESS_SECRET is not set');
+if (!REFRESH_SECRET)
+  throw new Error('JWT_REFRESH_SECRET is not set — do not share with ACCESS_SECRET');
 
 export class AuthService {
   // ── Email Helpers ─────────────────────────────────────────────────────────────
@@ -95,13 +99,14 @@ export class AuthService {
     let payload: JwtPayload;
 
     try {
-      payload = jwt.verify(refreshToken, REFRESH_SECRET) as JwtPayload;
+      payload = jwt.verify(refreshToken, REFRESH_SECRET!) as JwtPayload;
     } catch (err) {
       throw new UnauthorizedError('Refresh token is invalid or expired');
     }
 
     const redis = await getRedisClient();
-    const stored = await redis.get(`refresh:${payload.sub}`);
+    // Per-device key: refresh:{userId}:{jti}
+    const stored = await redis.get(`refresh:${payload.sub}:${payload.jti}`);
 
     if (stored !== refreshToken) {
       // Token has been rotated or revoked — potential replay attack
@@ -115,11 +120,12 @@ export class AuthService {
   }
 
   // ── Logout ───────────────────────────────────────────────────────────────────
-  static async logout(jti: string, userId: string): Promise<void> {
+  static async logout(jti: string, userId: string, refreshJti: string): Promise<void> {
     const redis = await getRedisClient();
-    // Blacklist the JTI for the remainder of the access token's lifetime
+    // Blacklist the access token JTI for the remainder of the access token's lifetime
     await redis.setEx(`blacklist:${jti}`, 60 * 15, '1');
-    await redis.del(`refresh:${userId}`);
+    // Delete only this device's refresh token (per-device key)
+    await redis.del(`refresh:${userId}:${refreshJti}`);
   }
 
   // ── Get User ─────────────────────────────────────────────────────────────────
@@ -169,6 +175,7 @@ export class AuthService {
     }
 
     const jti = uuidv4();
+    const refreshJti = uuidv4();
     const role = user.role as UserRole;
 
     const accessToken = jwt.sign(
@@ -182,8 +189,8 @@ export class AuthService {
     );
 
     const refreshToken = jwt.sign(
-      { sub: user.id, role, jti: uuidv4() } satisfies Omit<JwtPayload, 'iat' | 'exp'>,
-      REFRESH_SECRET,
+      { sub: user.id, role, jti: refreshJti } satisfies Omit<JwtPayload, 'iat' | 'exp'>,
+      REFRESH_SECRET!,
       {
         expiresIn: REFRESH_EXPIRY as Parameters<typeof jwt.sign>[2] extends { expiresIn?: infer E }
           ? E
@@ -192,10 +199,11 @@ export class AuthService {
     );
 
     // Persist refresh token with retry (Redis flap resilience)
+    // Key: refresh:{userId}:{refreshJti} — supports multiple concurrent device sessions
     await retry(
       async () => {
         const redis = await getRedisClient();
-        await redis.setEx(`refresh:${user.id}`, REFRESH_TTL_S, refreshToken);
+        await redis.setEx(`refresh:${user.id}:${refreshJti}`, REFRESH_TTL_S, refreshToken);
       },
       { maxAttempts: 3, label: 'redis:refresh-token-store' },
     );
@@ -385,13 +393,18 @@ export class AuthService {
   ): Promise<void> {
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock';
 
-    // 1. Verify Signature
-    if (paystackSecret !== 'sk_test_mock' && process.env.NODE_ENV === 'production') {
+    // 1. Verify Signature — always, regardless of environment
+    // Only skip if secret is the dev mock placeholder (no real secret configured)
+    if (paystackSecret !== 'sk_test_mock') {
       const hash = crypto.createHmac('sha512', paystackSecret).update(rawBody).digest('hex');
       if (hash !== signature) {
         logger.warn({ signature, hash }, '[Auth] Invalid Paystack webhook signature');
         throw new UnauthorizedError('Invalid signature');
       }
+    } else {
+      logger.warn(
+        '[Auth] Paystack webhook signature check SKIPPED — sk_test_mock in use (dev only)',
+      );
     }
 
     // 2. Process Event
