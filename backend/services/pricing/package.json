@@ -17,7 +17,8 @@
     "ngeohash": "^0.6.3",
     "@ebike/core": "*",
     "@ebike/redis": "*",
-    "@ebike/types": "*"
+    "@ebike/types": "*",
+    "@ebike/db": "*"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
