@@ -183,9 +183,12 @@ export default function RiderMap() {
     }
   }, [isDestinationPreview, destination?.lat, destination?.lng]);
 
+  const [initialLocation, setInitialLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
   // Search center tracks where we fetch bikes/docks from.
   // Initialize from the GPS lock we already acquired before rendering the map.
-  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(initialLocation);
+  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
   const searchLat = searchCenter?.lat ?? initialLocation?.lat ?? 0;
   const searchLng = searchCenter?.lng ?? initialLocation?.lng ?? 0;
 
@@ -196,9 +199,6 @@ export default function RiderMap() {
 
   // Fetch real docks from Postgres based on view center!
   const { docks } = useNearbyDocks(searchLat, searchLng);
-
-  const [initialLocation, setInitialLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Prevent hydration mismatch and acquire initial GPS lock before rendering map
   const [mounted, setMounted] = useState(false);
