@@ -184,9 +184,10 @@ export default function RiderMap() {
   }, [isDestinationPreview, destination?.lat, destination?.lng]);
 
   // Search center tracks where we fetch bikes/docks from.
-  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const searchLat = searchCenter?.lat ?? 0;
-  const searchLng = searchCenter?.lng ?? 0;
+  // Initialize from the GPS lock we already acquired before rendering the map.
+  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(initialLocation);
+  const searchLat = searchCenter?.lat ?? initialLocation?.lat ?? 0;
+  const searchLng = searchCenter?.lng ?? initialLocation?.lng ?? 0;
 
   const { bikes: liveBikes } = useLiveFleet(searchLat, searchLng, 10);
 
@@ -780,7 +781,7 @@ export default function RiderMap() {
               }
             }
           }}
-          positionOptions={{ enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }}
+          positionOptions={{ enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }}
           style={{
             marginRight: '20px',
             backgroundColor: '#111622',

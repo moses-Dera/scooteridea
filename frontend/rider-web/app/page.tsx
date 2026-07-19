@@ -23,11 +23,20 @@ export default function RiderHome() {
 
   // Track user's current location for smart trip validation
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Search center tracks where we fetch bikes/docks from.
+  // Initialize from the GPS lock we already have so bikes/docks load immediately.
+  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(userLoc);
+  const searchLat = searchCenter?.lat ?? userLoc?.lat ?? 0;
+  const searchLng = searchCenter?.lng ?? userLoc?.lng ?? 0;
+
   useEffect(() => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLoc(coords);
+          if (!searchCenter) setSearchCenter(coords);
         },
         () => {},
         { enableHighAccuracy: true },
@@ -527,13 +536,12 @@ export default function RiderHome() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                       />
                     </svg>
-                    <span className="text-white font-bold text-sm leading-tight mt-1">
-                      Lagos
-                      <br />
-                      Island
+                    <span className="text-white font-extrabold text-lg">Nearby</span>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mt-0.5">
+                      Zone
                     </span>
                   </div>
                 </div>
