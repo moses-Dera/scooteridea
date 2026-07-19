@@ -10,7 +10,12 @@ import { kafka } from '@ebike/events';
 export const authRouter = Router();
 
 // ── Rider App: Profile & Security ───────────────────────────────────────────────
-authRouter.put('/user/profile', jwtGuard, async (req: Request, res: Response) => {
+const profileSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100).optional(),
+  phone: z.string().regex(/^\+?[1-9]\d{6,14}$/, 'Invalid phone number').optional(),
+});
+
+authRouter.put('/user/profile', jwtGuard, validate({ body: profileSchema }), async (req: Request, res: Response) => {
   try {
     const { name, phone } = req.body;
     const user = await prisma.user.update({
@@ -24,7 +29,12 @@ authRouter.put('/user/profile', jwtGuard, async (req: Request, res: Response) =>
   }
 });
 
-authRouter.put('/user/password', jwtGuard, async (req: Request, res: Response) => {
+const updatePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
+authRouter.put('/user/password', jwtGuard, validate({ body: updatePasswordSchema }), async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
@@ -141,8 +151,7 @@ authRouter.post(
   asyncHandler(AuthController.topUpWallet),
 );
 
-// Paystack Asynchronous Webhook
-authRouter.post('/wallet/webhook/paystack', asyncHandler(AuthController.paystackWebhook));
+// Paystack Webhook moved entirely to payment-service to prevent double-entry risk
 
 // ── Admin: User Management ────────────────────────────────────────────────────
 
@@ -376,13 +385,15 @@ authRouter.get(
 
 // ── User: Customer Support ───────────────────────────────────────────────────
 
+const supportTicketSchema = z.object({
+  subject: z.string().min(1, 'Subject is required').max(200),
+  message: z.string().min(1, 'Message is required').max(2000),
+});
+
 // POST /auth/user/support — Create a new support ticket
-authRouter.post('/user/support', jwtGuard, async (req: Request, res: Response) => {
+authRouter.post('/user/support', jwtGuard, validate({ body: supportTicketSchema }), async (req: Request, res: Response) => {
   try {
     const { subject, message } = req.body;
-    if (!subject || !message) {
-      return res.status(400).json({ success: false, error: 'Subject and message are required' });
-    }
 
     const ticket = await prisma.supportTicket.create({
       data: {

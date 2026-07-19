@@ -86,11 +86,4 @@ export class AuthController {
     res.json({ success: true, data: user });
   }
 
-  static async paystackWebhook(req: Request, res: Response): Promise<void> {
-    const signature = req.headers['x-paystack-signature'] as string;
-    const rawBody = (req as any).rawBody || JSON.stringify(req.body);
-
-    await AuthService.handlePaystackWebhook(rawBody, req.body, signature);
-    res.status(200).send('Webhook Processed Successfully');
-  }
 }
