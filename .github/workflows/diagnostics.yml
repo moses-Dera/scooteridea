@@ -1,0 +1,31 @@
+name: Diagnostics
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Diagnostics via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_PASSPHRASE }}
+          script: |
+            echo "=== Docker Service List ==="
+            docker service ls
+            
+            echo "=== Nginx Status ==="
+            docker service ps scooter_stack_nginx --no-trunc
+            docker service logs scooter_stack_nginx --tail 50
+            
+            echo "=== Postgres Status ==="
+            docker service ps scooter_stack_postgres --no-trunc
+            docker service logs scooter_stack_postgres --tail 50
+            
+            echo "=== Auth Service Status ==="
+            docker service ps scooter_stack_auth-service --no-trunc
+            docker service logs scooter_stack_auth-service --tail 50
