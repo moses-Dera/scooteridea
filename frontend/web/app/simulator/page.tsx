@@ -556,8 +556,10 @@ export default function SimulatorPage() {
               </div>
 
               {/* Auto-Navigation Module */}
-              <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl relative overflow-hidden mt-2">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+              <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl relative mt-2">
+                <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                </div>
                 <div className="flex items-start gap-3 relative z-10">
                   <Navigation className="w-5 h-5 text-primary mt-0.5" />
                   <div className="w-full">
