@@ -1,0 +1,22 @@
+name: Cleanup Server
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Docker Prune via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          passphrase: ${{ secrets.VPS_PASSPHRASE }}
+          script: |
+            echo "Checking disk space before..."
+            df -h
+            echo "Pruning docker..."
+            docker system prune -af --volumes
+            echo "Checking disk space after..."
+            df -h
