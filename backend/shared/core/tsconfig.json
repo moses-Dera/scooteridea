@@ -23,7 +23,8 @@
     "middleware/**/*",
     "shutdown/**/*",
     "health/**/*",
-    "resilience/**/*"
+    "resilience/**/*",
+    "tracing/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }
