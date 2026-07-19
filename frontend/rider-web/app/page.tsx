@@ -36,7 +36,7 @@ export default function RiderHome() {
         (pos) => {
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setUserLoc(coords);
-          if (!searchCenter) setSearchCenter(coords);
+          setSearchCenter(prev => prev || coords);
         },
         () => {},
         { enableHighAccuracy: true },
