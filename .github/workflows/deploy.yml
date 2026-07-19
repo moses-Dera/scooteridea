@@ -147,6 +147,9 @@ jobs:
               > mosquitto.passwd
 
             # 4. Deploy
+            set -a
+            source .env
+            set +a
             docker stack deploy -c docker-compose.yml scooter_stack
 
             # 5. Run Prisma Database Migrations
