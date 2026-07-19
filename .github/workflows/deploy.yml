@@ -153,8 +153,8 @@ jobs:
             docker stack deploy -c docker-compose.yml scooter_stack
 
             # 5. Run Prisma Database Migrations
-            echo "Waiting for auth-service to start..."
-            sleep 10
+            echo "Waiting for services to start..."
+            sleep 30
             AUTH_CONTAINER=$(docker ps -q -f name=scooter_stack_auth-service | head -n 1)
             if [ -n "$AUTH_CONTAINER" ]; then
               docker exec -w /app/backend/shared/db $AUTH_CONTAINER npx prisma migrate deploy || true
@@ -162,5 +162,6 @@ jobs:
               echo "Warning: Auth container not found. Migration skipped."
             fi
 
-            # 6. Force reload Nginx to resolve new upstream container IPs
+            # 6. Force reload Nginx to pick up new upstream IPs
+            sleep 15
             docker service update --force scooter_stack_nginx
