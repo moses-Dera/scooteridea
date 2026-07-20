@@ -12,10 +12,10 @@
     "all": "node index.js"
   },
   "dependencies": {
-    "mqtt": "^5.3.4",
-    "dotenv": "^16.4.5",
     "chalk": "^4.1.2",
-    "uuid": "^9.0.0",
+    "dotenv": "^16.4.5",
+    "mqtt": "^5.3.4",
+    "uuid": "^14.0.1",
     "ws": "^8.17.0"
   }
 }

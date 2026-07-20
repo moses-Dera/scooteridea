@@ -20,7 +20,8 @@ class BikeSimulator {
     this.lockStatus = 'LOCKED';
     this.dockedAt = null;
     this.charging = false;
-    this.isMoving = false;
+    this.isMoving = Math.random() > 0.5; // 50% of bikes start moving
+    if (this.isMoving) this.lockStatus = 'UNLOCKED';
   }
 
   generateTelemetry() {
@@ -29,7 +30,7 @@ class BikeSimulator {
       lat: parseFloat(this.lat.toFixed(6)),
       lng: parseFloat(this.lng.toFixed(6)),
       speed_kmh: this.speed,
-      battery_pct: this.battery,
+      battery_pct: Math.round(this.battery),
       lock_status: this.lockStatus,
       docked_at: this.dockedAt,
       charging: this.charging,
@@ -39,15 +40,28 @@ class BikeSimulator {
 
   updatePosition() {
     if (this.isMoving && this.lockStatus === 'UNLOCKED') {
+      // 10% chance to stop each tick
+      if (Math.random() < 0.1) {
+        this.isMoving = false;
+        this.lockStatus = 'LOCKED';
+        this.speed = 0;
+        return;
+      }
       const moved = movePoint(this.lat, this.lng, 0.05);
       this.lat = moved.lat;
       this.lng = moved.lng;
-      this.speed = Math.floor(Math.random() * 15) + 10; // 10-25 km/h
-      this.battery = Math.max(0, this.battery - 0.1); // Drain battery
+      this.speed = Math.floor(Math.random() * 15) + 10;
+      this.battery = Math.max(0, this.battery - 0.1);
     } else {
       this.speed = 0;
+      // 5% chance to start riding if battery > 20% and not charging
+      if (!this.charging && this.battery > 20 && Math.random() < 0.05) {
+        this.isMoving = true;
+        this.lockStatus = 'UNLOCKED';
+        this.dockedAt = null;
+      }
       if (this.charging && this.battery < 100) {
-        this.battery = Math.min(100, this.battery + 0.5); // Charge battery
+        this.battery = Math.min(100, this.battery + 0.5);
       }
     }
   }
@@ -89,8 +103,10 @@ function startBikeFleet() {
   console.log(chalk.cyan.bold('\n🚲 E-Bike Fleet Simulator Starting...\n'));
 
   const client = mqtt.connect(MQTT_BROKER, {
-    username: process.env.MQTT_USERNAME,
-    password: process.env.MQTT_PASSWORD,
+    username: process.env.MQTT_USERNAME || undefined,
+    password: process.env.MQTT_PASSWORD || undefined,
+    reconnectPeriod: 3000,
+    connectTimeout: 10000,
   });
 
   const bikes = [];
@@ -188,6 +204,14 @@ function startBikeFleet() {
     if (bike) {
       bike.handleCommand(cmdString);
     }
+  });
+
+  client.on('reconnect', () => {
+    console.log(chalk.yellow('🔄 Bikes reconnecting to MQTT broker...'));
+  });
+
+  client.on('offline', () => {
+    console.log(chalk.red('📴 Bikes lost connection to MQTT broker'));
   });
 
   client.on('error', (err) => {

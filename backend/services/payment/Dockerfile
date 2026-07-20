@@ -1,5 +1,5 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json turbo.json ./
@@ -24,7 +24,7 @@ RUN npm run build --workspace=@ebike/db
 RUN npm run build --workspace=@ebike/payment-service
 
 # ── Runtime image ─────────────────────────────────────────────────────────────
-FROM node:20-alpine AS runtime
+FROM node:24-alpine AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/backend/services/payment/dist ./dist

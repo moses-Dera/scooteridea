@@ -1,5 +1,5 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json turbo.json ./
@@ -21,7 +21,7 @@ RUN npm run build --workspace=@ebike/events
 RUN npm run build --workspace=@ebike/notification-service
 
 # ── Runtime image ─────────────────────────────────────────────────────────────
-FROM node:20-alpine AS runtime
+FROM node:24-alpine AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/backend/services/notification/dist ./dist

@@ -89,7 +89,7 @@ class DockSimulator {
     // Update battery levels for charging bikes
     this.slots.forEach((slot) => {
       if (slot.charging && slot.battery_pct < 100) {
-        slot.battery_pct = Math.min(100, slot.battery_pct + Math.random() * 2);
+        slot.battery_pct = Math.min(100, Math.round(slot.battery_pct + Math.random() * 2));
       }
     });
   }
@@ -99,8 +99,10 @@ function startDockStations() {
   console.log(chalk.magenta.bold('\n🏗️  Docking Station Simulator Starting...\n'));
 
   const client = mqtt.connect(MQTT_BROKER, {
-    username: process.env.MQTT_USERNAME,
-    password: process.env.MQTT_PASSWORD,
+    username: process.env.MQTT_USERNAME || undefined,
+    password: process.env.MQTT_PASSWORD || undefined,
+    reconnectPeriod: 3000,
+    connectTimeout: 10000,
   });
 
   const docks = [];
@@ -139,6 +141,14 @@ function startDockStations() {
         ),
       );
     }, DOCK_INTERVAL);
+  });
+
+  client.on('reconnect', () => {
+    console.log(chalk.yellow('🔄 Docks reconnecting to MQTT broker...'));
+  });
+
+  client.on('offline', () => {
+    console.log(chalk.red('📴 Docks lost connection to MQTT broker'));
   });
 
   client.on('error', (err) => {
