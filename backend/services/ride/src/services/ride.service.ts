@@ -166,7 +166,9 @@ export class RideService {
     if (locationRaw) {
       try {
         const loc = JSON.parse(locationRaw);
-        batteryStartPct = loc.battery_pct ?? null;
+        if (typeof loc?.battery_pct === 'number') {
+          batteryStartPct = loc.battery_pct;
+        }
       } catch (err) {
         logger.warn(
           { err, bikeId: ride.bikeId },

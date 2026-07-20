@@ -108,7 +108,8 @@ export class AuthService {
     // Per-device key: refresh:{userId}:{jti}
     const stored = await redis.get(`refresh:${payload.sub}:${payload.jti}`);
 
-    if (stored !== refreshToken) {
+    // Use timing-safe comparison to prevent timing attacks
+    if (!stored || !crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(refreshToken))) {
       // Token has been rotated or revoked — potential replay attack
       throw new UnauthorizedError('Refresh token has been revoked');
     }

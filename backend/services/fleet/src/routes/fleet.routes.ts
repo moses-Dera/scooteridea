@@ -76,7 +76,9 @@ fleetRouter.get('/bikes/:id/trail', jwtGuard, async (req: Request, res: Response
     const trailRaw = await redis.lRange(`bike:${id}:trail`, 0, -1);
 
     // Parse the JSON strings back into objects
-    const trail = trailRaw.map((point: string) => JSON.parse(point));
+    const trail = trailRaw.map((point: string) => {
+      try { return JSON.parse(point); } catch { return null; }
+    }).filter(Boolean);
 
     res.json({ success: true, data: trail });
   } catch (err) {

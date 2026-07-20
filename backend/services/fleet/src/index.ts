@@ -24,6 +24,7 @@ import { prisma } from '@ebike/db';
 import { fleetRouter } from './routes/fleet.routes';
 import { FleetService } from './services/fleet.service';
 import { calculateBatteryEfficiency } from './services/efficiency.cron';
+import { csrfProtection, csrfTokenHandler } from '@ebike/core';
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3002);
@@ -40,7 +41,8 @@ app.use(standardRateLimiter);
 
 // ── Health + Routes ───────────────────────────────────────────────────────────
 app.use(healthRouter());
-app.use('/fleet', fleetRouter);
+app.get('/fleet/csrf-token', csrfTokenHandler);
+app.use('/fleet', csrfProtection, fleetRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 

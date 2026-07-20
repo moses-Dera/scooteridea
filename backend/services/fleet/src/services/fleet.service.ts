@@ -11,6 +11,25 @@ import { kafka } from '@ebike/events';
 import { prisma } from '@ebike/db';
 import { logger } from '@ebike/core';
 import type { BikeTelemetryPayload, BikeStatus } from '@ebike/types';
+import { z } from 'zod';
+
+const BikeTelemetrySchema = z.object({
+  lat: z.number(),
+  lng: z.number(),
+  battery_pct: z.number().min(0).max(100),
+  speed_kmh: z.number().min(0),
+  lock_status: z.enum(['LOCKED', 'UNLOCKED']),
+  docked_at: z.string().nullable().optional(),
+});
+
+const DemoSpawnSchema = z.object({
+  lat: z.number(),
+  lng: z.number(),
+  count: z.number().int().min(1).max(100).optional(),
+  radius: z.number().min(0.1).max(50).optional(),
+});
+
+const sanitize = (val: string) => String(val).replace(/[\r\n\t]/g, ' ');
 
 export class FleetService {
   /** Subscribe to all MQTT bike/dock topics. */
@@ -19,9 +38,13 @@ export class FleetService {
 
     subscribeToTopic('bikes/+/telemetry', async (topic, raw) => {
       try {
-        const bikeId = topic.split('/')[1];
-        const payload = JSON.parse(raw) as BikeTelemetryPayload;
-        await FleetService.handleBikeTelemetry(bikeId, payload);
+        const bikeId = sanitize(topic.split('/')[1]);
+        const parsed = BikeTelemetrySchema.safeParse(JSON.parse(raw));
+        if (!parsed.success) {
+          logger.warn({ bikeId, errors: parsed.error.issues }, '[Fleet] Invalid telemetry — skipped');
+          return;
+        }
+        await FleetService.handleBikeTelemetry(bikeId, parsed.data as BikeTelemetryPayload);
       } catch (err) {
         logger.error({ err, topic }, '[Fleet] Failed to process bike telemetry');
       }
@@ -29,44 +52,42 @@ export class FleetService {
 
     subscribeToTopic('bikes/+/alerts', async (topic, raw) => {
       try {
-        const bikeId = topic.split('/')[1];
-        await FleetService.handleBikeAlert(bikeId, JSON.parse(raw));
+        const bikeId = sanitize(topic.split('/')[1]);
+        const data = JSON.parse(raw);
+        if (typeof data?.type !== 'string') return;
+        await FleetService.handleBikeAlert(bikeId, { type: sanitize(data.type) });
       } catch (err) {
         logger.error({ err, topic }, '[Fleet] Failed to process bike alert');
       }
     });
 
-    // Handle RAW Hex from Physical IoT Trackers
     subscribeToTopic('iot/trackers/raw', async (topic, raw) => {
       try {
         const decoded = IoTParser.parseHexPayload(raw.toString());
         if (decoded) {
-          // Feed the translated JSON straight into the main simulator pipeline
-          await FleetService.handleBikeTelemetry(decoded.bikeId, decoded.payload);
+          const parsed = BikeTelemetrySchema.safeParse(decoded.payload);
+          if (!parsed.success) return;
+          await FleetService.handleBikeTelemetry(decoded.bikeId, parsed.data as BikeTelemetryPayload);
         }
       } catch (err) {
         logger.error({ err }, '[Fleet] Failed to ingest physical bike payload');
       }
     });
 
-    // Handle Demo Spawns
     subscribeToTopic('system/demo/spawn', async (topic, raw) => {
       try {
-        const payload = JSON.parse(raw.toString());
-        const { lat, lng, count, radius } = payload;
-
+        const parsed = DemoSpawnSchema.safeParse(JSON.parse(raw.toString()));
+        if (!parsed.success) {
+          logger.warn({ errors: parsed.error.issues }, '[Fleet] Invalid demo spawn — skipped');
+          return;
+        }
+        const { lat, lng, count, radius } = parsed.data;
         for (let i = 0; i < (count || 10); i++) {
           const newId = `BK-${Math.floor(Math.random() * 90000) + 10000}`;
           const bLat = lat + (Math.random() - 0.5) * ((radius || 2) * 0.01);
           const bLng = lng + (Math.random() - 0.5) * ((radius || 2) * 0.01);
-
           await FleetService.handleBikeTelemetry(newId, {
-            lat: bLat,
-            lng: bLng,
-            battery_pct: 100,
-            speed_kmh: 0,
-            docked_at: null,
-            lock_status: 'LOCKED',
+            lat: bLat, lng: bLng, battery_pct: 100, speed_kmh: 0, docked_at: null, lock_status: 'LOCKED',
           });
         }
         logger.info(`[Fleet] Spawned ${count} demo bikes near ${lat}, ${lng}`);
@@ -174,7 +195,7 @@ export class FleetService {
     // Track Enters
     for (const zone of zones) {
       if (!prevZoneIds.includes(zone.id)) {
-        logger.info(`Bike ${bikeId} entered zone ${zone.name}`);
+        logger.info(`Bike ${sanitize(bikeId)} entered zone ${sanitize(zone.name)}`);
 
         await prisma.zoneTransition.create({
           data: {
@@ -206,7 +227,7 @@ export class FleetService {
     // Track Exits
     for (const prevZoneId of prevZoneIds) {
       if (!currentZoneIds.includes(prevZoneId)) {
-        logger.info(`Bike ${bikeId} left zone ${prevZoneId}`);
+        logger.info(`Bike ${sanitize(bikeId)} left zone ${sanitize(prevZoneId)}`);
 
         await prisma.zoneTransition.create({
           data: {
@@ -257,7 +278,7 @@ export class FleetService {
           status,
           ...(location || {}),
           lock_status: location?.lock_status || 'LOCKED',
-          zoneIds: zonesRaw ? JSON.parse(zonesRaw) : [],
+      const zoneIds: string[] = zonesRaw ? (() => { try { return JSON.parse(zonesRaw); } catch { return []; } })() : [];
         };
       }),
     );

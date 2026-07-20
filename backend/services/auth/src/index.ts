@@ -37,6 +37,7 @@ import {
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
 
 import { authRouter } from './routes/auth.routes';
+import { csrfProtection, csrfTokenHandler } from '@ebike/core';
 
 // ── Prisma (shared singleton from @ebike/db) ────────────────────────────────
 
@@ -74,7 +75,8 @@ app.use(userRateLimiter);
 app.use(healthRouter());
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/auth', authRouter);
+app.get('/auth/csrf-token', csrfTokenHandler);
+app.use('/auth', csrfProtection, authRouter);
 
 // ── Error Handling ────────────────────────────────────────────────────────────
 app.use(notFoundHandler);
