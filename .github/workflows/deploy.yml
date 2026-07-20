@@ -61,6 +61,8 @@ jobs:
           push: true
           provenance: false
           tags: ${{ env.REGISTRY }}/moses-dera/scooteridea-${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   build-simulator:
     name: Build Simulator
@@ -90,6 +92,8 @@ jobs:
           push: true
           provenance: false
           tags: ${{ env.REGISTRY }}/moses-dera/scooteridea-hardware-simulator:latest
+          cache-from: type=gha,scope=simulator
+          cache-to: type=gha,mode=max,scope=simulator
 
   deploy-backend:
     name: Deploy Backend (VPS)
@@ -108,7 +112,7 @@ jobs:
           script: |
             # 0. Server Initialization & Cleanup
             docker swarm init || true
-            docker system prune -a -f
+            docker system prune -f
 
             # 1. Navigate to the project directory
             cd /var/www/scooteridea
