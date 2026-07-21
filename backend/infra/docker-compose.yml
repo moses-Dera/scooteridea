@@ -70,11 +70,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   fleet-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-fleet-service:latest
     expose:
@@ -101,11 +101,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   ride-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-ride-service:latest
     expose:
@@ -130,11 +130,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   pricing-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-pricing-service:latest
     expose:
@@ -157,11 +157,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   payment-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-payment-service:latest
     expose:
@@ -188,11 +188,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   notification-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-notification-service:latest
     expose:
@@ -216,11 +216,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   websocket-hub:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-websocket-hub:latest
     expose:
@@ -243,11 +243,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   dock-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-dock-service:latest
     expose:
@@ -272,11 +272,11 @@ services:
       start_period: 10s
     deploy:
       update_config:
-        order: start-first
+        order: stop-first
         failure_action: rollback
         delay: 10s
       rollback_config:
-        order: start-first
+        order: stop-first
   hardware-simulator:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-hardware-simulator:latest
     environment:

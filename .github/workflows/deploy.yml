@@ -192,3 +192,6 @@ jobs:
             # 5. Force reload Nginx to pick up new upstream IPs
             sleep 15
             docker service update --force scooter_stack_nginx
+
+            # 6. Clean up unused images and containers to free up space
+            docker system prune -a -f
