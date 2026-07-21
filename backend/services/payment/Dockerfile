@@ -10,7 +10,6 @@ COPY backend/shared/events/package.json        ./backend/shared/events/
 COPY backend/shared/db/package.json            ./backend/shared/db/
 COPY backend/services/payment/package.json     ./backend/services/payment/
 
-RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
 COPY backend/shared ./backend/shared
 COPY backend/services/payment ./backend/services/payment

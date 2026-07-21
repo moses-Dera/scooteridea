@@ -9,7 +9,6 @@ COPY backend/shared/events/package.json             ./backend/shared/events/
 COPY backend/shared/redis/package.json              ./backend/shared/redis/
 COPY backend/services/notification/package.json     ./backend/services/notification/
 
-RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
 COPY backend/shared ./backend/shared
 COPY backend/services/notification ./backend/services/notification

@@ -278,7 +278,7 @@ export class FleetService {
           status,
           ...(location || {}),
           lock_status: location?.lock_status || 'LOCKED',
-      const zoneIds: string[] = zonesRaw ? (() => { try { return JSON.parse(zonesRaw); } catch { return []; } })() : [];
+          zoneIds: zonesRaw ? (() => { try { return JSON.parse(zonesRaw); } catch { return []; } })() : [],
         };
       }),
     );

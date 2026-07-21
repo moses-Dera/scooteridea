@@ -11,6 +11,6 @@
     "@types/geojson": "^7946.0.14"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "typescript": "^7.0.0"
   }
 }

@@ -11,7 +11,6 @@ COPY backend/shared/mqtt/package.json        ./backend/shared/mqtt/
 COPY backend/shared/db/package.json          ./backend/shared/db/
 COPY backend/services/dock/package.json      ./backend/services/dock/
 
-RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
 COPY backend/shared ./backend/shared
 COPY backend/services/dock ./backend/services/dock

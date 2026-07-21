@@ -9,7 +9,6 @@ COPY backend/shared/redis/package.json               ./backend/shared/redis/
 COPY backend/shared/core/package.json                ./backend/shared/core/
 COPY backend/services/websocket-hub/package.json     ./backend/services/websocket-hub/
 
-RUN npm install -g typescript
 RUN npm ci --workspaces --include-workspace-root
 COPY backend/shared ./backend/shared
 COPY backend/services/websocket-hub ./backend/services/websocket-hub
