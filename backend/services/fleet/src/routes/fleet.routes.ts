@@ -52,7 +52,7 @@ fleetRouter.get('/bikes', jwtGuard, async (req: Request, res: Response) => {
         include: { assignedZones: true },
       });
 
-      const allowedZoneIds = user?.assignedZones.map((z) => z.id) || [];
+      const allowedZoneIds = user?.assignedZones.map((z: any) => z.id) || [];
 
       if (allowedZoneIds.length > 0) {
         // Filter out bikes that don't have at least one zone intersecting with allowedZoneIds
@@ -145,7 +145,7 @@ fleetRouter.get('/docks', jwtGuard, async (req: Request, res: Response) => {
         include: { assignedZones: true },
       });
 
-      const allowedZoneIds = user?.assignedZones.map((z) => z.id) || [];
+      const allowedZoneIds = user?.assignedZones.map((z: any) => z.id) || [];
 
       // Assume docks have a geofenceId field or we check spatial (for now, return all if no geofenceId)
       // Actually, docks don't have a direct geofenceId in schema right now. We'd use PostGIS, but for now we filter by ST_Contains on DB or just return all if not explicitly modeled.
@@ -310,7 +310,6 @@ fleetRouter.get(
   },
 );
 
-import { Prisma } from '@prisma/client';
 import circle from '@turf/circle';
 import { point } from '@turf/helpers';
 
@@ -332,7 +331,7 @@ fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {
         name,
         type,
         speedCap: speedCap ?? null,
-        boundary: circlePolygon.geometry as unknown as Prisma.InputJsonValue,
+        boundary: circlePolygon.geometry as any,
         baseFareOverride: baseFareOverride ?? null,
         perMinuteOverride: perMinuteOverride ?? null,
       },
@@ -354,7 +353,7 @@ fleetRouter.put('/zones/:id', jwtGuard, requireRole('ADMIN'), async (req, res) =
     if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
       const center = point([lng, lat]);
       const circlePolygon = circle(center, radiusKm, { steps: 32, units: 'kilometers' });
-      boundaryInput = circlePolygon.geometry as unknown as Prisma.InputJsonValue;
+      boundaryInput = circlePolygon.geometry as any;
     }
 
     const zone = await prisma.geofence.update({
