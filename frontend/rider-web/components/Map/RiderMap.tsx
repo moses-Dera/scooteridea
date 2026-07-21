@@ -205,31 +205,37 @@ export default function RiderMap() {
   useEffect(() => {
     setMounted(true);
 
-    // Attempt to get user's location immediately before rendering map
+    let fallbackTimer: NodeJS.Timeout;
+
+    const setFallback = () => {
+      console.warn('Geolocation failed or timed out, using fallback location.');
+      const fallback = { lat: 6.5244, lng: 3.3792 }; // Lagos as default
+      setInitialLocation(prev => prev || fallback);
+      setSearchCenter(prev => prev || fallback);
+    };
+
     if ('geolocation' in navigator) {
+      fallbackTimer = setTimeout(setFallback, 5000);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          clearTimeout(fallbackTimer);
           setInitialLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
           setSearchCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
         (error) => {
-          console.warn('Geolocation error:', error);
-          if (error.code === error.PERMISSION_DENIED) {
-            setLocationError(
-              'Location access denied. Please enable location permissions to use Scooterfy.',
-            );
-          } else {
-            setLocationError(
-              'Unable to determine your location. Please check your connection or GPS.',
-            );
-          }
+          clearTimeout(fallbackTimer);
+          setFallback();
         },
-        // Wait up to 15s for the initial lock. We must have a location to start the app.
-        { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 },
       );
     } else {
-      setLocationError('Geolocation is not supported by your browser.');
+      setFallback();
     }
+
+    return () => {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+    };
   }, []);
 
   // GeolocateControl is auto-triggered in onMapLoad — no duplicate trigger here

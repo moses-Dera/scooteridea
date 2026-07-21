@@ -31,17 +31,42 @@ export default function RiderHome() {
   const searchLng = searchCenter?.lng ?? userLoc?.lng ?? 0;
 
   useEffect(() => {
+    let fallbackTimer: NodeJS.Timeout;
+
+    const setFallback = () => {
+      setUserLoc(prev => {
+        if (!prev) {
+          const fallback = { lat: 6.5244, lng: 3.3792 };
+          setSearchCenter(s => s || fallback);
+          return fallback;
+        }
+        return prev;
+      });
+    };
+
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      fallbackTimer = setTimeout(setFallback, 5000);
+
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          clearTimeout(fallbackTimer);
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setUserLoc(coords);
           setSearchCenter(prev => prev || coords);
         },
-        () => {},
-        { enableHighAccuracy: true },
+        () => {
+          clearTimeout(fallbackTimer);
+          setFallback();
+        },
+        { enableHighAccuracy: true, timeout: 5000 },
       );
+    } else {
+      setFallback();
     }
+
+    return () => {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+    };
   }, []);
 
   // Handle QR scanner state and redirect
