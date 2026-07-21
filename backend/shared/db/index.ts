@@ -12,9 +12,8 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-// Fallback to default docker-compose database URL if not provided in environment
-const databaseUrl =
-  process.env.DATABASE_URL || 'postgresql://ebike:secret@localhost:5440/ebike?schema=public';
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error('DATABASE_URL is not set');
 
 // Initialize the database connection pool and adapter for Prisma 7
 const pool = new Pool({ connectionString: databaseUrl });

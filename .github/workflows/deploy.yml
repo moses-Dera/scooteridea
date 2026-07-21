@@ -95,9 +95,32 @@ jobs:
           cache-from: type=gha,scope=simulator
           cache-to: type=gha,mode=max,scope=simulator
 
+  migrate:
+    name: Run DB Migrations
+    needs: [build-and-push, build-simulator]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install db dependencies
+        run: npm ci --workspace=@ebike/db
+
+      - name: Run Prisma migrations
+        working-directory: backend/shared
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma migrate deploy
+
   deploy-backend:
     name: Deploy Backend (VPS)
-    needs: [build-and-push, build-simulator]
+    needs: [migrate]
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
@@ -108,7 +131,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           passphrase: ${{ secrets.VPS_PASSPHRASE }}
           command_timeout: '30m'
-          envs: MQTT_PASSWORD,MQTT_USERNAME,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,GOOGLE_CLIENT_ID,PAYSTACK_SECRET_KEY,STRIPE_SECRET_KEY,FRONTEND_URL,EXPO_ACCESS_TOKEN,GRAFANA_ADMIN_PASSWORD
+          envs: MQTT_PASSWORD,MQTT_USERNAME,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,PAYSTACK_SECRET_KEY,STRIPE_SECRET_KEY,FRONTEND_URL,EXPO_ACCESS_TOKEN,GRAFANA_ADMIN_PASSWORD,SMTP_USER,SMTP_PASS,DATABASE_URL,DIRECT_URL
           script: |
             # 0. Server Initialization & Cleanup
             docker swarm init || true
@@ -138,17 +161,21 @@ jobs:
             JWT_ACCESS_EXPIRY=15m
             JWT_REFRESH_EXPIRY=30d
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
             PAYSTACK_SECRET_KEY=${{ secrets.PAYSTACK_SECRET_KEY }}
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             EXPO_ACCESS_TOKEN=${{ secrets.EXPO_ACCESS_TOKEN }}
             GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DIRECT_URL=${{ secrets.DIRECT_URL }}
+            CSRF_SECRET=${{ secrets.CSRF_SECRET }}
             ENVEOF
 
             export GITHUB_REPOSITORY_OWNER=moses-dera
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            docker compose pull
 
             # 3b. Auto-generate Mosquitto password file using a temp container.
             #     Recreated on every deploy so it stays in sync with the secret.
@@ -162,16 +189,6 @@ jobs:
             set +a
             docker stack deploy -c docker-compose.yml scooter_stack
 
-            # 5. Run Prisma Database Migrations
-            echo "Waiting for services to start..."
-            sleep 30
-            AUTH_CONTAINER=$(docker ps -q -f name=scooter_stack_auth-service | head -n 1)
-            if [ -n "$AUTH_CONTAINER" ]; then
-              docker exec -w /app/backend/shared/db $AUTH_CONTAINER npx prisma migrate deploy || true
-            else
-              echo "Warning: Auth container not found. Migration skipped."
-            fi
-
-            # 6. Force reload Nginx to pick up new upstream IPs
+            # 5. Force reload Nginx to pick up new upstream IPs
             sleep 15
             docker service update --force scooter_stack_nginx

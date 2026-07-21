@@ -1,8 +1,13 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: 'Operator Login',
       credentials: {
@@ -75,9 +80,40 @@ export const authOptions: NextAuthOptions = {
     updateAge: 24 * 60 * 60, // 24 hours sliding window
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // For Google OAuth, verify the user exists in our backend and has operator/admin role
+      if (account?.provider === 'google') {
+        try {
+          const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+          const res = await fetch(`${backendUrl}/auth/oauth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: account.id_token }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.data?.accessToken) return '/login?error=OAuthFailed';
+
+          const payloadBase64 = json.data.accessToken.split('.')[1];
+          const decoded = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+
+          if (decoded.role !== 'OPERATOR' && decoded.role !== 'ADMIN') {
+            return '/login?error=AccessDenied';
+          }
+
+          // Attach tokens to user object so jwt callback can pick them up
+          (user as any).role = decoded.role;
+          (user as any).id = decoded.sub;
+          (user as any).accessToken = json.data.accessToken;
+          (user as any).refreshToken = json.data.refreshToken;
+        } catch {
+          return '/login?error=OAuthFailed';
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = (user as any).id ?? user.id;
         token.role = (user as any).role;
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;

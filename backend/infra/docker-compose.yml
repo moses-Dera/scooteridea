@@ -1,20 +1,4 @@
 services:
-  postgres:
-    image: postgis/postgis:16-3.4
-    environment:
-      POSTGRES_DB: ebike
-      POSTGRES_USER: ebike
-      POSTGRES_PASSWORD: secret
-    ports:
-    - 5440:5432
-    volumes:
-    - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test:
-      - CMD-SHELL
-      - pg_isready -U ebike
-      interval: 5s
-      retries: 5
   redis:
     image: redis:7-alpine
     ports:
@@ -62,15 +46,17 @@ services:
     - '3001'
     environment:
       PORT: 3001
-      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_REFRESH_EXPIRY: 30d
       JWT_ACCESS_EXPIRY: 15m
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
     depends_on:
-    - postgres
     - redis
     healthcheck:
       test:
@@ -95,14 +81,13 @@ services:
     - '3002'
     environment:
       PORT: 3002
-      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - postgres
     - redis
     healthcheck:
       test:
@@ -127,12 +112,11 @@ services:
     - '3003'
     environment:
       PORT: 3003
-      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - postgres
     - redis
     healthcheck:
       test:
@@ -184,14 +168,14 @@ services:
     - '3006'
     environment:
       PORT: 3006
-      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
       FRONTEND_URL: ${FRONTEND_URL}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - postgres
+    - redis
     healthcheck:
       test:
       - CMD
@@ -270,12 +254,11 @@ services:
     - '3009'
     environment:
       PORT: 3009
-      DATABASE_URL: postgresql://ebike:secret@postgres:5432/ebike
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - postgres
     - redis
     healthcheck:
       test:
@@ -332,7 +315,6 @@ services:
     depends_on:
     - loki
 volumes:
-  postgres_data: null
   redis_data: null
   mosquitto_data: null
   mosquitto_log: null

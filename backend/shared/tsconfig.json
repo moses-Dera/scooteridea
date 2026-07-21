@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["prisma.config.ts"],
+  "exclude": ["node_modules", "db", "core", "events", "mqtt", "redis", "types"]
+}
