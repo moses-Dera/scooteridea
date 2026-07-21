@@ -4,6 +4,9 @@ import { bikeCommander } from '@ebike/mqtt';
 import { prisma } from '@ebike/db';
 import { getRedisClient } from '@ebike/redis';
 import { jwtGuard, requireRole } from '@ebike/core';
+
+import circle from '@turf/circle';
+import { point } from '@turf/helpers';
 export const fleetRouter = Router();
 
 // ==========================================
@@ -310,8 +313,7 @@ fleetRouter.get(
   },
 );
 
-import circle from '@turf/circle';
-import { point } from '@turf/helpers';
+
 
 // POST /fleet/zones — create a new geofence zone
 fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {
@@ -348,7 +350,7 @@ fleetRouter.put('/zones/:id', jwtGuard, requireRole('ADMIN'), async (req, res) =
     const { id } = req.params;
     const { name, type, lat, lng, radiusKm, speedCap, baseFareOverride, perMinuteOverride } =
       req.body;
-    
+
     let boundaryInput = undefined;
     if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
       const center = point([lng, lat]);
