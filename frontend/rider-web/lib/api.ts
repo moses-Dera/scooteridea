@@ -49,7 +49,11 @@ function createApiClient(): AxiosInstance {
   client.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-      if (error.response?.status === 401) {
+      const isGhostSession =
+        error.response?.status === 404 &&
+        error.config?.url?.includes('auth/me');
+
+      if (error.response?.status === 401 || isGhostSession) {
         if (typeof window !== 'undefined') {
           let feature = 'your account';
           const url = error.config?.url || '';
