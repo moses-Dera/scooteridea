@@ -39,7 +39,6 @@ app.use(requestId);
 app.use(httpLogger);
 app.use(express.json({ limit: '512kb' }));
 app.use(standardRateLimiter);
-app.use(userRateLimiter);
 app.use(cookieParser(process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret'));
 
 // ── Health + Routes ───────────────────────────────────────────────────────────
