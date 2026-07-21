@@ -85,7 +85,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="text-center pt-8">
-          <p className="text-xs text-slate-500 font-bold mb-1">E-Bike Platform v1.0.0</p>
+          <p className="text-xs text-slate-500 font-bold mb-1">Scooterfy v1.0.0</p>
           <button className="text-sm font-bold text-danger hover:text-danger/80 transition-colors">
             Delete Account
           </button>

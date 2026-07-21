@@ -10,7 +10,7 @@ module.exports = withSentryConfig(
   nextConfig,
   {
     silent: true,
-    org: 'scooteridea',
+    org: 'scooterfy',
     project: 'web-operator',
   },
   {

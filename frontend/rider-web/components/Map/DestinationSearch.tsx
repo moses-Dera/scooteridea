@@ -36,7 +36,7 @@ export function DestinationSearch() {
   // Load recent searches from localStorage on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('scooteridea_recent_searches');
+      const saved = localStorage.getItem('scooterfy_recent_searches');
       if (saved) {
         setRecentSearches(JSON.parse(saved));
       }
@@ -51,7 +51,7 @@ export function DestinationSearch() {
         // Remove duplicate if exists, then prepend
         const filtered = prev.filter((r) => r.id !== result.id);
         const newRecent = [result, ...filtered].slice(0, 5); // Keep last 5
-        localStorage.setItem('scooteridea_recent_searches', JSON.stringify(newRecent));
+        localStorage.setItem('scooterfy_recent_searches', JSON.stringify(newRecent));
         return newRecent;
       });
     } catch (e) {
@@ -63,14 +63,14 @@ export function DestinationSearch() {
     e.stopPropagation(); // prevent clicking the item
     setRecentSearches((prev) => {
       const newRecent = prev.filter((r) => r.id !== id);
-      localStorage.setItem('scooteridea_recent_searches', JSON.stringify(newRecent));
+      localStorage.setItem('scooterfy_recent_searches', JSON.stringify(newRecent));
       return newRecent;
     });
   };
 
   const clearAllHistory = () => {
     setRecentSearches([]);
-    localStorage.removeItem('scooteridea_recent_searches');
+    localStorage.removeItem('scooterfy_recent_searches');
   };
 
   useEffect(() => {

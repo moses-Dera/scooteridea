@@ -26,7 +26,7 @@ module.exports = withSentryConfig(
   withPWA(nextConfig),
   {
     silent: true,
-    org: 'scooteridea',
+    org: 'scooterfy',
     project: 'rider-web',
   },
   {

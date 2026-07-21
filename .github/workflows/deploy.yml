@@ -112,7 +112,7 @@ jobs:
         run: npm ci --workspace=@ebike/db
 
       - name: Run Prisma migrations
-        working-directory: backend/shared
+        working-directory: backend/shared/db
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
