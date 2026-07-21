@@ -310,6 +310,10 @@ fleetRouter.get(
   },
 );
 
+import { Prisma } from '@prisma/client';
+import circle from '@turf/circle';
+import { point } from '@turf/helpers';
+
 // POST /fleet/zones — create a new geofence zone
 fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {
   try {
@@ -319,12 +323,16 @@ fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {
       res.status(400).json({ success: false, error: 'name, type, lat, lng, radiusKm required' });
       return;
     }
+
+    const center = point([lng, lat]);
+    const circlePolygon = circle(center, radiusKm, { steps: 32, units: 'kilometers' });
+
     const zone = await prisma.geofence.create({
       data: {
         name,
         type,
         speedCap: speedCap ?? null,
-        boundary: { type: 'circle', lat, lng, radiusKm },
+        boundary: circlePolygon.geometry as unknown as Prisma.InputJsonValue,
         baseFareOverride: baseFareOverride ?? null,
         perMinuteOverride: perMinuteOverride ?? null,
       },
@@ -341,12 +349,20 @@ fleetRouter.put('/zones/:id', jwtGuard, requireRole('ADMIN'), async (req, res) =
     const { id } = req.params;
     const { name, type, lat, lng, radiusKm, speedCap, baseFareOverride, perMinuteOverride } =
       req.body;
+    
+    let boundaryInput = undefined;
+    if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+      const center = point([lng, lat]);
+      const circlePolygon = circle(center, radiusKm, { steps: 32, units: 'kilometers' });
+      boundaryInput = circlePolygon.geometry as unknown as Prisma.InputJsonValue;
+    }
+
     const zone = await prisma.geofence.update({
       where: { id },
       data: {
         ...(name && { name }),
         ...(type && { type }),
-        ...(lat !== undefined && { boundary: { type: 'circle', lat, lng, radiusKm } }),
+        ...(boundaryInput && { boundary: boundaryInput }),
         ...(speedCap !== undefined && { speedCap }),
         ...(baseFareOverride !== undefined && { baseFareOverride }),
         ...(perMinuteOverride !== undefined && { perMinuteOverride }),
