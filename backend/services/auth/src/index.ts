@@ -19,6 +19,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import http from 'http';
+import cookieParser from 'cookie-parser';
 import { prisma } from '@ebike/db';
 
 import {
@@ -70,6 +71,7 @@ app.use(
 );
 app.use(standardRateLimiter);
 app.use(userRateLimiter);
+app.use(cookieParser(process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret'));
 
 // ── Health Checks ─────────────────────────────────────────────────────────────
 app.use(healthRouter());
