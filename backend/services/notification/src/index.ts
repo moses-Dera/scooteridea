@@ -27,6 +27,7 @@ import {
 } from '@ebike/core';
 import { createConsumer, TOPICS } from '@ebike/events';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
+import { EmailService } from './email.service';
 
 // ── App (health endpoint only) ────────────────────────────────────────────────
 const app = express();
@@ -144,69 +145,105 @@ async function startConsumer() {
   const consumer = createConsumer('notification-consumer');
 
   await consumer.subscribe(
-    [TOPICS.RIDE_STARTED, TOPICS.RIDE_ENDED, TOPICS.OPS_ALERT, TOPICS.PAYMENT_RESULT],
-    async (payload: unknown) => {
+    [
+      TOPICS.RIDE_STARTED,
+      TOPICS.RIDE_ENDED,
+      TOPICS.OPS_ALERT,
+      TOPICS.PAYMENT_RESULT,
+      TOPICS.USER_REGISTERED,
+      TOPICS.PASSWORD_RESET_REQUESTED,
+    ],
+    async (payload: unknown, raw: string, channel: string) => {
       const p = payload as NotificationPayload;
 
-      switch (p.type) {
+      switch (channel) {
         // ── Ops Alerts ────────────────────────────────────────────────────────
-        case 'DOCK_FULL':
-          logger.warn({ dockId: p.dockId }, '[Notification] Ops: dock full');
-          break;
-
-        case 'DOCK_EMPTY':
-          logger.warn({ dockId: p.dockId }, '[Notification] Ops: dock empty');
-          break;
-
-        case 'LOW_BATTERY':
-          if (p.userId) {
-            await sendPushNotification(
-              p.userId,
-              '⚡ Low Battery',
-              'Please return to a dock soon.',
-              { type: 'LOW_BATTERY', bikeId: p.bikeId ?? '' },
-            );
-          }
-          break;
-
-        case 'ZONE_VIOLATION':
-          if (p.userId) {
-            await sendPushNotification(
-              p.userId,
-              '⚠️ Zone Warning',
-              'You have entered a restricted zone.',
-              { type: 'ZONE_VIOLATION' },
-            );
+        case TOPICS.OPS_ALERT:
+          if (p.type === 'DOCK_FULL') {
+            logger.warn({ dockId: p.dockId }, '[Notification] Ops: dock full');
+          } else if (p.type === 'DOCK_EMPTY') {
+            logger.warn({ dockId: p.dockId }, '[Notification] Ops: dock empty');
+          } else if (p.type === 'LOW_BATTERY') {
+            if (p.userId) {
+              await sendPushNotification(
+                p.userId,
+                '⚡ Low Battery',
+                'Please return to a dock soon.',
+                { type: 'LOW_BATTERY', bikeId: p.bikeId ?? '' },
+              );
+            }
+          } else if (p.type === 'ZONE_VIOLATION') {
+            if (p.userId) {
+              await sendPushNotification(
+                p.userId,
+                '⚠️ Zone Warning',
+                'You have entered a restricted zone.',
+                { type: 'ZONE_VIOLATION' },
+              );
+            }
           }
           break;
 
         // ── Payment result ────────────────────────────────────────────────────
-        case 'failed':
-          if (p.userId) {
-            await sendPushNotification(
-              p.userId,
-              '💳 Payment Failed',
-              'Your ride payment could not be processed. Please top up your wallet.',
-              { type: 'PAYMENT_FAILED', rideId: p.rideId ?? '' },
+        case TOPICS.PAYMENT_RESULT:
+          if (p.status === 'failed') {
+            if (p.userId) {
+              await sendPushNotification(
+                p.userId,
+                '💳 Payment Failed',
+                'Your ride payment could not be processed. Please top up your wallet.',
+                { type: 'PAYMENT_FAILED', rideId: p.rideId ?? '' },
+              );
+            }
+            if ((p as any).userEmail) {
+              await EmailService.sendPaymentFailedEmail((p as any).userEmail);
+            }
+          }
+          break;
+
+        // ── Auth Emails ───────────────────────────────────────────────────────
+        case TOPICS.USER_REGISTERED:
+          if ((p as any).email && (p as any).name) {
+            await EmailService.sendWelcomeEmail((p as any).email, (p as any).name);
+          }
+          break;
+
+        case TOPICS.PASSWORD_RESET_REQUESTED:
+          if ((p as any).email && (p as any).resetToken && (p as any).role) {
+            await EmailService.sendPasswordResetEmail(
+              (p as any).email,
+              (p as any).resetToken,
+              (p as any).role,
             );
           }
           break;
 
         // ── Ride lifecycle (RIDE_STARTED / RIDE_ENDED) ────────────────────────
-        default: {
+        case TOPICS.RIDE_STARTED:
           if (p.rideId && p.userId) {
-            const isRideEnd = !!p.fareCents;
             await sendPushNotification(
               p.userId,
-              isRideEnd ? '🏁 Ride Complete' : '🚴 Ride Started',
-              isRideEnd
-                ? `Your fare: ₦${((p.fareCents ?? 0) / 100).toFixed(2)}`
-                : 'Your bike is unlocked — enjoy your ride!',
-              { type: isRideEnd ? 'RIDE_RECEIPT' : 'RIDE_STARTED', rideId: p.rideId },
+              '🚴 Ride Started',
+              'Your bike is unlocked — enjoy your ride!',
+              { type: 'RIDE_STARTED', rideId: p.rideId },
             );
           }
           break;
-        }
+
+        case TOPICS.RIDE_ENDED:
+          if (p.rideId && p.userId) {
+            await sendPushNotification(
+              p.userId,
+              '🏁 Ride Complete',
+              `Your fare: ₦${((p.fareCents ?? 0) / 100).toFixed(2)}`,
+              { type: 'RIDE_RECEIPT', rideId: p.rideId },
+            );
+
+            if ((p as any).userEmail && p.fareCents) {
+              await EmailService.sendRideReceiptEmail((p as any).userEmail, p.fareCents);
+            }
+          }
+          break;
       }
     },
   );

@@ -205,7 +205,13 @@ export async function processPaymentCharge(
       });
 
       // Emit failure so Notification + Ride services can handle it
-      await publish(TOPICS.PAYMENT_RESULT, { rideId, status: 'failed', ts: Date.now() });
+      await publish(TOPICS.PAYMENT_RESULT, { 
+        rideId, 
+        userId, 
+        userEmail: user.email, 
+        status: 'failed', 
+        ts: Date.now() 
+      });
 
       throw new InsufficientBalanceError(amountCents, user.walletCents);
     }
@@ -231,7 +237,13 @@ export async function processPaymentCharge(
   });
 
   // Emit success result
-  await publish(TOPICS.PAYMENT_RESULT, { rideId, status: 'success', ts: Date.now() });
+  await publish(TOPICS.PAYMENT_RESULT, { 
+    rideId, 
+    userId, 
+    userEmail: user.email, 
+    status: 'success', 
+    ts: Date.now() 
+  });
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────

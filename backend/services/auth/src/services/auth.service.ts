@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
-import nodemailer from 'nodemailer';
+import { kafka } from '@ebike/events';
 import {
   ConflictError,
   UnauthorizedError,
@@ -36,44 +36,6 @@ if (!REFRESH_SECRET)
   throw new Error('JWT_REFRESH_SECRET is not set — do not share with ACCESS_SECRET');
 
 export class AuthService {
-  // ── Email Helpers ─────────────────────────────────────────────────────────────
-  private static getTransporter() {
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-
-  private static async sendEmail(to: string, subject: string, text: string, html: string): Promise<void> {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      logger.warn({ to, subject }, '[Auth] SMTP not configured — skipping email');
-      return;
-    }
-    try {
-      await AuthService.getTransporter().sendMail({
-        from: `"Scooterfy" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        text,
-        html,
-      });
-      logger.info({ to, subject }, '[Auth] Email sent');
-    } catch (err) {
-      logger.error({ err }, '[Auth] Failed to send email');
-    }
-  }
-
-  private static async sendWelcomeEmail(email: string, name: string): Promise<void> {
-    await AuthService.sendEmail(
-      email,
-      'Welcome to Scooterfy! 🛴',
-      `Hi ${name},\n\nWelcome to Scooterfy! Start exploring the city with your first ride.\n\nThe Scooterfy Team`,
-      `<strong>Hi ${name},</strong><br><br>Welcome to Scooterfy! Start exploring the city with your first ride.<br><br>The Scooterfy Team`,
-    );
-  }
 
   // ── Register ─────────────────────────────────────────────────────────────────
   static async register(dto: RegisterDto): Promise<Omit<User, 'walletCents'>> {
@@ -85,9 +47,13 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = await UserRepository.create({ ...dto, passwordHash });
 
-    // Send welcome email asynchronously
-    AuthService.sendWelcomeEmail(user.email, user.name).catch(() => {});
-
+    await kafka.userRegistered({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      ts: Date.now(),
+    });
+    
     // Omit sensitive / internal fields before returning
     const { ...safeUser } = user;
     return safeUser;
@@ -181,7 +147,12 @@ export class AuthService {
     const { user, isNew } = await UserRepository.findOrCreateOAuth(email, name);
 
     if (isNew) {
-      AuthService.sendWelcomeEmail(user.email, user.name).catch(() => {});
+      kafka.userRegistered({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        ts: Date.now(),
+      }).catch(() => {});
     }
 
     return AuthService.issueTokenPair(user);
@@ -264,12 +235,13 @@ export class AuthService {
       '[Auth] Generated Password Reset Token',
     );
 
-    await AuthService.sendEmail(
-      email,
-      'Scooterfy Password Reset Request',
-      `You requested a password reset. Click this link to reset your password: ${resetLink}. This link expires in 15 minutes.`,
-      `<strong>You requested a password reset.</strong><br><br>Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`,
-    );
+    await kafka.passwordResetRequested({
+      userId: user.id,
+      email: user.email,
+      resetToken,
+      role: user.role,
+      ts: Date.now(),
+    });
 
     return {
       message: 'If an account exists for that email, a reset link has been sent.',

@@ -8,6 +8,8 @@ import type {
   KafkaPaymentResultEvent,
   KafkaOpsAlertEvent,
   KafkaFleetCommandEvent,
+  KafkaUserRegisteredEvent,
+  KafkaPasswordResetRequestedEvent,
 } from '@ebike/types';
 
 // ── Topic Registry ────────────────────────────────────────────────────────────
@@ -21,6 +23,8 @@ export const TOPICS = {
   OPS_ALERT: 'ops.alert',
   FLEET_COMMAND: 'fleet.command',
   SUPPORT_TICKET_CREATED: 'support.ticket.created',
+  USER_REGISTERED: 'user.registered',
+  PASSWORD_RESET_REQUESTED: 'password.reset.requested',
 } as const;
 
 // ── Redis instance (singleton) ────────────────────────────────────────────────
@@ -67,4 +71,7 @@ export const kafka = {
   fleetCommand: (e: KafkaFleetCommandEvent) => publish(TOPICS.FLEET_COMMAND, e, e.bikeId),
   supportTicketCreated: (e: { ticketId: string; userId: string; subject: string }) =>
     publish(TOPICS.SUPPORT_TICKET_CREATED, e),
+  userRegistered: (e: KafkaUserRegisteredEvent) => publish(TOPICS.USER_REGISTERED, e, e.userId),
+  passwordResetRequested: (e: KafkaPasswordResetRequestedEvent) =>
+    publish(TOPICS.PASSWORD_RESET_REQUESTED, e, e.userId),
 };

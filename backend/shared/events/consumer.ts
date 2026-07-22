@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import { TOPICS } from './producer';
 
-export type MessageHandler<T> = (payload: T, raw: string) => Promise<void>;
+export type MessageHandler<T> = (payload: T, raw: string, channel: string) => Promise<void>;
 
 /** Create a typed Redis subscriber. */
 export function createConsumer(groupId?: string) {
@@ -18,7 +18,7 @@ export function createConsumer(groupId?: string) {
         if (!topics.includes(channel)) return;
         try {
           const payload = JSON.parse(message);
-          await handler(payload, message);
+          await handler(payload, message, channel);
         } catch (err) {
           console.error(`[Redis Subscriber] Failed to process message from ${channel}`, err);
         }

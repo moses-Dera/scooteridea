@@ -247,6 +247,8 @@ export interface KafkaRideEndedEvent {
   rideId: string;
   fareCents: number;
   userId: string;
+  userEmail?: string;
+  userName?: string;
   ts: number;
 }
 
@@ -260,6 +262,22 @@ export interface KafkaPaymentChargeEvent {
 export interface KafkaPaymentResultEvent {
   rideId: string;
   status: PaymentStatus;
+  userEmail?: string;
+  ts: number;
+}
+
+export interface KafkaUserRegisteredEvent {
+  userId: string;
+  email: string;
+  name: string;
+  ts: number;
+}
+
+export interface KafkaPasswordResetRequestedEvent {
+  userId: string;
+  email: string;
+  resetToken: string;
+  role: UserRole;
   ts: number;
 }
 
