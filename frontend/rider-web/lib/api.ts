@@ -244,7 +244,7 @@ export const rideApi = {
 export const userApi = {
   getProfile: () => api.get('/auth/me'),
 
-  updateProfile: (data: any) => api.put('/auth/me', data),
+  updateProfile: (data: any) => api.put('/auth/user/profile', data),
 
   getWallet: () =>
     api.get('/auth/me').then((res: any) => {
@@ -262,6 +262,11 @@ export const userApi = {
 
   getTransactions: (page = 1, limit = 20) =>
     Promise.resolve({ data: [], pagination: { hasMore: false } }),
+};
+
+export const paymentApi = {
+  initializeTopUp: (email: string, amountCents: number) => 
+    api.post('/payments/initialize', { email, amountCents }),
 };
 
 export const pricingApi = {

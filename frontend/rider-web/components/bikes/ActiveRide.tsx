@@ -76,7 +76,6 @@ export function ActiveRideComponent() {
             <MapIcon className="w-4 h-4" /> Live Map
           </p>
           <p className="text-slate-500 text-xs">Your ride is being tracked in real-time</p>
-          <p className="text-slate-600 text-xs mt-2">Map integration coming soon</p>
         </div>
       </div>
 

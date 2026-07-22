@@ -127,6 +127,7 @@ export default function ActiveRide() {
           setIsEndingRide(false);
           setEndStep('idle');
         },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to end ride';

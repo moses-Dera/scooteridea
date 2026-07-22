@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, CreditCard, Plus, History, ChevronRight, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { paymentApi } from '@/lib/api';
 
 export default function WalletPage() {
   const router = useRouter();
@@ -18,22 +19,14 @@ export default function WalletPage() {
 
     try {
       setIsTopUpLoading(true);
-      const res = await fetch('/api/proxy/payments/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: session.user.email,
-          amountCents: 1000 * 100, // Top up ₦1,000 (Paystack expects kobo/cents)
-        }),
-      });
+      const res = await paymentApi.initializeTopUp(session.user.email, 1000 * 100);
+      const json: any = res.data;
 
-      const json = await res.json();
-
-      if (json.success && json.data?.authorization_url) {
+      if (json && json.authorization_url) {
         // Redirect browser to Paystack's secure checkout page
-        window.location.href = json.data.authorization_url;
+        window.location.href = json.authorization_url;
       } else {
-        alert(json.message || 'Failed to initialize payment');
+        alert(json?.message || 'Failed to initialize payment');
       }
     } catch (e) {
       alert('Network error while initializing payment.');

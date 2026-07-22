@@ -49,7 +49,27 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
     <div className="px-6 pb-6 text-white space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-2 pt-2">
-        <div className="text-2xl font-bold">Wallet</div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'menu' }))}
+            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
+          >
+            <svg
+              className="w-5 h-5 text-slate-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+          <div className="text-2xl font-bold">Wallet</div>
+        </div>
         <button
           onClick={onClose}
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
@@ -89,7 +109,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
             <input
               type="number"
               placeholder="Amount (₦)"
-              className="flex-1 bg-black/40 border border-primary/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+              className="flex-1 bg-black/40 border border-[#1ED760]/30 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-[#1ED760] transition-colors"
               value={topUpAmount}
               onChange={(e) => setTopUpAmount(e.target.value)}
               autoFocus
@@ -102,46 +122,26 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
                   return;
                 }
 
-                // Initialize Paystack Checkout
-                if ((window as any).PaystackPop) {
-                  const handler = (window as any).PaystackPop.setup({
-                    key:
-                      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ||
-                      'pk_test_xxxxxxxxxxxxxxxxxxxxxxxx',
-                    email: session?.user?.email || 'rider@scooter.com',
-                    amount: amount * 100, // Paystack expects lowest currency denomination (Kobo)
-                    currency: 'NGN',
-                    ref: 'txn_' + Math.floor(Math.random() * 1000000000 + 1),
-                    callback: async function (response: any) {
-                      // Payment Complete!
-                      // In production, we'd verify this reference on the backend before crediting.
-                      try {
-                        const { userApi } = await import('@/lib/api');
-                        await userApi.topUpWallet(response.reference);
-                        toast.success(
-                          `Payment successful! ₦${amount} has been added to your wallet.`,
-                        );
-                      } catch (err: any) {
-                        console.error('Failed to top up wallet on backend', err);
-                        const errorMessage = err?.message || 'Transaction verification failed.';
-                        toast.error(`Attention: ${errorMessage}`);
-                      }
+                // Initialize Paystack Checkout via Backend
+                import('@/lib/api').then(async ({ paymentApi }) => {
+                  try {
+                    const res: any = await paymentApi.initializeTopUp(
+                      session?.user?.email || 'rider@scooter.com',
+                      amount * 100
+                    );
+                    if (res.data?.authorization_url) {
+                      window.location.href = res.data.authorization_url;
+                    } else {
+                      toast.error('Failed to initialize payment.');
                       setIsTopping(false);
-                      setTopUpAmount('');
-                      // Force a refresh of the wallet balance
-                      window.location.reload();
-                    },
-                    onClose: function () {
-                      // User closed the payment window
-                      setIsTopping(false);
-                    },
-                  });
-                  handler.openIframe();
-                } else {
-                  toast.error('Payment gateway is still loading. Please try again in a moment.');
-                }
+                    }
+                  } catch (err: any) {
+                    toast.error('Network error while initializing payment.');
+                    setIsTopping(false);
+                  }
+                });
               }}
-              className="py-3 px-6 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform cursor-pointer"
+              className="py-3 px-5 bg-[#1ED760] text-black font-bold rounded-xl shadow-[0_0_15px_rgba(30,215,96,0.2)] hover:shadow-[0_0_20px_rgba(30,215,96,0.4)] hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center"
             >
               Pay
             </button>

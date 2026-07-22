@@ -28,7 +28,7 @@ export function DestinationSearch() {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => console.warn('Could not get location for search bias', err),
-        { enableHighAccuracy: false, maximumAge: 300000 }, // cached for 5 mins is fine
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
     }
   }, []);

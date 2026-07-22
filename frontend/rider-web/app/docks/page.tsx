@@ -14,7 +14,7 @@ export default function DocksPage() {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => console.error('Error getting location', err),
-        { enableHighAccuracy: true },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
     }
   }, []);

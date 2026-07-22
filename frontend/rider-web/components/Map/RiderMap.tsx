@@ -227,7 +227,7 @@ export default function RiderMap() {
           clearTimeout(fallbackTimer);
           setFallback();
         },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
     } else {
       setFallback();

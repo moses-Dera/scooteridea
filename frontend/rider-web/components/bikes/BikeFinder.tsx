@@ -36,6 +36,7 @@ export function BikeFinder() {
           setErrorMsg('Location access denied or failed.');
           setLoading(false);
         },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       setErrorMsg('Geolocation not supported.');

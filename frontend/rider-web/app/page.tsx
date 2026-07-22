@@ -58,7 +58,7 @@ export default function RiderHome() {
           clearTimeout(fallbackTimer);
           setFallback();
         },
-        { enableHighAccuracy: true, timeout: 5000 },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
     } else {
       setFallback();

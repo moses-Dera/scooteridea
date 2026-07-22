@@ -172,8 +172,8 @@ export function useProfile(): UseProfile {
       setLoading(true);
       setError(null);
 
-      const response = await userApi.getProfile();
-      setProfile((response.data as UserProfile) || null);
+      const response: any = await userApi.getProfile();
+      setProfile((response.data?.data as UserProfile) || null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch profile';
       setError(message);
