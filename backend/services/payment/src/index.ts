@@ -226,7 +226,6 @@ export async function processPaymentCharge(
 ): Promise<void> {
   const { userId, amount: amountCents, rideId, _traceId } = event;
   const log = logger.child({ userId, rideId, amountCents, traceId: _traceId });
-
   log.info('[Payment] Processing charge');
 
   await prisma.$transaction(async (tx) => {
