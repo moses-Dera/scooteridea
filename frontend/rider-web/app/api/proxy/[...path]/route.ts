@@ -71,6 +71,18 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
   }
 
   try {
+    const csrfRes = await fetch(`${baseUrl}/auth/csrf-token`);
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+    const cookies = csrfRes.headers.get('set-cookie');
+    
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+    }
+    if (cookies) {
+      headers['cookie'] = cookies;
+    }
+
     const body = await req.json().catch(() => ({}));
     const response = await fetch(backendUrl, {
       method: 'POST',
@@ -119,6 +131,18 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
   }
 
   try {
+    const csrfRes = await fetch(`${baseUrl}/auth/csrf-token`);
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+    const cookies = csrfRes.headers.get('set-cookie');
+    
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+    }
+    if (cookies) {
+      headers['cookie'] = cookies;
+    }
+
     const body = await req.json().catch(() => ({}));
     const response = await fetch(backendUrl, {
       method: 'PUT',
@@ -167,6 +191,18 @@ export async function DELETE(req: NextRequest, { params }: { params: { path: str
   }
 
   try {
+    const csrfRes = await fetch(`${baseUrl}/auth/csrf-token`);
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+    const cookies = csrfRes.headers.get('set-cookie');
+    
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+    }
+    if (cookies) {
+      headers['cookie'] = cookies;
+    }
+
     const response = await fetch(backendUrl, {
       method: 'DELETE',
       headers,

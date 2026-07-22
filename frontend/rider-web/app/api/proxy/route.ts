@@ -60,6 +60,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const csrfRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/csrf-token`);
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+    const cookies = csrfRes.headers.get('set-cookie');
+    
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+    }
+    if (cookies) {
+      headers['cookie'] = cookies;
+    }
+
     const response = await fetch(backendUrl, {
       method: 'POST',
       headers,
@@ -97,6 +109,18 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
+    const csrfRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/csrf-token`);
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+    const cookies = csrfRes.headers.get('set-cookie');
+    
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+    }
+    if (cookies) {
+      headers['cookie'] = cookies;
+    }
+
     const response = await fetch(backendUrl, {
       method: 'PUT',
       headers,
@@ -132,6 +156,18 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
+    const csrfRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/csrf-token`);
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+    const cookies = csrfRes.headers.get('set-cookie');
+    
+    if (csrfToken) {
+      headers['x-csrf-token'] = csrfToken;
+    }
+    if (cookies) {
+      headers['cookie'] = cookies;
+    }
+
     const response = await fetch(backendUrl, {
       method: 'DELETE',
       headers,
