@@ -105,6 +105,34 @@ authRouter.post(
 );
 
 authRouter.post(
+  '/2fa/login',
+  validate({
+    body: z.object({
+      token: z.string(),
+      otp: z.string().length(6),
+    }),
+  }),
+  asyncHandler(AuthController.login2fa),
+);
+
+authRouter.post(
+  '/2fa/setup',
+  jwtGuard,
+  asyncHandler(AuthController.setup2fa),
+);
+
+authRouter.post(
+  '/2fa/verify',
+  jwtGuard,
+  validate({
+    body: z.object({
+      otp: z.string().length(6),
+    }),
+  }),
+  asyncHandler(AuthController.verify2fa),
+);
+
+authRouter.post(
   '/refresh',
   validate({ body: refreshSchema }),
   asyncHandler(AuthController.refresh),
@@ -123,6 +151,18 @@ authRouter.post(
   authRateLimiter,
   validate({ body: resetPasswordSchema }),
   asyncHandler(AuthController.resetPassword),
+);
+
+authRouter.put(
+  '/user/password',
+  jwtGuard,
+  validate({
+    body: z.object({
+      oldPassword: z.string().min(6),
+      newPassword: z.string().min(6),
+    }),
+  }),
+  asyncHandler(AuthController.updatePassword),
 );
 
 authRouter.post('/logout', jwtGuard, asyncHandler(AuthController.logout));

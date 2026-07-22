@@ -100,8 +100,8 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
           Security
         </div>
         <button
-          disabled
-          className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between opacity-50 cursor-not-allowed"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'password' }))}
+          className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center">
@@ -116,8 +116,8 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         </button>
 
         <button
-          disabled
-          className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between opacity-50 cursor-not-allowed"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: '2fa' }))}
+          className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center">

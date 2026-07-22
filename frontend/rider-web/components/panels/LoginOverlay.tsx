@@ -15,6 +15,8 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null);
+  const [otp, setOtp] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,41 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
       });
 
       if (result?.error) {
-        setError(result.error || 'Login failed');
+        if (result.error.startsWith('2FA_REQUIRED:')) {
+          setTwoFactorToken(result.error.split(':')[1]);
+        } else {
+          setError(result.error || 'Login failed');
+        }
+      } else if (result?.ok) {
+        if (window.location.pathname === '/login' || window.location.pathname === '/register') {
+          window.location.href = '/';
+        } else {
+          window.location.reload();
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handle2FASubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!twoFactorToken) return;
+    setError('');
+    setLoading(true);
+    
+    try {
+      const result = await signIn('2fa', {
+        token: twoFactorToken,
+        otp,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError(result.error || 'Invalid OTP');
       } else if (result?.ok) {
         if (window.location.pathname === '/login' || window.location.pathname === '/register') {
           window.location.href = '/';
@@ -106,12 +142,14 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
           </div>
 
           <div className="text-3xl font-bold text-white mb-2">
-            {feature ? `Access Required` : `Welcome Back`}
+            {twoFactorToken ? `Verification Required` : feature ? `Access Required` : `Welcome Back`}
           </div>
           <p className="text-slate-400 mb-6">
-            {feature
-              ? `Please sign in to securely access ${feature}.`
-              : `Enter your credentials to access your wallet and ride history.`}
+            {twoFactorToken
+              ? `We sent a code to your email. Enter it below to sign in.`
+              : feature
+                ? `Please sign in to securely access ${feature}.`
+                : `Enter your credentials to access your wallet and ride history.`}
           </p>
 
           {error && (
@@ -121,7 +159,46 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          {twoFactorToken ? (
+            <form onSubmit={handle2FASubmit} className="flex flex-col gap-5">
+              <div className="relative group">
+                <label className="text-xs font-bold tracking-wider text-slate-500 uppercase mb-1.5 block transition-colors group-focus-within:text-[#1ED760]">
+                  Enter 6-digit Code
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#1ED760] transition-colors" />
+                  <input
+                    type="text"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    className="w-full h-12 bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-[#1ED760]/50 focus:ring-1 focus:ring-[#1ED760]/50 transition-all text-center tracking-widest text-lg font-bold"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="w-full h-12 bg-[#1ED760] text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-[#1ED760]/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              >
+                {loading ? 'Verifying...' : 'Verify'}
+                {!loading && <ArrowRight className="w-5 h-5" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTwoFactorToken(null);
+                  setOtp('');
+                }}
+                className="w-full text-center text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+              >
+                Back to login
+              </button>
+            </form>
+          ) : (
+            <>
+              <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div className="relative group">
               <label className="text-xs font-bold tracking-wider text-slate-500 uppercase mb-1.5 block transition-colors group-focus-within:text-[#1ED760]">
                 Email Address
@@ -229,6 +306,8 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
               Create an account
             </Link>
           </p>
+            </>
+          )}
         </div>
       </div>
     </div>

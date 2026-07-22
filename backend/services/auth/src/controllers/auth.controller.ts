@@ -20,6 +20,21 @@ export class AuthController {
     res.json({ success: true, data: tokens });
   }
 
+  static async setup2fa(req: Request, res: Response): Promise<void> {
+    await AuthService.setup2fa(req.user!.sub);
+    res.json({ success: true, message: 'OTP sent to email' });
+  }
+
+  static async verify2fa(req: Request, res: Response): Promise<void> {
+    await AuthService.verify2fa(req.user!.sub, req.body.otp);
+    res.json({ success: true, message: '2FA enabled successfully' });
+  }
+
+  static async login2fa(req: Request, res: Response): Promise<void> {
+    const tokens = await AuthService.login2fa(req.body.token, req.body.otp);
+    res.json({ success: true, data: tokens });
+  }
+
   static async refresh(req: Request, res: Response): Promise<void> {
     const tokens = await AuthService.refresh(req.body.refreshToken);
     res.json({ success: true, data: tokens });
@@ -77,6 +92,11 @@ export class AuthController {
   static async resetPassword(req: Request, res: Response): Promise<void> {
     await AuthService.resetPassword(req.body.token, req.body.newPassword);
     res.json({ success: true, message: 'Password has been reset successfully' });
+  }
+
+  static async updatePassword(req: Request, res: Response): Promise<void> {
+    await AuthService.updatePassword(req.user!.sub, req.body.oldPassword, req.body.newPassword);
+    res.json({ success: true, message: 'Password updated successfully' });
   }
 
   static async topUpWallet(req: Request, res: Response): Promise<void> {

@@ -218,6 +218,12 @@ async function startConsumer() {
           }
           break;
 
+        case TOPICS.TWO_FACTOR_OTP_REQUESTED:
+          if ((p as any).email && (p as any).otp) {
+            await EmailService.sendTwoFactorOtpEmail((p as any).email, (p as any).otp);
+          }
+          break;
+
         // ── Ride lifecycle (RIDE_STARTED / RIDE_ENDED) ────────────────────────
         case TOPICS.RIDE_STARTED:
           if (p.rideId && p.userId) {

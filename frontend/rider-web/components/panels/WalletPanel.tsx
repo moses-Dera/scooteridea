@@ -105,15 +105,21 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
         )}
 
         {isTopping ? (
-          <div className="mt-6 flex gap-2 items-center relative z-10">
+          <div className="mt-6 flex flex-col gap-3 relative z-10">
             <input
               type="number"
               placeholder="Amount (₦)"
-              className="flex-1 bg-black/40 border border-[#1ED760]/30 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-[#1ED760] transition-colors"
+              className="w-full bg-black/40 border border-[#1ED760]/30 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-[#1ED760] transition-colors"
               value={topUpAmount}
               onChange={(e) => setTopUpAmount(e.target.value)}
               autoFocus
             />
+            <button
+              onClick={() => setIsTopping(false)}
+              className="w-full py-3 px-4 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors flex items-center justify-center"
+            >
+              Cancel
+            </button>
             <button
               onClick={() => {
                 const amount = parseFloat(topUpAmount);
@@ -141,15 +147,9 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
                   }
                 });
               }}
-              className="py-3 px-5 bg-[#1ED760] text-black font-bold rounded-xl shadow-[0_0_15px_rgba(30,215,96,0.2)] hover:shadow-[0_0_20px_rgba(30,215,96,0.4)] hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center"
+              className="w-full py-3 px-5 bg-[#1ED760] text-black font-bold rounded-xl shadow-[0_0_15px_rgba(30,215,96,0.2)] hover:shadow-[0_0_20px_rgba(30,215,96,0.4)] hover:scale-[1.02] transition-all cursor-pointer flex items-center justify-center"
             >
               Pay
-            </button>
-            <button
-              onClick={() => setIsTopping(false)}
-              className="py-3 px-4 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors"
-            >
-              <X className="w-5 h-5" />
             </button>
           </div>
         ) : (

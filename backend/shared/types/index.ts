@@ -281,6 +281,13 @@ export interface KafkaPasswordResetRequestedEvent {
   ts: number;
 }
 
+export interface KafkaTwoFactorOtpEvent {
+  userId: string;
+  email: string;
+  otp: string;
+  ts: number;
+}
+
 export interface KafkaOpsAlertEvent {
   type:
     | 'DOCK_FULL'

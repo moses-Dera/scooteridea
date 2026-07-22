@@ -62,6 +62,10 @@ export const authOptions: NextAuthOptions = {
             throw new Error(`API Endpoint Misconfigured. Contact Support.`);
           }
 
+          if (data.success && data.data?.requires2FA) {
+            throw new Error(`2FA_REQUIRED:${data.data.token}`);
+          }
+
           if (data.success && data.data?.accessToken) {
             // Decode JWT to get user ID
             const payloadBase64 = data.data.accessToken.split('.')[1];
@@ -81,6 +85,50 @@ export const authOptions: NextAuthOptions = {
           throw new Error(data.message || data.error || 'Invalid credentials');
         } catch (err) {
           console.error('Auth error:', err);
+          // Re-throw if it's our custom error so it propagates to the client
+          if (err instanceof Error && err.message.startsWith('2FA_REQUIRED:')) {
+            throw err;
+          }
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
+      id: '2fa',
+      name: 'Two Factor Authentication',
+      credentials: {
+        token: { label: 'Token', type: 'text' },
+        otp: { label: 'OTP', type: 'text' },
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.token || !credentials?.otp) return null;
+
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80'}/auth/login/2fa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: credentials.token, otp: credentials.otp }),
+          });
+
+          if (!response.ok) return null;
+
+          const data = await response.json();
+          if (data.success && data.data?.accessToken) {
+            const payloadBase64 = data.data.accessToken.split('.')[1];
+            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+            const userId = decodedPayload.sub;
+
+            return {
+              id: userId,
+              email: 'rider@example.com', // Not important as we just need the tokens
+              name: 'Rider',
+              accessToken: data.data.accessToken,
+              refreshToken: data.data.refreshToken,
+            };
+          }
+          throw new Error('Invalid OTP');
+        } catch (err) {
+          console.error('2FA auth error:', err);
           return null;
         }
       },

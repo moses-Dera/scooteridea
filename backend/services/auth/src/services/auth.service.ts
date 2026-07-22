@@ -22,6 +22,7 @@ import {
 } from '@ebike/core';
 import { getRedisClient } from '@ebike/redis';
 import { UserRepository } from '../repositories/user.repository';
+import { prisma } from '@ebike/db';
 import type { LoginDto, RegisterDto, TokenPair, User, JwtPayload, UserRole } from '@ebike/types';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
@@ -60,7 +61,7 @@ export class AuthService {
   }
 
   // ── Login ────────────────────────────────────────────────────────────────────
-  static async login(dto: LoginDto): Promise<TokenPair> {
+  static async login(dto: LoginDto): Promise<TokenPair | { requires2FA: true; token: string }> {
     const user = await UserRepository.findByEmail(dto.email);
 
     if (!user || !user.passwordHash) {
@@ -75,6 +76,74 @@ export class AuthService {
       throw new UnauthorizedError('Invalid email or password');
     }
 
+    if ((user as any).twoFactorEnabled) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const tempToken = uuidv4();
+      const redis = await getRedisClient();
+      await redis.setEx(`2fa_login:${tempToken}`, 300, JSON.stringify({ userId: user.id, otp }));
+      
+      await kafka.twoFactorOtpRequested({
+        userId: user.id,
+        email: user.email,
+        otp,
+        ts: Date.now(),
+      });
+
+      return { requires2FA: true, token: tempToken };
+    }
+
+    return AuthService.issueTokenPair(user);
+  }
+
+  // ── Two Factor Auth ──────────────────────────────────────────────────────────
+  static async setup2fa(userId: string): Promise<void> {
+    const user = await UserRepository.findById(userId);
+    if (!user) throw new NotFoundError('User', userId);
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const redis = await getRedisClient();
+    await redis.setEx(`2fa_setup:${userId}`, 300, otp);
+
+    await kafka.twoFactorOtpRequested({
+      userId: user.id,
+      email: user.email,
+      otp,
+      ts: Date.now(),
+    });
+  }
+
+  static async verify2fa(userId: string, otp: string): Promise<void> {
+    const redis = await getRedisClient();
+    const stored = await redis.get(`2fa_setup:${userId}`);
+    if (!stored || stored !== otp) {
+      throw new UnauthorizedError('Invalid or expired OTP');
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: true }, // TS recheck
+    });
+    
+    await redis.del(`2fa_setup:${userId}`);
+  }
+
+  static async login2fa(token: string, otp: string): Promise<TokenPair> {
+    const redis = await getRedisClient();
+    const storedStr = await redis.get(`2fa_login:${token}`);
+    if (!storedStr) {
+      throw new UnauthorizedError('Invalid or expired session token');
+    }
+
+    const { userId, otp: storedOtp } = JSON.parse(storedStr);
+    
+    if (otp !== storedOtp) {
+      throw new UnauthorizedError('Invalid OTP');
+    }
+
+    const user = await UserRepository.findById(userId);
+    if (!user) throw new NotFoundError('User', userId);
+
+    await redis.del(`2fa_login:${token}`);
     return AuthService.issueTokenPair(user);
   }
 
@@ -252,25 +321,46 @@ export class AuthService {
 
   static async resetPassword(token: string, newPassword: string): Promise<void> {
     const redis = await getRedisClient();
-    const userId = await redis.get(`reset:${token}`);
+    const email = await redis.get(`reset_pwd:${token}`);
 
-    if (!userId) {
+    if (!email) {
+      throw new UnauthorizedError('Invalid or expired reset token');
+    }
+
+    const user = await UserRepository.findByEmail(email);
+    if (!user) {
       throw new UnauthorizedError('Invalid or expired reset token');
     }
 
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
-    // Update user in DB
-    await UserRepository.updatePassword(userId, passwordHash);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
 
-    // Delete the token so it can't be used again
-    await redis.del(`reset:${token}`);
-
-    // Invalidate all existing refresh tokens for safety
-    await redis.del(`refresh:${userId}`);
+    await redis.del(`reset_pwd:${token}`);
   }
 
-  // ── Wallet Top-up (Paystack) ────────────────────────────────────────────────
+  static async updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    const user = await UserRepository.findById(userId);
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedError('User not found or password not set');
+    }
+
+    const match = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!match) {
+      throw new UnauthorizedError('Incorrect old password');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+  }
+
+  // ── Payment Integration ──────────────────────────────────────────────────────
   static async verifyAndTopUpWallet(
     userId: string,
     reference: string,

@@ -33,7 +33,11 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
     try {
       setIsSaving(true);
       const { userApi } = await import('@/lib/api');
-      await userApi.updateProfile({ name: editName, phone: editPhone });
+      const payload: any = { name: editName };
+      if (editPhone.trim() !== '') {
+        payload.phone = editPhone.trim();
+      }
+      await userApi.updateProfile(payload);
       await refetch();
       setIsEditing(false);
     } catch (err) {
@@ -121,7 +125,15 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
       <div className="flex items-center gap-5 mb-6 p-5 rounded-2xl bg-white/5 border border-white/10">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1ED760] to-[#00CC7F] flex items-center justify-center flex-shrink-0">
           <span className="text-xl font-bold text-black">
-            {(user?.name?.[0] || 'U') + (user?.email?.[1] || 'U')}
+            {(() => {
+              if (user?.name) {
+                const parts = user.name.trim().split(' ');
+                if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+                return user.name.substring(0, 2).toUpperCase();
+              }
+              if (user?.email) return user.email.substring(0, 2).toUpperCase();
+              return 'UU';
+            })()}
           </span>
         </div>
         <div className="min-w-0 flex-1">
@@ -186,7 +198,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
               <input
                 type="tel"
                 value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
+                onChange={(e) => setEditPhone(e.target.value.replace(/[^0-9+]/g, ''))}
                 placeholder="+234..."
                 className="w-full bg-black/40 border border-white/20 rounded-md px-2 py-1 mt-1 text-white text-xs focus:outline-none focus:border-[#1ED760] transition-colors"
               />
@@ -216,14 +228,14 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
           </button>
         )}
         <button
-          disabled
-          className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white opacity-50 cursor-not-allowed text-left font-medium text-sm"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'payment-methods' }))}
+          className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]"
         >
           Payment Methods
         </button>
         <button
-          disabled
-          className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white opacity-50 cursor-not-allowed text-left font-medium text-sm"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'settings' }))}
+          className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]"
         >
           Privacy & Security
         </button>

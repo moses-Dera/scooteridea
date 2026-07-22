@@ -10,6 +10,7 @@ import type {
   KafkaFleetCommandEvent,
   KafkaUserRegisteredEvent,
   KafkaPasswordResetRequestedEvent,
+  KafkaTwoFactorOtpEvent,
 } from '@ebike/types';
 
 // ── Topic Registry ────────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ export const TOPICS = {
   SUPPORT_TICKET_CREATED: 'support.ticket.created',
   USER_REGISTERED: 'user.registered',
   PASSWORD_RESET_REQUESTED: 'password.reset.requested',
+  TWO_FACTOR_OTP_REQUESTED: 'two.factor.otp.requested',
 } as const;
 
 // ── Redis instance (singleton) ────────────────────────────────────────────────
@@ -74,4 +76,6 @@ export const kafka = {
   userRegistered: (e: KafkaUserRegisteredEvent) => publish(TOPICS.USER_REGISTERED, e, e.userId),
   passwordResetRequested: (e: KafkaPasswordResetRequestedEvent) =>
     publish(TOPICS.PASSWORD_RESET_REQUESTED, e, e.userId),
+  twoFactorOtpRequested: (e: KafkaTwoFactorOtpEvent) =>
+    publish(TOPICS.TWO_FACTOR_OTP_REQUESTED, e, e.userId),
 };

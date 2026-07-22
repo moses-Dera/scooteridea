@@ -20,11 +20,12 @@ import {
   requestId,
   httpLogger,
   healthRouter,
-  registerProbe,
   registerCleanup,
+  registerProbe,
   setupGracefulShutdown,
   notFoundHandler,
   errorHandler,
+  jwtGuard,
   InsufficientBalanceError,
   InternalError,
   withDLQ,
@@ -166,6 +167,46 @@ app.post('/payments/webhook', async (req, res, next) => {
   }
 });
 
+// 3. Get Payment Methods
+app.get('/payments/methods', jwtGuard, async (req, res, next) => {
+  try {
+    const userId = req.user!.sub;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Return a mocked object if they have an auth code, since we don't store full card details
+    const methods = user.paystackAuthCode ? [{
+      id: 'paystack_saved_card',
+      brand: 'Card',
+      last4: '****', // Paystack doesn't return this in standard initialization, we just know it's a card.
+      isDefault: true
+    }] : [];
+
+    res.json({ success: true, data: methods });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 4. Delete Payment Method
+app.delete('/payments/methods', jwtGuard, async (req, res, next) => {
+  try {
+    const userId = req.user!.sub;
+    
+    await prisma.user.update({
+      where: { id: userId },
+      data: { paystackAuthCode: null }
+    });
+
+    res.json({ success: true, message: 'Payment method removed' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 
@@ -235,6 +276,8 @@ export async function processPaymentCharge(
 
     log.info('[Payment] Wallet deduction successful');
   });
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
 
   // Emit success result
   await publish(TOPICS.PAYMENT_RESULT, { 

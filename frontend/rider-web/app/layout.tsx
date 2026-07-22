@@ -16,6 +16,9 @@ import SettingsPanel from '@/components/panels/SettingsPanel';
 import HelpPanel from '@/components/panels/HelpPanel';
 import SafetyPanel from '@/components/panels/SafetyPanel';
 import ReportPanel from '@/components/panels/ReportPanel';
+import PasswordUpdateModal from '@/components/panels/PasswordUpdateModal';
+import TwoFactorSetupModal from '@/components/panels/TwoFactorSetupModal';
+import PaymentMethodsModal from '@/components/panels/PaymentMethodsModal';
 import SplashScreen from '@/components/SplashScreen';
 
 import { AlertCircle } from 'lucide-react';
@@ -33,6 +36,9 @@ type PanelType =
   | 'safety'
   | 'report'
   | 'login'
+  | 'password'
+  | '2fa'
+  | 'payment-methods'
   | null;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -261,6 +267,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           {activePanel === 'help' && <HelpPanel onClose={closePanel} />}
                           {activePanel === 'safety' && <SafetyPanel onClose={closePanel} />}
                           {activePanel === 'report' && <ReportPanel onClose={closePanel} />}
+                          {activePanel === 'password' && <PasswordUpdateModal onClose={closePanel} />}
+                          {activePanel === '2fa' && <TwoFactorSetupModal onClose={closePanel} />}
+                          {activePanel === 'payment-methods' && <PaymentMethodsModal onClose={closePanel} />}
                         </div>
                       </div>
                     </div>
