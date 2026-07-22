@@ -27,8 +27,8 @@ export default function RiderHome() {
   // Search center tracks where we fetch bikes/docks from.
   // Initialize from the GPS lock we already have so bikes/docks load immediately.
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(userLoc);
-  const searchLat = searchCenter?.lat ?? userLoc?.lat ?? 0;
-  const searchLng = searchCenter?.lng ?? userLoc?.lng ?? 0;
+  const searchLat = searchCenter?.lat ?? userLoc?.lat;
+  const searchLng = searchCenter?.lng ?? userLoc?.lng;
 
   useEffect(() => {
     let fallbackTimer: NodeJS.Timeout;
@@ -81,11 +81,11 @@ export default function RiderHome() {
   }, [unlockId, router]);
 
   // If previewing destination, fetch bikes near USER and docks near DESTINATION
-  const originLat = isDestinationPreview ? userLoc?.lat : selectedLat;
-  const originLng = isDestinationPreview ? userLoc?.lng : selectedLng;
+  const originLat = isDestinationPreview ? userLoc?.lat : (selectedLat ?? searchLat);
+  const originLng = isDestinationPreview ? userLoc?.lng : (selectedLng ?? searchLng);
 
   const { bikes: liveBikes } = useLiveFleet(originLat, originLng, 2);
-  const { docks } = useNearbyDocks(selectedLat, selectedLng);
+  const { docks } = useNearbyDocks(selectedLat ?? searchLat, selectedLng ?? searchLng);
 
   const displayBikes = liveBikes;
 
