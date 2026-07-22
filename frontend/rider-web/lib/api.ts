@@ -249,12 +249,12 @@ export const userApi = {
   getWallet: () =>
     api.get('/auth/me').then((res: any) => {
       // Adapter: convert walletCents from backend to NGN balance on frontend
-      return { data: { balance: (res.data?.data?.walletCents || 0) / 100 } };
+      return { data: { balance: (res.data?.walletCents || 0) / 100 } };
     }),
   topUpWallet: (reference: string) => {
     return api.post('/auth/wallet/topup', { reference }).then((res: any) => {
       // Return updated balance converted from cents
-      return { data: { balance: (res.data?.data?.walletCents || 0) / 100 } };
+      return { data: { balance: (res.data?.walletCents || 0) / 100 } };
     });
   },
 

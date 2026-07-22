@@ -22,7 +22,7 @@ function SessionErrorWatcher({ children }: { children: React.ReactNode }) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={3 * 60}>
       <SessionErrorWatcher>{children}</SessionErrorWatcher>
     </SessionProvider>
   );
