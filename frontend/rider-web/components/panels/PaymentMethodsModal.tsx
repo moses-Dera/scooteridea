@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CreditCard, Trash2, X } from 'lucide-react';
+import { CreditCard, Trash2, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { LoadingSpinner } from '../LoadingSpinner';
@@ -63,7 +63,7 @@ export default function PaymentMethodsModal({ onClose }: { onClose: () => void }
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5 text-slate-300" />
+            <ArrowLeft className="w-5 h-5 text-slate-300" />
           </button>
           <div className="text-2xl font-bold">Payment Methods</div>
         </div>

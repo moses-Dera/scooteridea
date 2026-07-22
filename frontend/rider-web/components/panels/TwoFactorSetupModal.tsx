@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Shield, ArrowRight, X } from 'lucide-react';
+import { Shield, ArrowRight, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 
@@ -13,7 +13,7 @@ export default function TwoFactorSetupModal({ onClose }: { onClose: () => void }
   const handleSetup = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/proxy/auth/user/2fa/setup', {
+      const res = await fetch('/api/proxy/auth/2fa/setup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export default function TwoFactorSetupModal({ onClose }: { onClose: () => void }
 
     setLoading(true);
     try {
-      const res = await fetch('/api/proxy/auth/user/2fa/verify', {
+      const res = await fetch('/api/proxy/auth/2fa/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export default function TwoFactorSetupModal({ onClose }: { onClose: () => void }
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5 text-slate-300" />
+            <ArrowLeft className="w-5 h-5 text-slate-300" />
           </button>
           <div className="text-2xl font-bold">Two-Factor Auth</div>
         </div>
