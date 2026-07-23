@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   FiUsers,
   FiDollarSign,
@@ -49,6 +50,7 @@ function createGeoJSONCircle(
 }
 
 export default function AdminSettings() {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<
     'users' | 'finance' | 'geofencing' | 'pricing' | 'support'
   >('geofencing');
@@ -143,13 +145,34 @@ export default function AdminSettings() {
   useEffect(() => {
     if (loading) return; // Wait until initial load is complete
 
-    const token = localStorage.getItem('token');
+    const token = (session as any)?.accessToken as string | undefined;
     if (!token) return;
+
+    const getTokenExpiryMs = (jwt: string): number | null => {
+      try {
+        const payloadBase64 = jwt.split('.')[1];
+        if (!payloadBase64) return null;
+        const payload = JSON.parse(atob(payloadBase64));
+        if (typeof payload.exp !== 'number') return null;
+        return payload.exp * 1000;
+      } catch {
+        return null;
+      }
+    };
+
+    const canConnect = () => {
+      const exp = getTokenExpiryMs(token);
+      return exp === null || Date.now() < exp - 15 * 1000;
+    };
+
+    if (!canConnect()) return;
 
     let ws: WebSocket;
     let reconnectTimeout: NodeJS.Timeout;
 
     const connect = () => {
+      if (!canConnect()) return;
+
       try {
         const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3008';
         ws = new WebSocket(`${wsUrl}?token=${token}`);
@@ -182,7 +205,11 @@ export default function AdminSettings() {
           } catch (e) {}
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
+          if (event.code === 4001 || event.code === 4003) {
+            return;
+          }
+          if (!canConnect()) return;
           reconnectTimeout = setTimeout(connect, 3000);
         };
       } catch (err) {}
@@ -194,7 +221,7 @@ export default function AdminSettings() {
       if (ws) ws.close();
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
     };
-  }, [loading]);
+  }, [loading, session]);
 
   // PRICING
   const handleSavePricing = async () => {

@@ -36,6 +36,7 @@ import {
   registerCleanup,
 } from '@ebike/core';
 import { getRedisClient, disconnectRedis } from '@ebike/redis';
+import { connectProducer, disconnectProducer } from '@ebike/events';
 
 import { authRouter } from './routes/auth.routes';
 import { csrfTokenHandler } from '@ebike/core';
@@ -115,6 +116,9 @@ async function bootstrap(): Promise<void> {
 
     await getRedisClient();
     logger.info('[Auth] Redis connected');
+
+    await connectProducer();
+    logger.info('[Auth] Events producer connected');
   } catch (err) {
     logger.fatal({ err }, '[Auth] Failed to connect to dependencies — aborting startup');
     process.exit(1);
@@ -125,6 +129,7 @@ async function bootstrap(): Promise<void> {
   // Register cleanup callbacks (SIGTERM drain)
   registerCleanup('Postgres', () => prisma.$disconnect());
   registerCleanup('Redis', () => disconnectRedis());
+  registerCleanup('Events Producer', () => disconnectProducer());
 
   setupGracefulShutdown(server, 10_000);
 

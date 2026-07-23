@@ -17,6 +17,7 @@ import {
   NotFoundError,
   InternalError,
   ValidationError,
+  ServiceUnavailableError,
   retry,
   logger,
 } from '@ebike/core';
@@ -81,12 +82,18 @@ export class AuthService {
       const redis = await getRedisClient();
       await redis.setEx(`2fa_login:${tempToken}`, 300, JSON.stringify({ userId: user.id, otp }));
 
-      await kafka.twoFactorOtpRequested({
-        userId: user.id,
-        email: user.email,
-        otp,
-        ts: Date.now(),
-      });
+      try {
+        await kafka.twoFactorOtpRequested({
+          userId: user.id,
+          email: user.email,
+          otp,
+          ts: Date.now(),
+        });
+      } catch (err) {
+        await redis.del(`2fa_login:${tempToken}`);
+        logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA login OTP event');
+        throw new ServiceUnavailableError('notification pipeline');
+      }
 
       return { requires2FA: true, token: tempToken };
     }
@@ -103,12 +110,18 @@ export class AuthService {
     const redis = await getRedisClient();
     await redis.setEx(`2fa_setup:${userId}`, 300, otp);
 
-    await kafka.twoFactorOtpRequested({
-      userId: user.id,
-      email: user.email,
-      otp,
-      ts: Date.now(),
-    });
+    try {
+      await kafka.twoFactorOtpRequested({
+        userId: user.id,
+        email: user.email,
+        otp,
+        ts: Date.now(),
+      });
+    } catch (err) {
+      await redis.del(`2fa_setup:${userId}`);
+      logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA setup OTP event');
+      throw new ServiceUnavailableError('notification pipeline');
+    }
   }
 
   static async verify2fa(userId: string, otp: string): Promise<void> {

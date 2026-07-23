@@ -28,6 +28,18 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
   const bikesMap = useRef<Map<string, Bike>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
 
+  const getTokenExpiryMs = (token: string): number | null => {
+    try {
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) return null;
+      const payload = JSON.parse(atob(payloadBase64));
+      if (typeof payload.exp !== 'number') return null;
+      return payload.exp * 1000;
+    } catch {
+      return null;
+    }
+  };
+
   const handleBikesUpdate = useCallback(
     (updatedBikes: Bike[]) => {
       setBikes((prevBikes) => {
@@ -76,9 +88,29 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
     const token = (session as any)?.accessToken;
     if (!token) return;
 
+    const tokenExpiryMs = getTokenExpiryMs(token);
+    const isExpiredOrNearExpiry =
+      tokenExpiryMs !== null && Date.now() >= tokenExpiryMs - 15 * 1000;
+    if (isExpiredOrNearExpiry) {
+      setConnected(false);
+      setError('Session expired. Re-authenticating...');
+      return;
+    }
+
     let reconnectTimeout: NodeJS.Timeout;
 
+    const canConnect = () => {
+      const exp = getTokenExpiryMs(token);
+      return exp === null || Date.now() < exp - 15 * 1000;
+    };
+
     const connect = () => {
+      if (!canConnect()) {
+        setConnected(false);
+        setError('Session expired. Re-authenticating...');
+        return;
+      }
+
       try {
         const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3008';
         const ws = new WebSocket(`${wsUrl}?token=${token}`);
@@ -119,8 +151,20 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
           }
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
           setConnected(false);
+
+          // 4001/4003 from WS hub are auth-related; wait for token refresh instead of retry storm.
+          if (event.code === 4001 || event.code === 4003) {
+            setError('Authentication expired. Reconnecting after refresh...');
+            return;
+          }
+
+          if (!canConnect()) {
+            setError('Session expired. Re-authenticating...');
+            return;
+          }
+
           reconnectTimeout = setTimeout(connect, 3000);
         };
       } catch (err) {
@@ -135,7 +179,7 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
       if (wsRef.current) wsRef.current.close();
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
     };
-  }, [onBikeUpdate]);
+  }, [onBikeUpdate, session]);
 
   return {
     bikes: Array.from(bikes.values()),
