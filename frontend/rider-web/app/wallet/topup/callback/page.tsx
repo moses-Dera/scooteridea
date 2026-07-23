@@ -85,11 +85,11 @@ export default function TopUpCallbackPage() {
         )}
 
         <button
-          onClick={() => (window.location.href = '/wallet')}
+          onClick={() => (window.location.href = '/')}
           disabled={status === 'verifying'}
           className="w-full py-4 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100"
         >
-          Return to Wallet
+          Return to Map
         </button>
       </div>
     </div>

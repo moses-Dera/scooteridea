@@ -31,7 +31,7 @@ export function RideTableComponent() {
   useEffect(() => {
     const fetchRides = async () => {
       try {
-        const res = await fetch(`/api/proxy/rides/history?page=${page}&limit=${pageSize}`);
+        const res = await fetch(`/api/proxy/rides/all-history?page=${page}&limit=${pageSize}`);
 
         if (!res.ok) throw new Error(`Failed to fetch rides: ${res.statusText}`);
 

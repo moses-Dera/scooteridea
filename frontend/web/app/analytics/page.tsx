@@ -16,14 +16,14 @@ import {
 } from 'recharts';
 
 interface Analytics {
-  total_rides: number;
-  total_revenue: number;
-  active_users: number;
-  fleet_utilization: number;
-  avg_ride_duration: number;
-  avg_ride_distance: number;
-  bikes_active: number;
-  bikes_total: number;
+  totalRides: number;
+  totalRevenue: number;
+  activeUsers: number;
+  fleetUtilization: number;
+  avgRideDuration: number;
+  avgRideDistance: number;
+  bikesActive: number;
+  bikesTotal: number;
   revenueTrend: { time: string; revenue: number; rides: number }[];
   userGrowth: { time: string; users: number }[];
 }
@@ -100,19 +100,19 @@ export default function AnalyticsOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Rides"
-          value={loading ? '-' : analytics?.total_rides?.toLocaleString() || '0'}
+          value={loading ? '-' : analytics?.totalRides?.toLocaleString() || '0'}
         />
         <StatCard
           label="Total Revenue"
-          value={loading ? '-' : `₦${(analytics?.total_revenue || 0).toLocaleString()}`}
+          value={loading ? '-' : `₦${(analytics?.totalRevenue || 0).toLocaleString()}`}
         />
         <StatCard
           label="Active Users"
-          value={loading ? '-' : (analytics?.active_users || 0).toLocaleString()}
+          value={loading ? '-' : (analytics?.activeUsers || 0).toLocaleString()}
         />
         <StatCard
           label="Fleet Utilization"
-          value={loading ? '-' : `${analytics?.fleet_utilization || 0}%`}
+          value={loading ? '-' : `${analytics?.fleetUtilization || 0}%`}
         />
       </div>
 
@@ -120,17 +120,17 @@ export default function AnalyticsOverview() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           label="Avg Ride Duration"
-          value={loading ? '-' : (analytics?.avg_ride_duration || 0).toFixed(1)}
+          value={loading ? '-' : (analytics?.avgRideDuration || 0).toFixed(1)}
           unit="min"
         />
         <StatCard
           label="Avg Ride Distance"
-          value={loading ? '-' : (analytics?.avg_ride_distance || 0).toFixed(1)}
+          value={loading ? '-' : (analytics?.avgRideDistance || 0).toFixed(1)}
           unit="km"
         />
         <StatCard
           label="Bikes Active"
-          value={loading ? '-' : `${analytics?.bikes_active || 0} / ${analytics?.bikes_total || 0}`}
+          value={loading ? '-' : `${analytics?.bikesActive || 0} / ${analytics?.bikesTotal || 0}`}
         />
       </div>
 
