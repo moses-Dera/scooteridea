@@ -132,8 +132,17 @@ export const authOptions: NextAuthOptions = {
             headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.0.0.1' },
             body: JSON.stringify({ idToken: account.id_token }),
           });
-          const json = await res.json();
-          if (!res.ok || !json.data?.accessToken) return '/login?error=OAuthFailed';
+          const text = await res.text();
+          let json;
+          try {
+            json = JSON.parse(text);
+          } catch {
+            return `/login?error=OAuthFailed&details=${encodeURIComponent('Backend returned non-JSON: ' + text.substring(0, 50))}`;
+          }
+
+          if (!res.ok || !json.data?.accessToken) {
+            return `/login?error=OAuthFailed&details=${encodeURIComponent(json.error || json.message || 'No access token')}`;
+          }
 
           const payloadBase64 = json.data.accessToken.split('.')[1];
           const decoded = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
@@ -147,8 +156,8 @@ export const authOptions: NextAuthOptions = {
           (user as any).id = decoded.sub;
           (user as any).accessToken = json.data.accessToken;
           (user as any).refreshToken = json.data.refreshToken;
-        } catch {
-          return '/login?error=OAuthFailed';
+        } catch (e: any) {
+          return `/login?error=OAuthFailed&details=${encodeURIComponent(e.message || 'Unknown error')}`;
         }
       }
       return true;

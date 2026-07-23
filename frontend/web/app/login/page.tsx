@@ -9,6 +9,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oauthError = searchParams.get('error');
+  const details = searchParams.get('details');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +17,7 @@ function LoginContent() {
     oauthError === 'AccessDenied'
       ? 'Access Denied: You do not have operator privileges.'
       : oauthError === 'OAuthFailed'
-        ? 'Google sign-in failed. Please try again.'
+        ? `Google sign-in failed. Please try again. ${details ? `(${details})` : ''}`
         : '',
   );
   const [loading, setLoading] = useState(false);
