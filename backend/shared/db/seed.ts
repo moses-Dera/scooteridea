@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
+import * as path from 'path';
+require('dotenv').config({ path: path.resolve(__dirname, '../../infra/.env') });
 
-const prisma = new PrismaClient();
+import { prisma } from './index';
 
 async function main() {
   console.log('Seeding production database...');

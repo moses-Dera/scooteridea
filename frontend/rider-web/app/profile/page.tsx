@@ -2,17 +2,19 @@
 
 import Link from 'next/link';
 import { Mail, Phone, MapPin, Shield, LogOut } from 'lucide-react';
-import { useProfile } from '@/hooks';
+import { useProfile, useRideHistory } from '@/hooks';
 import { useAuthStore } from '@/store/authStore';
 
 export default function ProfilePage() {
   const { profile: user, loading, error } = useProfile();
   const logout = useAuthStore((state) => state.logout);
 
+  const { rides } = useRideHistory();
+
   const stats = {
-    totalRides: 0, // Will fetch from ride history if needed
-    totalDistance: 0,
-    totalTime: 0,
+    totalRides: rides.length,
+    totalDistance: rides.reduce((acc, ride) => acc + (ride.distance || 0), 0).toFixed(1),
+    totalTime: rides.reduce((acc, ride) => acc + Math.round((ride.duration || 0) / 60), 0),
   };
 
   if (loading) {

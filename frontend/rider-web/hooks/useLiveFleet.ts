@@ -36,7 +36,7 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
         } else if (wsUrl.startsWith('https://')) {
           wsUrl = wsUrl.replace('https://', 'wss://');
         }
-        
+
         const ws = new WebSocket(`${wsUrl}?token=${token}`);
         wsRef.current = ws;
 

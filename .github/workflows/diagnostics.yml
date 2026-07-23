@@ -17,15 +17,15 @@ jobs:
           script: |
             echo "=== Docker Service List ==="
             docker service ls
-            
+
             echo "=== Nginx Status ==="
             docker service ps scooter_stack_nginx --no-trunc
             docker service logs scooter_stack_nginx --tail 50
-            
+
             echo "=== Postgres Status ==="
             docker service ps scooter_stack_postgres --no-trunc
             docker service logs scooter_stack_postgres --tail 50
-            
+
             echo "=== Auth Service Status ==="
             docker service ps scooter_stack_auth-service --no-trunc
             docker service logs scooter_stack_auth-service --tail 50

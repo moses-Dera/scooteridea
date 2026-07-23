@@ -41,7 +41,10 @@ export class FleetService {
         const bikeId = sanitize(topic.split('/')[1]);
         const parsed = BikeTelemetrySchema.safeParse(JSON.parse(raw));
         if (!parsed.success) {
-          logger.warn({ bikeId, errors: parsed.error.issues }, '[Fleet] Invalid telemetry — skipped');
+          logger.warn(
+            { bikeId, errors: parsed.error.issues },
+            '[Fleet] Invalid telemetry — skipped',
+          );
           return;
         }
         await FleetService.handleBikeTelemetry(bikeId, parsed.data as BikeTelemetryPayload);
@@ -67,7 +70,10 @@ export class FleetService {
         if (decoded) {
           const parsed = BikeTelemetrySchema.safeParse(decoded.payload);
           if (!parsed.success) return;
-          await FleetService.handleBikeTelemetry(decoded.bikeId, parsed.data as BikeTelemetryPayload);
+          await FleetService.handleBikeTelemetry(
+            decoded.bikeId,
+            parsed.data as BikeTelemetryPayload,
+          );
         }
       } catch (err) {
         logger.error({ err }, '[Fleet] Failed to ingest physical bike payload');
@@ -87,7 +93,12 @@ export class FleetService {
           const bLat = lat + (Math.random() - 0.5) * ((radius || 2) * 0.01);
           const bLng = lng + (Math.random() - 0.5) * ((radius || 2) * 0.01);
           await FleetService.handleBikeTelemetry(newId, {
-            lat: bLat, lng: bLng, battery_pct: 100, speed_kmh: 0, docked_at: null, lock_status: 'LOCKED',
+            lat: bLat,
+            lng: bLng,
+            battery_pct: 100,
+            speed_kmh: 0,
+            docked_at: null,
+            lock_status: 'LOCKED',
           });
         }
         logger.info(`[Fleet] Spawned ${count} demo bikes near ${lat}, ${lng}`);
@@ -278,7 +289,15 @@ export class FleetService {
           status,
           ...(location || {}),
           lock_status: location?.lock_status || 'LOCKED',
-          zoneIds: zonesRaw ? (() => { try { return JSON.parse(zonesRaw); } catch { return []; } })() : [],
+          zoneIds: zonesRaw
+            ? (() => {
+                try {
+                  return JSON.parse(zonesRaw);
+                } catch {
+                  return [];
+                }
+              })()
+            : [],
         };
       }),
     );

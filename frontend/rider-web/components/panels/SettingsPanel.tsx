@@ -100,7 +100,9 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
           Security
         </div>
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'password' }))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent('open-panel', { detail: 'password' }))
+          }
           className="w-full glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors"
         >
           <div className="flex items-center gap-4">

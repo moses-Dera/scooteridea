@@ -51,7 +51,9 @@ export default function PasswordUpdateModal({ onClose }: { onClose: () => void }
       <div className="flex items-center justify-between mb-6 pt-2">
         <div className="flex items-center gap-3">
           <button
-            onClick={onClose}
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('open-panel', { detail: 'settings' }))
+            }
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5 text-slate-300" />

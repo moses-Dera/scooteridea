@@ -36,9 +36,7 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
       <div className="flex items-center justify-between mb-6 pt-2">
         <div className="flex items-center gap-3">
           <button
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent('open-panel', { detail: 'menu' }))
-            }
+            onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'menu' }))}
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
             <svg

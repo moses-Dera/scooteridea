@@ -67,7 +67,9 @@ export default function TwoFactorSetupModal({ onClose }: { onClose: () => void }
       <div className="flex items-center justify-between mb-6 pt-2">
         <div className="flex items-center gap-3">
           <button
-            onClick={onClose}
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('open-panel', { detail: 'settings' }))
+            }
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5 text-slate-300" />
@@ -83,7 +85,8 @@ export default function TwoFactorSetupModal({ onClose }: { onClose: () => void }
           </div>
           <h3 className="text-xl font-bold">Protect your account</h3>
           <p className="text-slate-400 text-sm">
-            Add an extra layer of security to your account. We'll send a 6-digit code to your email whenever you sign in.
+            Add an extra layer of security to your account. We'll send a 6-digit code to your email
+            whenever you sign in.
           </p>
           <button
             onClick={handleSetup}
@@ -97,10 +100,8 @@ export default function TwoFactorSetupModal({ onClose }: { onClose: () => void }
       ) : (
         <form onSubmit={handleVerify} className="space-y-6 text-center">
           <h3 className="text-xl font-bold">Enter Code</h3>
-          <p className="text-slate-400 text-sm">
-            We sent a 6-digit code to your email.
-          </p>
-          
+          <p className="text-slate-400 text-sm">We sent a 6-digit code to your email.</p>
+
           <div className="relative group max-w-[200px] mx-auto">
             <input
               type="text"

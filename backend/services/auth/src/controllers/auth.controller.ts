@@ -105,5 +105,4 @@ export class AuthController {
     const user = await AuthService.verifyAndTopUpWallet(userId, reference);
     res.json({ success: true, data: user });
   }
-
 }

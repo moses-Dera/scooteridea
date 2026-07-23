@@ -13,21 +13,59 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'admin@scooter.com' },
         password: { label: 'Password', type: 'password' },
+        token: { label: 'Token', type: 'text' },
+        otp: { label: 'OTP', type: 'text' },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+      async authorize(credentials, req) {
+        if (!credentials) return null;
+
+        const clientIp =
+          req?.headers?.['x-forwarded-for'] || req?.headers?.['x-real-ip'] || '127.0.0.1';
 
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
         try {
-          const res = await fetch(`${backendUrl}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
-          });
+          let res;
+
+          if (credentials.token && credentials.otp) {
+            // 2FA login step
+            res = await fetch(`${backendUrl}/auth/2fa/login`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-forwarded-for':
+                  typeof clientIp === 'string'
+                    ? clientIp
+                    : Array.isArray(clientIp)
+                      ? clientIp[0]
+                      : '127.0.0.1',
+              },
+              body: JSON.stringify({
+                token: credentials.token,
+                otp: credentials.otp,
+              }),
+            });
+          } else if (credentials.email && credentials.password) {
+            // Initial login step
+            res = await fetch(`${backendUrl}/auth/login`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-forwarded-for':
+                  typeof clientIp === 'string'
+                    ? clientIp
+                    : Array.isArray(clientIp)
+                      ? clientIp[0]
+                      : '127.0.0.1',
+              },
+              body: JSON.stringify({
+                email: credentials.email,
+                password: credentials.password,
+              }),
+            });
+          } else {
+            return null;
+          }
 
           let json;
           const contentType = res.headers.get('content-type');
@@ -40,6 +78,10 @@ export const authOptions: NextAuthOptions = {
               text.substring(0, 100),
             );
             throw new Error(`API Endpoint Misconfigured. Contact Support.`);
+          }
+
+          if (json.success && json.data?.requires2FA) {
+            throw new Error(`2FA_REQUIRED:${json.data.tempToken}`);
           }
 
           if (res.ok && json.success && json.data?.accessToken) {
@@ -87,7 +129,7 @@ export const authOptions: NextAuthOptions = {
           const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
           const res = await fetch(`${backendUrl}/auth/oauth/google`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.0.0.1' },
             body: JSON.stringify({ idToken: account.id_token }),
           });
           const json = await res.json();
@@ -140,11 +182,16 @@ export const authOptions: NextAuthOptions = {
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
         const refreshRes = await fetch(`${backendUrl}/auth/refresh`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '127.0.0.1' },
           body: JSON.stringify({ refreshToken: token.refreshToken }),
         });
 
-        if (!refreshRes.ok) throw new Error(`Refresh failed with status: ${refreshRes.status}`);
+        if (!refreshRes.ok) {
+          if (refreshRes.status === 401 || refreshRes.status === 403) {
+            token.error = 'RefreshAccessTokenError';
+          }
+          throw new Error(`Refresh failed with status: ${refreshRes.status}`);
+        }
 
         const refreshedTokens = await refreshRes.json();
         if (!refreshedTokens.success || !refreshedTokens.data) {
@@ -156,7 +203,8 @@ export const authOptions: NextAuthOptions = {
         console.log('[NextAuth] Successfully refreshed access token!');
       } catch (e) {
         console.error('[NextAuth] Token refresh error:', e);
-        token.error = 'RefreshAccessTokenError';
+        // Do not permanently invalidate the token on network error.
+        // It will retry on the next session read.
       }
       return token;
     },

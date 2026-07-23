@@ -71,6 +71,76 @@ fleetRouter.get('/bikes', jwtGuard, async (req: Request, res: Response) => {
   }
 });
 
+// POST /fleet/bikes — add a new bike manually
+fleetRouter.post(
+  '/bikes',
+  jwtGuard,
+  requireRole('ADMIN', 'OPERATOR'),
+  async (req: Request, res: Response) => {
+    try {
+      const { id, lat, lng, batteryPct } = req.body;
+      if (!id || lat === undefined || lng === undefined) {
+        res.status(400).json({ success: false, error: 'id, lat, lng are required' });
+        return;
+      }
+
+      // Check if it exists
+      const existing = await prisma.bike.findUnique({ where: { id } });
+      if (existing) {
+        res.status(400).json({ success: false, error: 'Bike ID already exists' });
+        return;
+      }
+
+      const bike = await prisma.bike.create({
+        data: {
+          id,
+          locationLat: lat,
+          locationLng: lng,
+          batteryPct: batteryPct || 100,
+          status: 'available',
+        },
+      });
+
+      // Also inject into Redis so it shows up live immediately
+      await FleetService.handleBikeTelemetry(id, {
+        lat,
+        lng,
+        battery_pct: bike.batteryPct,
+        speed_kmh: 0,
+        lock_status: 'LOCKED',
+        docked_at: null,
+      });
+
+      res.status(201).json({ success: true, data: bike });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to add bike' });
+    }
+  },
+);
+
+// DELETE /fleet/bikes/:id — remove a bike
+fleetRouter.delete(
+  '/bikes/:id',
+  jwtGuard,
+  requireRole('ADMIN', 'OPERATOR'),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await prisma.bike.delete({ where: { id } });
+
+      // Remove from Redis
+      const redis = await getRedisClient();
+      await redis.del(`bike:${id}:status`);
+      await redis.del(`bike:${id}:location`);
+      await redis.zRem('fleet:available', id);
+
+      res.json({ success: true, message: 'Bike deleted successfully' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to delete bike' });
+    }
+  },
+);
+
 // GET /fleet/bikes/:id/trail — Get the last 100 GPS waypoints for a specific bike
 fleetRouter.get('/bikes/:id/trail', jwtGuard, async (req: Request, res: Response) => {
   try {
@@ -79,9 +149,15 @@ fleetRouter.get('/bikes/:id/trail', jwtGuard, async (req: Request, res: Response
     const trailRaw = await redis.lRange(`bike:${id}:trail`, 0, -1);
 
     // Parse the JSON strings back into objects
-    const trail = trailRaw.map((point: string) => {
-      try { return JSON.parse(point); } catch { return null; }
-    }).filter(Boolean);
+    const trail = trailRaw
+      .map((point: string) => {
+        try {
+          return JSON.parse(point);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
 
     res.json({ success: true, data: trail });
   } catch (err) {
@@ -160,6 +236,59 @@ fleetRouter.get('/docks', jwtGuard, async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: 'Failed to fetch docks' });
   }
 });
+
+// POST /fleet/docks — create a new dock
+fleetRouter.post(
+  '/docks',
+  jwtGuard,
+  requireRole('ADMIN', 'OPERATOR'),
+  async (req: Request, res: Response) => {
+    try {
+      const { id, name, lat, lng, totalSlots } = req.body;
+      if (!id || !name || lat === undefined || lng === undefined) {
+        res.status(400).json({ success: false, error: 'id, name, lat, lng are required' });
+        return;
+      }
+
+      const existing = await prisma.dock.findUnique({ where: { id } });
+      if (existing) {
+        res.status(400).json({ success: false, error: 'Dock ID already exists' });
+        return;
+      }
+
+      const dock = await prisma.dock.create({
+        data: {
+          id,
+          name,
+          locationLat: lat,
+          locationLng: lng,
+          totalSlots: totalSlots || 10,
+          availableSlots: totalSlots || 10,
+        },
+      });
+
+      res.status(201).json({ success: true, data: dock });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to create dock' });
+    }
+  },
+);
+
+// DELETE /fleet/docks/:id — remove a dock
+fleetRouter.delete(
+  '/docks/:id',
+  jwtGuard,
+  requireRole('ADMIN', 'OPERATOR'),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await prisma.dock.delete({ where: { id } });
+      res.json({ success: true, message: 'Dock deleted successfully' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to delete dock' });
+    }
+  },
+);
 
 // GET /fleet/alerts — system alerts
 fleetRouter.get('/alerts', jwtGuard, requireRole('OPERATOR', 'ADMIN'), async (req, res) => {
@@ -312,8 +441,6 @@ fleetRouter.get(
     }
   },
 );
-
-
 
 // POST /fleet/zones — create a new geofence zone
 fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {

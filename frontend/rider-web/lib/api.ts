@@ -50,8 +50,7 @@ function createApiClient(): AxiosInstance {
     (response) => response,
     async (error: AxiosError) => {
       const isGhostSession =
-        error.response?.status === 404 &&
-        error.config?.url?.includes('auth/me');
+        error.response?.status === 404 && error.config?.url?.includes('auth/me');
 
       if (error.response?.status === 401 || isGhostSession) {
         if (typeof window !== 'undefined') {
@@ -265,8 +264,10 @@ export const userApi = {
 };
 
 export const paymentApi = {
-  initializeTopUp: (email: string, amountCents: number) => 
+  initializeTopUp: (email: string, amountCents: number) =>
     api.post('/payments/initialize', { email, amountCents }),
+  verifyTopUp: (reference: string) => api.post('/payments/verify', { reference }),
+  getMethods: () => api.get('/payments/methods'),
 };
 
 export const pricingApi = {

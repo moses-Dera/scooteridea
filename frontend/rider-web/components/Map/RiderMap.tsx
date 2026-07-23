@@ -210,8 +210,8 @@ export default function RiderMap() {
     const setFallback = () => {
       console.warn('Geolocation failed or timed out, using fallback location.');
       const fallback = { lat: 6.5244, lng: 3.3792 }; // Lagos as default
-      setInitialLocation(prev => prev || fallback);
-      setSearchCenter(prev => prev || fallback);
+      setInitialLocation((prev) => prev || fallback);
+      setSearchCenter((prev) => prev || fallback);
     };
 
     if ('geolocation' in navigator) {

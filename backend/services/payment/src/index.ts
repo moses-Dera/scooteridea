@@ -167,23 +167,91 @@ app.post('/payments/webhook', async (req, res, next) => {
   }
 });
 
+// 2.5 Verify Payment (Frontend Fallback if webhook dropped)
+app.post('/payments/verify', jwtGuard, async (req, res, next) => {
+  try {
+    const { reference } = req.body;
+    if (!reference) {
+      return res.status(400).json({ success: false, message: 'Reference required' });
+    }
+
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: { Authorization: `Bearer ${paystackSecret}` },
+    });
+    const data = (await response.json()) as any;
+
+    if (!response.ok || !data.status) {
+      throw new Error(data.message || 'Failed to verify payment');
+    }
+
+    if (data.data.status === 'success') {
+      const { customer, amount, authorization } = data.data;
+      const user = await prisma.user.findUnique({ where: { email: customer.email } });
+
+      if (user) {
+        try {
+          await prisma.$transaction(async (tx) => {
+            await tx.user.update({
+              where: { id: user.id },
+              data: {
+                walletCents: { increment: amount },
+                paystackAuthCode: authorization.authorization_code,
+              },
+            });
+            await tx.payment.create({
+              data: {
+                userId: user.id,
+                amountCents: amount,
+                currency: 'NGN',
+                status: 'success',
+                provider: 'paystack',
+                providerRef: reference,
+              },
+            });
+          });
+          logger.info(
+            { userId: user.id, amount, reference },
+            '[Payment] Wallet topped up via manual verify endpoint',
+          );
+        } catch (dbErr: any) {
+          if (dbErr.code === 'P2002' && dbErr.meta?.target?.includes('provider_ref')) {
+            // Already processed (webhook probably beat us to it)
+          } else {
+            throw dbErr;
+          }
+        }
+      }
+      return res.json({ success: true, message: 'Payment verified successfully' });
+    } else {
+      return res.json({ success: false, message: `Payment status: ${data.data.status}` });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 // 3. Get Payment Methods
 app.get('/payments/methods', jwtGuard, async (req, res, next) => {
   try {
     const userId = req.user!.sub;
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     // Return a mocked object if they have an auth code, since we don't store full card details
-    const methods = user.paystackAuthCode ? [{
-      id: 'paystack_saved_card',
-      brand: 'Card',
-      last4: '****', // Paystack doesn't return this in standard initialization, we just know it's a card.
-      isDefault: true
-    }] : [];
+    const methods = user.paystackAuthCode
+      ? [
+          {
+            id: 'paystack_saved_card',
+            brand: 'Card',
+            last4: '****', // Paystack doesn't return this in standard initialization, we just know it's a card.
+            isDefault: true,
+          },
+        ]
+      : [];
 
     res.json({ success: true, data: methods });
   } catch (err) {
@@ -195,10 +263,10 @@ app.get('/payments/methods', jwtGuard, async (req, res, next) => {
 app.delete('/payments/methods', jwtGuard, async (req, res, next) => {
   try {
     const userId = req.user!.sub;
-    
+
     await prisma.user.update({
       where: { id: userId },
-      data: { paystackAuthCode: null }
+      data: { paystackAuthCode: null },
     });
 
     res.json({ success: true, message: 'Payment method removed' });
@@ -245,12 +313,12 @@ export async function processPaymentCharge(
       });
 
       // Emit failure so Notification + Ride services can handle it
-      await publish(TOPICS.PAYMENT_RESULT, { 
-        rideId, 
-        userId, 
-        userEmail: user.email, 
-        status: 'failed', 
-        ts: Date.now() 
+      await publish(TOPICS.PAYMENT_RESULT, {
+        rideId,
+        userId,
+        userEmail: user.email,
+        status: 'failed',
+        ts: Date.now(),
       });
 
       throw new InsufficientBalanceError(amountCents, user.walletCents);
@@ -279,12 +347,12 @@ export async function processPaymentCharge(
   const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
 
   // Emit success result
-  await publish(TOPICS.PAYMENT_RESULT, { 
-    rideId, 
-    userId, 
-    userEmail: user.email, 
-    status: 'success', 
-    ts: Date.now() 
+  await publish(TOPICS.PAYMENT_RESULT, {
+    rideId,
+    userId,
+    userEmail: user.email,
+    status: 'success',
+    ts: Date.now(),
   });
 }
 

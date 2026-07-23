@@ -32,14 +32,16 @@ const PORT = Number(process.env.PORT ?? 3002);
 process.env.SERVICE_NAME = 'fleet-service';
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 app.use(helmet());
 app.use(cors());
 app.use(requestId);
 app.use(httpLogger);
 app.use(express.json({ limit: '512kb' }));
 app.use(standardRateLimiter);
-app.use(cookieParser(process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret'));
+app.use(
+  cookieParser(process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret'),
+);
 
 // ── Health + Routes ───────────────────────────────────────────────────────────
 app.use(healthRouter());

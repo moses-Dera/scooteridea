@@ -39,10 +39,22 @@ export default function NotificationsPage() {
       <div className="sticky top-0 z-40 pt-20 px-6 pb-6 border-b border-white/5 bg-[#0A0D14]/80 backdrop-blur-xl">
         <div className="flex items-center gap-4 mb-2">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/settings')}
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <svg
+              className="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
           </button>
           <div className="text-2xl font-bold">Push Notifications</div>
         </div>

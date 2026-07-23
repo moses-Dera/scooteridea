@@ -63,8 +63,10 @@ function makeMockRedis(overrides: Record<string, jest.Mock> = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  process.env.JWT_ACCESS_SECRET = process.env.TEST_JWT_ACCESS_SECRET ?? 'test-access-secret-1234567890abcdef';
-  process.env.JWT_REFRESH_SECRET = process.env.TEST_JWT_REFRESH_SECRET ?? 'test-refresh-secret-abcdef1234567890';
+  process.env.JWT_ACCESS_SECRET =
+    process.env.TEST_JWT_ACCESS_SECRET ?? 'test-access-secret-1234567890abcdef';
+  process.env.JWT_REFRESH_SECRET =
+    process.env.TEST_JWT_REFRESH_SECRET ?? 'test-refresh-secret-abcdef1234567890';
   process.env.JWT_ACCESS_EXPIRY = '15m';
   process.env.JWT_REFRESH_EXPIRY = '30d';
 });
@@ -76,7 +78,11 @@ describe('AuthService.register', () => {
     (UserRepository.findByEmail as jest.Mock).mockResolvedValue(mockUser);
 
     await expect(
-      AuthService.register({ email: mockUser.email, password: process.env.TEST_PASSWORD ?? 'pass1234', name: 'Dup' }),
+      AuthService.register({
+        email: mockUser.email,
+        password: process.env.TEST_PASSWORD ?? 'pass1234',
+        name: 'Dup',
+      }),
     ).rejects.toMatchObject({ name: 'ConflictError' });
   });
 
@@ -103,7 +109,10 @@ describe('AuthService.login', () => {
     (UserRepository.findByEmail as jest.Mock).mockResolvedValue(null);
 
     await expect(
-      AuthService.login({ email: 'nobody@test.com', password: process.env.TEST_PASSWORD ?? 'wrong-password' }),
+      AuthService.login({
+        email: 'nobody@test.com',
+        password: process.env.TEST_PASSWORD ?? 'wrong-password',
+      }),
     ).rejects.toMatchObject({ name: 'UnauthorizedError' });
   });
 
@@ -111,7 +120,10 @@ describe('AuthService.login', () => {
     (UserRepository.findByEmail as jest.Mock).mockResolvedValue(mockUser);
 
     await expect(
-      AuthService.login({ email: mockUser.email, password: process.env.TEST_WRONG_PASSWORD ?? 'definitely-wrong-password' }),
+      AuthService.login({
+        email: mockUser.email,
+        password: process.env.TEST_WRONG_PASSWORD ?? 'definitely-wrong-password',
+      }),
     ).rejects.toMatchObject({ name: 'UnauthorizedError' });
   });
 
@@ -126,7 +138,10 @@ describe('AuthService.login', () => {
     const bcrypt = await import('bcryptjs');
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
 
-    const tokens = await AuthService.login({ email: mockUser.email, password: process.env.TEST_PASSWORD ?? 'correct-password' });
+    const tokens = await AuthService.login({
+      email: mockUser.email,
+      password: process.env.TEST_PASSWORD ?? 'correct-password',
+    });
 
     expect(tokens).toHaveProperty('accessToken');
     expect(tokens).toHaveProperty('refreshToken');
@@ -146,7 +161,8 @@ describe('AuthService.oauthGoogle', () => {
   });
 
   test('throws UnauthorizedError for invalid Google token', async () => {
-    process.env.GOOGLE_CLIENT_ID = process.env.TEST_GOOGLE_CLIENT_ID ?? 'test-client-id.apps.googleusercontent.com';
+    process.env.GOOGLE_CLIENT_ID =
+      process.env.TEST_GOOGLE_CLIENT_ID ?? 'test-client-id.apps.googleusercontent.com';
 
     const mockVerifyIdToken = jest.fn().mockRejectedValue(new Error('Token verification failed'));
     (OAuth2Client as unknown as jest.Mock).mockImplementation(() => ({
@@ -159,7 +175,8 @@ describe('AuthService.oauthGoogle', () => {
   });
 
   test('returns token pair for valid Google token — upserts user', async () => {
-    process.env.GOOGLE_CLIENT_ID = process.env.TEST_GOOGLE_CLIENT_ID ?? 'test-client-id.apps.googleusercontent.com';
+    process.env.GOOGLE_CLIENT_ID =
+      process.env.TEST_GOOGLE_CLIENT_ID ?? 'test-client-id.apps.googleusercontent.com';
 
     const mockTicket = {
       getPayload: () => ({
@@ -191,7 +208,8 @@ describe('AuthService.oauthGoogle', () => {
   });
 
   test('falls back to email prefix as name when name is absent', async () => {
-    process.env.GOOGLE_CLIENT_ID = process.env.TEST_GOOGLE_CLIENT_ID ?? 'test-client-id.apps.googleusercontent.com';
+    process.env.GOOGLE_CLIENT_ID =
+      process.env.TEST_GOOGLE_CLIENT_ID ?? 'test-client-id.apps.googleusercontent.com';
 
     const mockTicket = {
       getPayload: () => ({

@@ -21,12 +21,33 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
   const { lock, unlock, alarm, disable, loading, error } = useBikeCommand();
   const [showDetails, setShowDetails] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleCommand = async (action: () => Promise<any>) => {
     setCommandError(null);
     const result = await action();
     if (!result.success && result.error) {
       setCommandError(result.error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${bike.id}?`)) return;
+    setIsDeleting(true);
+    setCommandError(null);
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch(`/api/proxy/fleet/bikes/${bike.id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!res.ok) throw new Error('Failed to delete bike');
+      // On success, we don't necessarily update local state, as the socket might sync, or we can reload
+      // But we can just show a success message
+    } catch (err) {
+      setCommandError(err instanceof Error ? err.message : 'Failed to delete bike');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -76,6 +97,17 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
               <p className="text-slate-400">Speed</p>
               <p className="text-white">{bike.speed_kmh} km/h</p>
             </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
+              disabled={isDeleting || loading}
+              className="col-span-2 flex items-center justify-center gap-2 bg-red-600/10 hover:bg-red-600/20 text-red-500 py-2 rounded-lg font-medium transition-colors"
+            >
+              <FaXmark />
+              {isDeleting ? 'Deleting...' : 'Delete Bike'}
+            </button>
           </div>
 
           {/* Commands */}

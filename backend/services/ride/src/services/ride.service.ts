@@ -196,9 +196,9 @@ export class RideService {
 
   // ── End ──────────────────────────────────────────────────────────────────────
   static async endRide(rideId: string, dockId: string): Promise<{ fareCents: number }> {
-    const ride = await prisma.ride.findUnique({ 
+    const ride = await prisma.ride.findUnique({
       where: { id: rideId },
-      include: { user: true }
+      include: { user: true },
     });
     if (!ride) throw new NotFoundError('Ride', rideId);
     if (ride.status !== 'ACTIVE') throw new RideNotActiveError(rideId, ride.status);
@@ -292,13 +292,13 @@ export class RideService {
     // Emit billing + ended events
     await Promise.all([
       kafka.paymentCharge({ userId: ride.userId, amount: fareCents, rideId, ts: Date.now() }),
-      kafka.rideEnded({ 
-        rideId, 
-        fareCents, 
-        userId: ride.userId, 
+      kafka.rideEnded({
+        rideId,
+        fareCents,
+        userId: ride.userId,
         userEmail: ride.user?.email,
         userName: ride.user?.name,
-        ts: Date.now() 
+        ts: Date.now(),
       }),
     ]);
 

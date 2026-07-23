@@ -37,7 +37,6 @@ if (!REFRESH_SECRET)
   throw new Error('JWT_REFRESH_SECRET is not set — do not share with ACCESS_SECRET');
 
 export class AuthService {
-
   // ── Register ─────────────────────────────────────────────────────────────────
   static async register(dto: RegisterDto): Promise<Omit<User, 'walletCents'>> {
     const existing = await UserRepository.findByEmail(dto.email);
@@ -54,7 +53,7 @@ export class AuthService {
       name: user.name,
       ts: Date.now(),
     });
-    
+
     // Omit sensitive / internal fields before returning
     const { ...safeUser } = user;
     return safeUser;
@@ -81,7 +80,7 @@ export class AuthService {
       const tempToken = uuidv4();
       const redis = await getRedisClient();
       await redis.setEx(`2fa_login:${tempToken}`, 300, JSON.stringify({ userId: user.id, otp }));
-      
+
       await kafka.twoFactorOtpRequested({
         userId: user.id,
         email: user.email,
@@ -123,7 +122,7 @@ export class AuthService {
       where: { id: userId },
       data: { twoFactorEnabled: true }, // TS recheck
     });
-    
+
     await redis.del(`2fa_setup:${userId}`);
   }
 
@@ -135,7 +134,7 @@ export class AuthService {
     }
 
     const { userId, otp: storedOtp } = JSON.parse(storedStr);
-    
+
     if (otp !== storedOtp) {
       throw new UnauthorizedError('Invalid OTP');
     }
@@ -216,12 +215,14 @@ export class AuthService {
     const { user, isNew } = await UserRepository.findOrCreateOAuth(email, name);
 
     if (isNew) {
-      kafka.userRegistered({
-        userId: user.id,
-        email: user.email,
-        name: user.name,
-        ts: Date.now(),
-      }).catch(() => {});
+      kafka
+        .userRegistered({
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          ts: Date.now(),
+        })
+        .catch(() => {});
     }
 
     return AuthService.issueTokenPair(user);
@@ -342,7 +343,11 @@ export class AuthService {
     await redis.del(`reset_pwd:${token}`);
   }
 
-  static async updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+  static async updatePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const user = await UserRepository.findById(userId);
     if (!user || !user.passwordHash) {
       throw new UnauthorizedError('User not found or password not set');
@@ -447,5 +452,4 @@ export class AuthService {
     const { passwordHash, ...safeUser } = user;
     return safeUser as Omit<User, 'passwordHash'>;
   }
-
 }

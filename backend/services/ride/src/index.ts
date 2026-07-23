@@ -44,7 +44,7 @@ const PORT = Number(process.env.RIDE_PORT ?? process.env.PORT ?? 3003);
 process.env.SERVICE_NAME = 'ride-service';
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 app.use(helmet());
 app.use(
   cors({

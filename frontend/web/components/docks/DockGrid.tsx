@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FiCheck, FiZap, FiCircle } from 'react-icons/fi';
 import { MdCircle } from 'react-icons/md';
+import { AddDockModal } from './AddDockModal';
 
 interface DockSlot {
   id: string;
@@ -27,26 +28,28 @@ export function DockGridComponent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDock, setSelectedDock] = useState<Dock | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchDocks = async () => {
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch(`/api/proxy/fleet/docks`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      if (!res.ok) throw new Error(`Failed to fetch docks: ${res.statusText}`);
+
+      const data = await res.json();
+      setDocks(data.success && data.data ? data.data : Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch docks');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDocks = async () => {
-      try {
-        const token = localStorage.getItem('token') || '';
-        const res = await fetch(`/api/proxy/fleet/docks`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
-
-        if (!res.ok) throw new Error(`Failed to fetch docks: ${res.statusText}`);
-
-        const data = await res.json();
-        setDocks(data.success && data.data ? data.data : Array.isArray(data) ? data : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch docks');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDocks();
     const interval = setInterval(fetchDocks, 5000); // Refresh every 5 seconds
 
@@ -57,8 +60,40 @@ export function DockGridComponent() {
   if (error) return <div className="text-red-400">Error: {error}</div>;
   if (!docks.length) return <div className="text-slate-400">No docks found</div>;
 
+  const handleDeleteDock = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this dock?')) return;
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch(`/api/proxy/fleet/docks/${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (res.ok) {
+        setSelectedDock(null);
+        fetchDocks();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete dock');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-colors"
+        >
+          Add New Dock
+        </button>
+      </div>
+
+      {showAddModal && <AddDockModal onClose={() => setShowAddModal(false)} onAdded={fetchDocks} />}
+
       {/* Dock cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {docks.map((dock) => {
@@ -131,12 +166,21 @@ export function DockGridComponent() {
               <div className="text-2xl font-bold text-white">{selectedDock.name}</div>
               <p className="text-slate-400">{selectedDock.location}</p>
             </div>
-            <button
-              onClick={() => setSelectedDock(null)}
-              className="text-slate-400 hover:text-white text-xl"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleDeleteDock(selectedDock.id)}
+                disabled={isDeleting}
+                className="text-red-400 hover:text-red-300 border border-red-500/30 hover:bg-red-500/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Dock'}
+              </button>
+              <button
+                onClick={() => setSelectedDock(null)}
+                className="text-slate-400 hover:text-white text-xl"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           {/* Stats */}

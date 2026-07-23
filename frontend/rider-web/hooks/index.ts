@@ -173,7 +173,22 @@ export function useProfile(): UseProfile {
       setError(null);
 
       const response: any = await userApi.getProfile();
-      setProfile((response.data as UserProfile) || null);
+      const userData = response.data;
+
+      if (userData) {
+        setProfile({
+          ...userData,
+          balance: userData.walletCents ? userData.walletCents / 100 : 0,
+          wallet: {
+            current: userData.walletCents ? userData.walletCents / 100 : 0,
+            totalSpent: 0,
+          },
+          status: userData.status || 'active',
+          verified: userData.verified !== false,
+        } as UserProfile);
+      } else {
+        setProfile(null);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch profile';
       setError(message);

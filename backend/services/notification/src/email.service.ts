@@ -12,7 +12,12 @@ export class EmailService {
     });
   }
 
-  private static async sendEmail(to: string, subject: string, text: string, html: string): Promise<void> {
+  private static async sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html: string,
+  ): Promise<void> {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       logger.warn({ to, subject }, '[Notification] SMTP not configured — skipping email');
       return;
@@ -40,7 +45,11 @@ export class EmailService {
     );
   }
 
-  static async sendPasswordResetEmail(email: string, resetToken: string, role: string): Promise<void> {
+  static async sendPasswordResetEmail(
+    email: string,
+    resetToken: string,
+    role: string,
+  ): Promise<void> {
     let resetLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
     if (role === 'RIDER') {
       resetLink = `scooterapp://reset-password?token=${resetToken}`;

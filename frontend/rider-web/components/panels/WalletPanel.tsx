@@ -133,7 +133,7 @@ export default function WalletPanel({ onClose }: WalletPanelProps) {
                   try {
                     const res: any = await paymentApi.initializeTopUp(
                       session?.user?.email || 'rider@scooter.com',
-                      amount * 100
+                      amount * 100,
                     );
                     if (res.data?.authorization_url) {
                       window.location.href = res.data.authorization_url;

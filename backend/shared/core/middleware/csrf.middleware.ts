@@ -2,7 +2,8 @@ import { doubleCsrf } from 'csrf-csrf';
 import type { Request, Response, NextFunction } from 'express';
 
 const { generateToken, doubleCsrfProtection } = doubleCsrf({
-  getSecret: () => process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret',
+  getSecret: () =>
+    process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret',
   cookieName: '__Host-psifi.x-csrf-token',
   cookieOptions: {
     httpOnly: true,

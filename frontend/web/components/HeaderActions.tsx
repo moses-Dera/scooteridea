@@ -16,9 +16,12 @@ import {
 import { MdDirectionsBike } from 'react-icons/md';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
+import ProfileModal from '@/components/ProfileModal';
+import { FiShield } from 'react-icons/fi';
 
 export default function HeaderActions({ session }: { session: any }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-4">
@@ -110,7 +113,17 @@ export default function HeaderActions({ session }: { session: any }) {
             )}
           </nav>
 
-          <div className="p-6 border-t border-white/10 mt-auto">
+          <div className="p-6 border-t border-white/10 mt-auto flex flex-col gap-3">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setProfileModalOpen(true);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors font-bold text-sm border border-white/10"
+            >
+              <FiShield className="w-5 h-5" />
+              <span>Profile & Security</span>
+            </button>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors font-bold text-sm border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
@@ -123,6 +136,7 @@ export default function HeaderActions({ session }: { session: any }) {
       )}
 
       {/* Desktop Actions Removed */}
+      <ProfileModal isOpen={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
     </div>
   );
 }

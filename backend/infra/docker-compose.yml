@@ -2,48 +2,48 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-    - 6380:6379
+      - 6380:6379
     volumes:
-    - redis_data:/data
+      - redis_data:/data
     command: redis-server --appendonly yes
     healthcheck:
       test:
-      - CMD
-      - redis-cli
-      - ping
+        - CMD
+        - redis-cli
+        - ping
       interval: 5s
       retries: 5
   mosquitto:
     image: eclipse-mosquitto:2
     ports:
-    - 1883:1883
-    - 8083:8083
+      - 1883:1883
+      - 8083:8083
     volumes:
-    - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
-    - ./mosquitto.passwd:/mosquitto/config/passwd
-    - mosquitto_data:/mosquitto/data
-    - mosquitto_log:/mosquitto/log
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto.passwd:/mosquitto/config/passwd
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
     healthcheck:
       test:
-      - CMD-SHELL
-      - mosquitto_sub -t '$$SYS/#' -C 1 -W 3 || exit 1
+        - CMD-SHELL
+        - mosquitto_sub -t '$$SYS/#' -C 1 -W 3 || exit 1
       interval: 10s
       retries: 5
   nginx:
     image: nginx:1.27-alpine
     ports:
-    - 80:80
-    - 443:443
+      - 80:80
+      - 443:443
     volumes:
-    - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     extra_hosts:
-    - host.docker.internal:host-gateway
+      - host.docker.internal:host-gateway
     restart: unless-stopped
   auth-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-auth-service:latest
     expose:
-    - '3001'
+      - '3001'
     environment:
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL}
@@ -57,13 +57,13 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3001/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3001/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -78,7 +78,7 @@ services:
   fleet-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-fleet-service:latest
     expose:
-    - '3002'
+      - '3002'
     environment:
       PORT: 3002
       DATABASE_URL: ${DATABASE_URL}
@@ -88,13 +88,13 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3002/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3002/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -109,7 +109,7 @@ services:
   ride-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-ride-service:latest
     expose:
-    - '3003'
+      - '3003'
     environment:
       PORT: 3003
       DATABASE_URL: ${DATABASE_URL}
@@ -117,13 +117,13 @@ services:
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3003/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3003/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -138,19 +138,19 @@ services:
   pricing-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-pricing-service:latest
     expose:
-    - '3005'
+      - '3005'
     environment:
       PORT: 3005
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3005/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3005/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -165,7 +165,7 @@ services:
   payment-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-payment-service:latest
     expose:
-    - '3006'
+      - '3006'
     environment:
       PORT: 3006
       DATABASE_URL: ${DATABASE_URL}
@@ -175,13 +175,13 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3006/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3006/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -196,20 +196,20 @@ services:
   notification-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-notification-service:latest
     expose:
-    - '3007'
+      - '3007'
     environment:
       PORT: 3007
       REDIS_URL: redis://redis:6379
       EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3007/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3007/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -224,19 +224,19 @@ services:
   websocket-hub:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-websocket-hub:latest
     expose:
-    - '3008'
+      - '3008'
     environment:
       PORT: 3008
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3008/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3008/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -251,7 +251,7 @@ services:
   dock-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-moses-dera}/scooteridea-dock-service:latest
     expose:
-    - '3009'
+      - '3009'
     environment:
       PORT: 3009
       DATABASE_URL: ${DATABASE_URL}
@@ -259,13 +259,13 @@ services:
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
-    - redis
+      - redis
     healthcheck:
       test:
-      - CMD
-      - wget
-      - -qO-
-      - http://localhost:3009/health/ready
+        - CMD
+        - wget
+        - -qO-
+        - http://localhost:3009/health/ready
       interval: 10s
       timeout: 5s
       retries: 3
@@ -285,8 +285,8 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       API_URL: http://nginx:80
     depends_on:
-    - mosquitto
-    - nginx
+      - mosquitto
+      - nginx
 #   loki:
 #     image: grafana/loki:2.9.0
 #     ports:

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FleetMapComponent } from '@/components/map/FleetMap';
 import { BikeCard } from '@/components/bikes/BikeCard';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
+import { AddBikeModal } from '@/components/fleet/AddBikeModal';
 
 export default function FleetMapPage() {
   const [showList, setShowList] = useState(false);
@@ -11,6 +12,7 @@ export default function FleetMapPage() {
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
   const [historicalRoute, setHistoricalRoute] = useState<{ lat: number; lng: number }[]>([]);
   const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [showAddBikeModal, setShowAddBikeModal] = useState(false);
 
   const { bikes, connected, error } = useFleetSocket({});
 
@@ -134,6 +136,20 @@ export default function FleetMapPage() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {activeTab === 'live' ? (
               <>
+                <button
+                  onClick={() => setShowAddBikeModal(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-medium shadow-lg transition-colors mb-4"
+                >
+                  Add New Bike
+                </button>
+                {showAddBikeModal && (
+                  <AddBikeModal
+                    onClose={() => setShowAddBikeModal(false)}
+                    onAdded={() => {
+                      // It will automatically appear via WebSocket, but we could trigger a refresh here if needed
+                    }}
+                  />
+                )}
                 {bikes.map((bike) => (
                   <BikeCard key={bike.id} bike={bike} onSelect={() => handleSelectBike(bike.id)} />
                 ))}

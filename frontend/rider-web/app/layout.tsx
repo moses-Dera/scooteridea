@@ -267,9 +267,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           {activePanel === 'help' && <HelpPanel onClose={closePanel} />}
                           {activePanel === 'safety' && <SafetyPanel onClose={closePanel} />}
                           {activePanel === 'report' && <ReportPanel onClose={closePanel} />}
-                          {activePanel === 'password' && <PasswordUpdateModal onClose={closePanel} />}
+                          {activePanel === 'password' && (
+                            <PasswordUpdateModal onClose={closePanel} />
+                          )}
                           {activePanel === '2fa' && <TwoFactorSetupModal onClose={closePanel} />}
-                          {activePanel === 'payment-methods' && <PaymentMethodsModal onClose={closePanel} />}
+                          {activePanel === 'payment-methods' && (
+                            <PaymentMethodsModal onClose={closePanel} />
+                          )}
                         </div>
                       </div>
                     </div>

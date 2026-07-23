@@ -49,7 +49,7 @@ const PORT = Number(process.env.PORT ?? 3001);
 process.env.SERVICE_NAME = 'auth-service';
 
 // ── Security ──────────────────────────────────────────────────────────────────
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 app.use(helmet());
 app.use(
   cors({
@@ -71,7 +71,9 @@ app.use(
 );
 app.use(standardRateLimiter);
 app.use(userRateLimiter);
-app.use(cookieParser(process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret'));
+app.use(
+  cookieParser(process.env.CSRF_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'csrf-fallback-secret'),
+);
 
 // ── Health Checks ─────────────────────────────────────────────────────────────
 app.use(healthRouter());

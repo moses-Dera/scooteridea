@@ -60,7 +60,9 @@ export default function PaymentMethodsModal({ onClose }: { onClose: () => void }
       <div className="flex items-center justify-between mb-6 pt-2">
         <div className="flex items-center gap-3">
           <button
-            onClick={onClose}
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('open-panel', { detail: 'wallet' }))
+            }
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5 text-slate-300" />
@@ -76,7 +78,10 @@ export default function PaymentMethodsModal({ onClose }: { onClose: () => void }
       ) : methods.length > 0 ? (
         <div className="space-y-4">
           {methods.map((method) => (
-            <div key={method.id} className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div
+              key={method.id}
+              className="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-between"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center">
                   <CreditCard className="w-5 h-5 text-slate-300" />
@@ -98,7 +103,11 @@ export default function PaymentMethodsModal({ onClose }: { onClose: () => void }
                 disabled={deleting}
                 className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors disabled:opacity-50"
               >
-                {deleting ? <LoadingSpinner size="sm" /> : <Trash2 className="w-4 h-4 text-red-400" />}
+                {deleting ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                )}
               </button>
             </div>
           ))}

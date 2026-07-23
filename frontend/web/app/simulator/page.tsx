@@ -68,19 +68,26 @@ export default function SimulatorPage() {
         });
       };
 
+      // Initialize immediately with default coordinates to avoid blank screen while waiting for permission
+      initMap(3.37, 6.52);
+
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => initMap(position.coords.longitude, position.coords.latitude),
-          (err) => {
-            console.log('Geolocation denied, sticking to default.', err);
-            initMap(3.37, 6.52);
+          (position) => {
+            if (map.current) {
+              map.current.flyTo({
+                center: [position.coords.longitude, position.coords.latitude],
+                zoom: 16,
+                duration: 2000,
+              });
+            }
           },
+          (err) => {
+            console.log('Geolocation denied or failed.', err);
+          },
+          { timeout: 10000 },
         );
-      } else {
-        initMap(3.37, 6.52);
       }
-
-      // Duplicate removed
     } catch (err) {
       console.error('Failed to initialize map:', err);
     }

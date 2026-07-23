@@ -33,7 +33,7 @@ const app = express();
 const PORT = Number(process.env.PRICING_PORT ?? process.env.PORT ?? 3005);
 
 process.env.SERVICE_NAME = 'pricing-service';
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());

@@ -87,7 +87,9 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
       <div className="flex items-center justify-between mb-6 pt-2">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'settings' }))}
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent('open-panel', { detail: 'settings' }))
+            }
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
             <svg
@@ -228,13 +230,17 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
           </button>
         )}
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'payment-methods' }))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent('open-panel', { detail: 'payment-methods' }))
+          }
           className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]"
         >
           Payment Methods
         </button>
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'settings' }))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent('open-panel', { detail: 'settings' }))
+          }
           className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-left font-medium text-sm active:scale-[0.98]"
         >
           Privacy & Security

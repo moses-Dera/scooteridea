@@ -12,49 +12,62 @@ export const authRouter = Router();
 // ── Rider App: Profile & Security ───────────────────────────────────────────────
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100).optional(),
-  phone: z.string().regex(/^\+?[1-9]\d{6,14}$/, 'Invalid phone number').optional(),
+  phone: z
+    .string()
+    .regex(/^\+?[1-9]\d{6,14}$/, 'Invalid phone number')
+    .optional(),
 });
 
-authRouter.put('/user/profile', jwtGuard, validate({ body: profileSchema }), async (req: Request, res: Response) => {
-  try {
-    const { name, phone } = req.body;
-    const user = await prisma.user.update({
-      where: { id: req.user!.sub },
-      data: { name, phone },
-      select: { id: true, email: true, name: true, phone: true },
-    });
-    res.json({ success: true, data: user });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to update profile' });
-  }
-});
+authRouter.put(
+  '/user/profile',
+  jwtGuard,
+  validate({ body: profileSchema }),
+  async (req: Request, res: Response) => {
+    try {
+      const { name, phone } = req.body;
+      const user = await prisma.user.update({
+        where: { id: req.user!.sub },
+        data: { name, phone },
+        select: { id: true, email: true, name: true, phone: true },
+      });
+      res.json({ success: true, data: user });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to update profile' });
+    }
+  },
+);
 
 const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string().min(8, 'New password must be at least 8 characters'),
 });
 
-authRouter.put('/user/password', jwtGuard, validate({ body: updatePasswordSchema }), async (req: Request, res: Response) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
-    if (!user || !user.passwordHash) {
-      return res.status(400).json({ success: false, error: 'Invalid user or password not set' });
+authRouter.put(
+  '/user/password',
+  jwtGuard,
+  validate({ body: updatePasswordSchema }),
+  async (req: Request, res: Response) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+      if (!user || !user.passwordHash) {
+        return res.status(400).json({ success: false, error: 'Invalid user or password not set' });
+      }
+      const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!valid) {
+        return res.status(400).json({ success: false, error: 'Incorrect current password' });
+      }
+      const newHash = await bcrypt.hash(newPassword, 12);
+      await prisma.user.update({
+        where: { id: req.user!.sub },
+        data: { passwordHash: newHash },
+      });
+      res.json({ success: true, message: 'Password updated successfully' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to update password' });
     }
-    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!valid) {
-      return res.status(400).json({ success: false, error: 'Incorrect current password' });
-    }
-    const newHash = await bcrypt.hash(newPassword, 12);
-    await prisma.user.update({
-      where: { id: req.user!.sub },
-      data: { passwordHash: newHash },
-    });
-    res.json({ success: true, message: 'Password updated successfully' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to update password' });
-  }
-});
+  },
+);
 
 // ── Validation Schemas ────────────────────────────────────────────────────────
 const registerSchema = z.object({
@@ -115,11 +128,7 @@ authRouter.post(
   asyncHandler(AuthController.login2fa),
 );
 
-authRouter.post(
-  '/2fa/setup',
-  jwtGuard,
-  asyncHandler(AuthController.setup2fa),
-);
+authRouter.post('/2fa/setup', jwtGuard, asyncHandler(AuthController.setup2fa));
 
 authRouter.post(
   '/2fa/verify',
@@ -431,29 +440,34 @@ const supportTicketSchema = z.object({
 });
 
 // POST /auth/user/support — Create a new support ticket
-authRouter.post('/user/support', jwtGuard, validate({ body: supportTicketSchema }), async (req: Request, res: Response) => {
-  try {
-    const { subject, message } = req.body;
+authRouter.post(
+  '/user/support',
+  jwtGuard,
+  validate({ body: supportTicketSchema }),
+  async (req: Request, res: Response) => {
+    try {
+      const { subject, message } = req.body;
 
-    const ticket = await prisma.supportTicket.create({
-      data: {
+      const ticket = await prisma.supportTicket.create({
+        data: {
+          userId: req.user!.sub,
+          subject,
+          message,
+          status: 'OPEN',
+        },
+      });
+
+      // Emit event to Notification Engine / WebSocket Hub
+      await kafka.supportTicketCreated({
+        ticketId: ticket.id,
         userId: req.user!.sub,
-        subject,
-        message,
-        status: 'OPEN',
-      },
-    });
+        subject: ticket.subject,
+      });
 
-    // Emit event to Notification Engine / WebSocket Hub
-    await kafka.supportTicketCreated({
-      ticketId: ticket.id,
-      userId: req.user!.sub,
-      subject: ticket.subject,
-    });
-
-    res.json({ success: true, data: ticket });
-  } catch (err) {
-    console.error('Error creating support ticket:', err);
-    res.status(500).json({ success: false, error: 'Failed to create support ticket' });
-  }
-});
+      res.json({ success: true, data: ticket });
+    } catch (err) {
+      console.error('Error creating support ticket:', err);
+      res.status(500).json({ success: false, error: 'Failed to create support ticket' });
+    }
+  },
+);

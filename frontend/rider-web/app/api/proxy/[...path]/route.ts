@@ -14,7 +14,9 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
-  const headers: HeadersInit = {};
+  const clientIp =
+    req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+  const headers: HeadersInit = { 'x-forwarded-for': clientIp };
 
   if ((session as any)?.error === 'RefreshAccessTokenError') {
     return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
@@ -60,7 +62,9 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  const clientIp =
+    req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+  const headers: HeadersInit = { 'Content-Type': 'application/json', 'x-forwarded-for': clientIp };
 
   if ((session as any)?.error === 'RefreshAccessTokenError') {
     return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
@@ -75,7 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
     const csrfData = await csrfRes.json();
     const csrfToken = csrfData.csrfToken;
     const cookies = csrfRes.headers.get('set-cookie');
-    
+
     if (csrfToken) {
       headers['x-csrf-token'] = csrfToken;
     }
@@ -120,7 +124,9 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  const clientIp =
+    req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+  const headers: HeadersInit = { 'Content-Type': 'application/json', 'x-forwarded-for': clientIp };
 
   if ((session as any)?.error === 'RefreshAccessTokenError') {
     return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
@@ -135,7 +141,7 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
     const csrfData = await csrfRes.json();
     const csrfToken = csrfData.csrfToken;
     const cookies = csrfRes.headers.get('set-cookie');
-    
+
     if (csrfToken) {
       headers['x-csrf-token'] = csrfToken;
     }
@@ -180,7 +186,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { path: str
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;
 
-  const headers: HeadersInit = {};
+  const clientIp =
+    req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+  const headers: HeadersInit = { 'x-forwarded-for': clientIp };
 
   if ((session as any)?.error === 'RefreshAccessTokenError') {
     return NextResponse.json({ error: 'Session Expired' }, { status: 401 });
@@ -195,7 +203,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { path: str
     const csrfData = await csrfRes.json();
     const csrfToken = csrfData.csrfToken;
     const cookies = csrfRes.headers.get('set-cookie');
-    
+
     if (csrfToken) {
       headers['x-csrf-token'] = csrfToken;
     }

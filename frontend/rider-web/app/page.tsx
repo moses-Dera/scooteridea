@@ -23,7 +23,7 @@ export default function RiderHome() {
 
   // Track user's current location for smart trip validation
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
-  
+
   // Search center tracks where we fetch bikes/docks from.
   // Initialize from the GPS lock we already have so bikes/docks load immediately.
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(userLoc);
@@ -34,10 +34,10 @@ export default function RiderHome() {
     let fallbackTimer: NodeJS.Timeout;
 
     const setFallback = () => {
-      setUserLoc(prev => {
+      setUserLoc((prev) => {
         if (!prev) {
           const fallback = { lat: 6.5244, lng: 3.3792 };
-          setSearchCenter(s => s || fallback);
+          setSearchCenter((s) => s || fallback);
           return fallback;
         }
         return prev;
@@ -52,7 +52,7 @@ export default function RiderHome() {
           clearTimeout(fallbackTimer);
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setUserLoc(coords);
-          setSearchCenter(prev => prev || coords);
+          setSearchCenter((prev) => prev || coords);
         },
         () => {
           clearTimeout(fallbackTimer);

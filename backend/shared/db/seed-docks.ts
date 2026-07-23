@@ -1,3 +1,6 @@
+import * as path from 'path';
+require('dotenv').config({ path: path.resolve(__dirname, '../../infra/.env') });
+
 import { prisma } from './index';
 
 async function main() {
