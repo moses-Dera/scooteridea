@@ -38,7 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
     try {
       data = JSON.parse(text);
     } catch {
-      data = { text };
+      data = { success: false, error: 'UPSTREAM_INVALID_RESPONSE', message: 'Service unavailable' };
     }
 
     if (!response.ok) {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
   } catch (err: any) {
     console.error('[Proxy GET] Fetch failed:', err);
     return NextResponse.json(
-      { error: 'Proxy Request failed', details: err.message, backendUrl },
+      { success: false, error: 'UPSTREAM_UNAVAILABLE', message: 'Service temporarily unavailable' },
       { status: 500 },
     );
   }
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
     try {
       data = JSON.parse(text);
     } catch {
-      data = { text };
+      data = { success: false, error: 'UPSTREAM_INVALID_RESPONSE', message: 'Service unavailable' };
     }
 
     if (!response.ok) {
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
   } catch (err: any) {
     console.error('[Proxy POST] Fetch failed:', err);
     return NextResponse.json(
-      { error: 'Proxy Request failed', details: err.message, backendUrl },
+      { success: false, error: 'UPSTREAM_UNAVAILABLE', message: 'Service temporarily unavailable' },
       { status: 500 },
     );
   }
@@ -162,7 +162,7 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
     try {
       data = JSON.parse(text);
     } catch {
-      data = { text };
+      data = { success: false, error: 'UPSTREAM_INVALID_RESPONSE', message: 'Service unavailable' };
     }
 
     if (!response.ok) {
@@ -173,7 +173,7 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
   } catch (err: any) {
     console.error('[Proxy PUT] Fetch failed:', err);
     return NextResponse.json(
-      { error: 'Proxy Request failed', details: err.message, backendUrl },
+      { success: false, error: 'UPSTREAM_UNAVAILABLE', message: 'Service temporarily unavailable' },
       { status: 500 },
     );
   }
@@ -222,7 +222,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { path: str
     try {
       data = JSON.parse(text);
     } catch {
-      data = { text };
+      data = { success: false, error: 'UPSTREAM_INVALID_RESPONSE', message: 'Service unavailable' };
     }
 
     if (!response.ok) {
@@ -233,7 +233,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { path: str
   } catch (err: any) {
     console.error('[Proxy DELETE] Fetch failed:', err);
     return NextResponse.json(
-      { error: 'Proxy Request failed', details: err.message, backendUrl },
+      { success: false, error: 'UPSTREAM_UNAVAILABLE', message: 'Service temporarily unavailable' },
       { status: 500 },
     );
   }

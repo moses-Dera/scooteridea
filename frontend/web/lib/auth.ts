@@ -137,11 +137,11 @@ export const authOptions: NextAuthOptions = {
           try {
             json = JSON.parse(text);
           } catch {
-            return `/login?error=OAuthFailed&details=${encodeURIComponent('Backend returned non-JSON: ' + text.substring(0, 50))}`;
+            return '/login?error=OAuthFailed';
           }
 
           if (!res.ok || !json.data?.accessToken) {
-            return `/login?error=OAuthFailed&details=${encodeURIComponent(json.error || json.message || 'No access token')}`;
+            return '/login?error=OAuthFailed';
           }
 
           const payloadBase64 = json.data.accessToken.split('.')[1];
@@ -157,7 +157,7 @@ export const authOptions: NextAuthOptions = {
           (user as any).accessToken = json.data.accessToken;
           (user as any).refreshToken = json.data.refreshToken;
         } catch (e: any) {
-          return `/login?error=OAuthFailed&details=${encodeURIComponent(e.message || 'Unknown error')}`;
+          return '/login?error=OAuthFailed';
         }
       }
       return true;
