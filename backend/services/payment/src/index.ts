@@ -224,7 +224,11 @@ app.post('/payments/verify', jwtGuard, async (req, res, next) => {
       }
       return res.json({ success: true, message: 'Payment verified successfully' });
     } else {
-      return res.json({ success: false, message: `Payment status: ${data.data.status}` });
+      return res.json({
+        success: false,
+        paymentStatus: data.data.status,
+        message: `Payment status: ${data.data.status}`,
+      });
     }
   } catch (err) {
     next(err);

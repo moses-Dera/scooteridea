@@ -5,10 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { paymentApi } from '@/lib/api';
 
+const MAX_VERIFICATION_ATTEMPTS = 5;
+const VERIFICATION_DELAY_MS = 2000;
+
 export default function TopUpCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const reference = searchParams.get('reference');
+  const reference = searchParams.get('reference') || searchParams.get('trxref');
 
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying');
   const [message, setMessage] = useState('Verifying your payment...');
@@ -20,24 +23,51 @@ export default function TopUpCallbackPage() {
       return;
     }
 
+    let cancelled = false;
+
     const verify = async () => {
-      try {
-        const res = await paymentApi.verifyTopUp(reference);
-        const data: any = res.data;
-        if (data.success) {
-          setStatus('success');
-          setMessage('Payment verified successfully!');
-        } else {
-          setStatus('failed');
-          setMessage(data.message || 'Payment verification failed');
+      for (let attempt = 1; attempt <= MAX_VERIFICATION_ATTEMPTS; attempt += 1) {
+        try {
+          const res = await paymentApi.verifyTopUp(reference);
+          const data: any = res.data;
+
+          if (data.success) {
+            if (!cancelled) {
+              setStatus('success');
+              setMessage('Payment verified successfully!');
+            }
+            return;
+          }
+
+          const paymentStatus = String(data.paymentStatus || '').toLowerCase();
+          const isTransient = ['pending', 'ongoing', 'processing', 'queued'].includes(paymentStatus);
+
+          if (!isTransient || attempt === MAX_VERIFICATION_ATTEMPTS) {
+            if (!cancelled) {
+              setStatus('failed');
+              setMessage(data.message || 'Payment verification failed');
+            }
+            return;
+          }
+
+          if (!cancelled) {
+            setMessage('Payment is still being confirmed...');
+          }
+          await new Promise((resolve) => setTimeout(resolve, VERIFICATION_DELAY_MS));
+        } catch (err) {
+          if (!cancelled) {
+            setStatus('failed');
+            setMessage('Network error while verifying payment');
+          }
+          return;
         }
-      } catch (err) {
-        setStatus('failed');
-        setMessage('Network error while verifying payment');
       }
     };
 
     verify();
+    return () => {
+      cancelled = true;
+    };
   }, [reference]);
 
   return (
