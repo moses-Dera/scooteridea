@@ -82,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   // Pages that need their own full layout (unlock flow, active ride, etc.)
   const isFullScreenPage = pathname?.startsWith('/ride/active') || pathname?.startsWith('/unlock');
+  const isPaymentCallbackPage = pathname?.startsWith('/wallet/topup/callback');
 
   return (
     <html lang="en" className="dark">
@@ -287,7 +288,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   )}
 
                   {/* Page-specific overlays (bike details, etc.) */}
-                  <div className="absolute inset-0 z-30 pointer-events-none">
+                  <div
+                    className={`absolute inset-0 ${isPaymentCallbackPage ? 'z-[60] pointer-events-auto' : 'z-30 pointer-events-none'}`}
+                  >
                     <Suspense fallback={null}>{children}</Suspense>
                   </div>
                 </>

@@ -5,12 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { paymentApi } from '@/lib/api';
 
-import dynamic from 'next/dynamic';
-
-const MapView = dynamic(() => import('@/components/Map/RiderMap'), {
-  ssr: false,
-});
-
 export default function TopUpCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,13 +41,9 @@ export default function TopUpCallbackPage() {
   }, [reference]);
 
   return (
-    <div className="min-h-screen relative text-white flex flex-col items-center justify-center px-6 text-center overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <MapView />
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-      </div>
+    <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-sm text-white flex flex-col items-center justify-center px-6 text-center overflow-hidden pointer-events-auto">
 
-      <div className="relative z-10 glass-panel p-8 rounded-3xl border border-white/10 max-w-sm w-full flex flex-col items-center shadow-2xl shadow-primary/20">
+      <div className="relative z-10 glass-panel p-8 rounded-3xl border border-white/10 max-w-sm w-full flex flex-col items-center shadow-2xl shadow-primary/20 pointer-events-auto">
         {status === 'verifying' && (
           <>
             <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mb-6">
@@ -85,7 +75,7 @@ export default function TopUpCallbackPage() {
         )}
 
         <button
-          onClick={() => (window.location.href = '/')}
+          onClick={() => router.push('/')}
           disabled={status === 'verifying'}
           className="w-full py-4 bg-primary text-black font-bold rounded-xl shadow-glow-primary hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:hover:scale-100"
         >

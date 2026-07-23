@@ -99,7 +99,7 @@ export default function LoginOverlay({ feature, onClose }: LoginOverlayProps) {
         {/* Left Side: Branding / Hero (Hidden on smaller screens) */}
         <div className="hidden md:flex flex-col justify-between flex-1 p-12 bg-gradient-to-br from-[#111827]/80 to-[#0A0F1E]/90 border-r border-white/5 relative overflow-hidden">
           {/* Subtle grid overlay */}
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay"></div>
+          <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay"></div>
 
           <div>
             <div className="mb-6">
