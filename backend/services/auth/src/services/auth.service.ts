@@ -82,18 +82,15 @@ export class AuthService {
       const redis = await getRedisClient();
       await redis.setEx(`2fa_login:${tempToken}`, 300, JSON.stringify({ userId: user.id, otp }));
 
-      try {
-        await kafka.twoFactorOtpRequested({
-          userId: user.id,
-          email: user.email,
-          otp,
-          ts: Date.now(),
-        });
-      } catch (err) {
-        await redis.del(`2fa_login:${tempToken}`);
-        logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA login OTP event');
-        throw new ServiceUnavailableError('notification pipeline');
-      }
+      // Fire-and-forget: don't fail the login flow if notification can't be sent
+      kafka.twoFactorOtpRequested({
+        userId: user.id,
+        email: user.email,
+        otp,
+        ts: Date.now(),
+      }).catch((err) => {
+        logger.warn({ userId: user.id, err }, '[Auth] Failed to publish 2FA login OTP event — user can still verify');
+      });
 
       return { requires2FA: true, token: tempToken };
     }
@@ -110,18 +107,15 @@ export class AuthService {
     const redis = await getRedisClient();
     await redis.setEx(`2fa_setup:${userId}`, 300, otp);
 
-    try {
-      await kafka.twoFactorOtpRequested({
-        userId: user.id,
-        email: user.email,
-        otp,
-        ts: Date.now(),
-      });
-    } catch (err) {
-      await redis.del(`2fa_setup:${userId}`);
-      logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA setup OTP event');
-      throw new ServiceUnavailableError('notification pipeline');
-    }
+    // Fire-and-forget: don't fail the 2FA setup if notification can't be sent
+    kafka.twoFactorOtpRequested({
+      userId: user.id,
+      email: user.email,
+      otp,
+      ts: Date.now(),
+    }).catch((err) => {
+      logger.warn({ userId: user.id, err }, '[Auth] Failed to publish 2FA setup OTP event — OTP still in Redis');
+    });
   }
 
   static async verify2fa(userId: string, otp: string): Promise<void> {

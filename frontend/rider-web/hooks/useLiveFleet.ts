@@ -28,8 +28,12 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
 
     const connect = () => {
       try {
-        let wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3008';
-        if (wsUrl.startsWith('ss://')) {
+        let wsUrl = process.env.NEXT_PUBLIC_WS_URL || '';
+        if (!wsUrl) {
+          // Derive WebSocket URL from current page location for production
+          const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+          wsUrl = `${proto}://${window.location.host}/live`;
+        } else if (wsUrl.startsWith('ss://')) {
           wsUrl = wsUrl.replace('ss://', 'wss://');
         } else if (wsUrl.startsWith('http://')) {
           wsUrl = wsUrl.replace('http://', 'ws://');

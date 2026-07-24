@@ -15,13 +15,34 @@ export default function DocksPanel({ onClose }: DocksPanelProps) {
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
+    let fallbackTimer: NodeJS.Timeout;
+    const LAGOS_FALLBACK = { lat: 6.5244, lng: 3.3792 };
+
+    const setFallback = () => {
+      setUserLoc((prev) => prev || LAGOS_FALLBACK);
+    };
+
     if (typeof window !== 'undefined' && navigator.geolocation) {
+      fallbackTimer = setTimeout(setFallback, 5000);
+
       navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => console.error('Error getting location', err),
+        (pos) => {
+          clearTimeout(fallbackTimer);
+          setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {
+          clearTimeout(fallbackTimer);
+          setFallback();
+        },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
+    } else {
+      setFallback();
     }
+
+    return () => {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+    };
   }, []);
 
   const { docks, loading } = useNearbyDocks(userLoc?.lat, userLoc?.lng);
