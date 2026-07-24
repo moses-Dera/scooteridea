@@ -168,10 +168,10 @@ export class DockFullError extends AppError {
 // ── Type guards ───────────────────────────────────────────────────────────────
 
 export function isAppError(err: unknown): err is AppError {
-  return err instanceof AppError;
+  return typeof err === 'object' && err !== null && 'statusCode' in err && 'code' in err;
 }
 
 export function isOperationalError(err: unknown): boolean {
-  if (isAppError(err)) return err.isOperational;
+  if (isAppError(err)) return (err as any).isOperational === true;
   return false;
 }

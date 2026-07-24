@@ -12,6 +12,7 @@
   "dependencies": {
     "@ebike/core": "*",
     "@ebike/db": "*",
+    "@ebike/events": "^1.0.0",
     "@ebike/redis": "*",
     "@ebike/types": "*",
     "bcryptjs": "^2.4.3",
