@@ -379,28 +379,33 @@ fleetRouter.post('/simulator/telemetry', async (req, res) => {
 // POST /fleet/demo/spawn — Dynamically spawn bikes anywhere in the world!
 fleetRouter.post('/demo/spawn', async (req, res) => {
   try {
-    const { lat, lng, count, radius } = req.body;
+    const { lat, lng, count = 10, radius = 2 } = req.body;
 
     if (lat === undefined || lng === undefined) {
       res.status(400).json({ success: false, error: 'Missing lat/lng' });
       return;
     }
 
-    const { getMqttClient } = require('@ebike/mqtt');
-    const mqtt = getMqttClient();
+    // Spawn bikes directly via FleetService — no MQTT round-trip needed
+    const spawned: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const newId = `BK-${Math.floor(Math.random() * 90000) + 10000}`;
+      const bLat = lat + (Math.random() - 0.5) * (radius * 0.01);
+      const bLng = lng + (Math.random() - 0.5) * (radius * 0.01);
+      await FleetService.handleBikeTelemetry(newId, {
+        lat: bLat,
+        lng: bLng,
+        battery_pct: Math.floor(55 + Math.random() * 45),
+        speed_kmh: 0,
+        docked_at: null,
+        lock_status: 'LOCKED',
+      });
+      spawned.push(newId);
+    }
 
-    mqtt.publish(
-      'system/demo/spawn',
-      JSON.stringify({
-        lat,
-        lng,
-        count: count || 10,
-        radius: radius || 2,
-      }),
-    );
-
-    res.json({ success: true, message: `Demo spawn triggered at ${lat}, ${lng}` });
+    res.json({ success: true, message: `Spawned ${spawned.length} demo bikes near ${lat}, ${lng}`, bikeIds: spawned });
   } catch (err) {
+    console.error('[Fleet] Demo spawn error:', err);
     res.status(500).json({ success: false, error: 'Failed to trigger demo spawn' });
   }
 });
