@@ -196,4 +196,4 @@ jobs:
             docker service update --force scooter_stack_nginx
 
             # 6. Clean up unused images and containers to free up space
-            docker system prune -a -f
+            docker system prune -f
