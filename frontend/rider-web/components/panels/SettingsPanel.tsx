@@ -1,7 +1,7 @@
 'use client';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
-import { Shield, Bell, Key, LogOut, ChevronRight, User, Lock } from 'lucide-react';
+import { Shield, Bell, Key, LogOut, ChevronRight, User, Lock, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -16,19 +16,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
             onClick={() => window.dispatchEvent(new CustomEvent('open-panel', { detail: 'menu' }))}
             className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
           >
-            <svg
-              className="w-5 h-5 text-slate-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
+            <ArrowLeft className="w-5 h-5 text-slate-300" />
           </button>
           <div className="text-2xl font-bold">Settings</div>
         </div>
@@ -36,14 +24,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex flex-shrink-0 items-center justify-center transition-colors cursor-pointer"
         >
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="w-5 h-5 text-slate-300" />
         </button>
       </div>
 
