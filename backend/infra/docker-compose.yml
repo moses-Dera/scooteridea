@@ -118,6 +118,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
@@ -144,6 +146,7 @@ services:
       - '3005'
     environment:
       PORT: 3005
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
@@ -262,6 +265,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
