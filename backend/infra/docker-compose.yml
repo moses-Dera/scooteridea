@@ -205,6 +205,8 @@ services:
       REDIS_URL: redis://redis:6379
       EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
     depends_on:
       - redis
     healthcheck:
