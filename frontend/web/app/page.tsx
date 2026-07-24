@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { AddBikeModal } from '@/components/fleet/AddBikeModal';
 import { StatCard, Card, CardHeader, CardContent, Badge, LoadingSpinner } from '@/components';
 import {
   BarChart,
@@ -14,6 +15,7 @@ import {
   Activity,
   Users,
   CheckCircle,
+  Plus,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -63,55 +65,55 @@ export default function DashboardOverview() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [maintenance, setMaintenance] = useState<MaintenanceIssue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddBike, setShowAddBike] = useState(false);
 
   // Real data for chart will require analytics service
   const chartData: any[] = [];
 
-  useEffect(() => {
-    // Fetch all data
-    const fetchAllData = async () => {
-      try {
-        setLoading(true);
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const fetchAllData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-        // Fetch fleet data
-        const fleetRes = await fetch(`/api/proxy/fleet/bikes`).catch(() => null);
-        if (fleetRes?.ok) {
-          const json = await fleetRes.json();
-          if (json.success && json.data) setBikes(json.data);
-        }
-
-        // Fetch top riders
-        const ridersRes = await fetch(`/api/proxy/rides/riders/top`).catch(() => null);
-        if (ridersRes?.ok) {
-          const json = await ridersRes.json();
-          if (json.success && json.data) setRiders(json.data);
-        }
-
-        // Fetch system alerts
-        const alertsRes = await fetch(`/api/proxy/fleet/alerts`).catch(() => null);
-        if (alertsRes?.ok) {
-          const json = await alertsRes.json();
-          if (json.success && json.data) setAlerts(json.data);
-        }
-
-        // Fetch maintenance issues
-        const maintRes = await fetch(`/api/proxy/fleet/maintenance`).catch(() => null);
-        if (maintRes?.ok) {
-          const json = await maintRes.json();
-          if (json.success && json.data) setMaintenance(json.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch dashboard data', err);
-      } finally {
-        setLoading(false);
+      // Fetch fleet data
+      const fleetRes = await fetch(`/api/proxy/fleet/bikes`).catch(() => null);
+      if (fleetRes?.ok) {
+        const json = await fleetRes.json();
+        if (json.success && json.data) setBikes(json.data);
       }
-    };
 
+      // Fetch top riders
+      const ridersRes = await fetch(`/api/proxy/rides/riders/top`).catch(() => null);
+      if (ridersRes?.ok) {
+        const json = await ridersRes.json();
+        if (json.success && json.data) setRiders(json.data);
+      }
+
+      // Fetch system alerts
+      const alertsRes = await fetch(`/api/proxy/fleet/alerts`).catch(() => null);
+      if (alertsRes?.ok) {
+        const json = await alertsRes.json();
+        if (json.success && json.data) setAlerts(json.data);
+      }
+
+      // Fetch maintenance issues
+      const maintRes = await fetch(`/api/proxy/fleet/maintenance`).catch(() => null);
+      if (maintRes?.ok) {
+        const json = await maintRes.json();
+        if (json.success && json.data) setMaintenance(json.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard data', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     fetchAllData();
     const interval = setInterval(fetchAllData, 30000); // 30s polling
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAllData]);
 
   const activeRides = bikes.filter((b) => b.status === 'IN_USE' || b.status === 'in_use').length;
   const availableBikes = bikes.filter(
@@ -127,6 +129,13 @@ export default function DashboardOverview() {
         <div>
           <div className="text-3xl font-black text-white tracking-tight">Overview</div>
         </div>
+        <button
+          onClick={() => setShowAddBike(true)}
+          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-slate-900 px-4 py-2 rounded-xl font-bold transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          Add Bike
+        </button>
       </div>
 
       {/* KPI Cards - Grid */}
@@ -396,6 +405,13 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {showAddBike && (
+        <AddBikeModal
+          onClose={() => setShowAddBike(false)}
+          onAdded={() => fetchAllData()}
+        />
+      )}
     </div>
   );
 }
