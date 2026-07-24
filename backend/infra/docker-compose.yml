@@ -23,10 +23,13 @@ services:
       - ./mosquitto.passwd:/mosquitto/config/passwd
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    environment:
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
     healthcheck:
       test:
         - CMD-SHELL
-        - mosquitto_sub -t '$$SYS/#' -C 1 -W 3 || exit 1
+        - mosquitto_sub -t '$$SYS/#' -C 1 -W 3 -u "$${MQTT_USERNAME}" -P "$${MQTT_PASSWORD}" || exit 1
       interval: 10s
       retries: 5
   nginx:
