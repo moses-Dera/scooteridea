@@ -30,9 +30,16 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
       try {
         let wsUrl = process.env.NEXT_PUBLIC_WS_URL || '';
         if (!wsUrl) {
-          // Derive WebSocket URL from current page location for production
-          const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-          wsUrl = `${proto}://${window.location.host}/live`;
+          // Derive WebSocket URL from NEXT_PUBLIC_API_URL
+          let apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          if (!apiUrl) {
+             const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+             wsUrl = `${proto}://${window.location.host}/live`;
+          } else {
+             const proto = apiUrl.startsWith('https') ? 'wss' : 'ws';
+             const host = apiUrl.replace(/^https?:\/\//, '');
+             wsUrl = `${proto}://${host}/live`;
+          }
         } else if (wsUrl.startsWith('ss://')) {
           wsUrl = wsUrl.replace('ss://', 'wss://');
         } else if (wsUrl.startsWith('http://')) {
