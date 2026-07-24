@@ -1,6 +1,7 @@
 import { getMqttClient, subscribeToTopic } from '@ebike/mqtt';
 import { getRedisClient } from '@ebike/redis';
 import { kafka } from '@ebike/events';
+import { prisma } from '@ebike/db';
 import type { DockTelemetryPayload } from '@ebike/types';
 
 // Lazy import to avoid circular dep
@@ -92,5 +93,18 @@ export class DockService {
       totalSlots: total_slots,
       ts: Date.now(),
     });
+
+    // 7. Sync physical hardware state to Postgres DB to prevent drift
+    try {
+      await prisma.dock.update({
+        where: { id: dockId },
+        data: {
+          availableSlots: available_slots,
+          totalSlots: total_slots,
+        },
+      });
+    } catch (err) {
+      console.error(`[Dock] Failed to sync dock DB state for ${dockId}`, err);
+    }
   }
 }

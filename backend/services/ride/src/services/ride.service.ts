@@ -110,11 +110,14 @@ export class RideService {
 
       // Mark bike as in_use atomically — any concurrent reservation hits the status check above
       if (bike.dockId) {
-        // Free up the dock slot
-        await tx.dock.update({
-          where: { id: bike.dockId },
-          data: { availableSlots: { increment: 1 } },
-        });
+        // Free up the dock slot, safely capped at totalSlots
+        const dock = await tx.dock.findUnique({ where: { id: bike.dockId } });
+        if (dock) {
+          await tx.dock.update({
+            where: { id: bike.dockId },
+            data: { availableSlots: Math.min(dock.totalSlots, dock.availableSlots + 1) },
+          });
+        }
         await tx.bike.update({ 
           where: { id: bikeId }, 
           data: { status: 'in_use', dockId: null } 
@@ -273,10 +276,13 @@ export class RideService {
     });
 
     if (dockId) {
-      await prisma.dock.update({
-        where: { id: dockId },
-        data: { availableSlots: { decrement: 1 } },
-      });
+      const dock = await prisma.dock.findUnique({ where: { id: dockId } });
+      if (dock) {
+        await prisma.dock.update({
+          where: { id: dockId },
+          data: { availableSlots: Math.max(0, dock.availableSlots - 1) },
+        });
+      }
     }
 
     // Lock the bike and update PIN on hardware (best-effort, don't fail ride-end if MQTT is down)
