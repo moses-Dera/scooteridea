@@ -48,11 +48,14 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = await UserRepository.create({ ...dto, passwordHash });
 
-    await kafka.userRegistered({
+    // Fire-and-forget: do not fail registration if event publishing fails
+    kafka.userRegistered({
       userId: user.id,
       email: user.email,
       name: user.name,
       ts: Date.now(),
+    }).catch((err) => {
+      logger.warn({ userId: user.id, err }, '[Auth] Failed to publish user registered event');
     });
 
     // Omit sensitive / internal fields before returning
@@ -312,12 +315,14 @@ export class AuthService {
       '[Auth] Generated Password Reset Token',
     );
 
-    await kafka.passwordResetRequested({
+    kafka.passwordResetRequested({
       userId: user.id,
       email: user.email,
       resetToken,
       role: user.role,
       ts: Date.now(),
+    }).catch((err) => {
+      logger.warn({ userId: user.id, err }, '[Auth] Failed to publish password reset event');
     });
 
     return {
