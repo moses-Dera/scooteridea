@@ -386,24 +386,62 @@ fleetRouter.post('/demo/spawn', async (req, res) => {
       return;
     }
 
-    // Spawn bikes directly via FleetService — no MQTT round-trip needed
+    // Spawn bikes directly via FleetService — using actual DB bikes!
+    const dbBikes = await prisma.bike.findMany({ take: count });
+    
+    // If no bikes exist in DB, create some real ones for them
+    const bikesToSpawn = dbBikes.length > 0 ? dbBikes : [];
+    if (bikesToSpawn.length === 0) {
+      for (let i = 0; i < count; i++) {
+        const newId = `BK-${Math.floor(Math.random() * 90000) + 10000}`;
+        const newBike = await prisma.bike.create({
+          data: {
+            id: newId,
+            locationLat: lat,
+            locationLng: lng,
+            status: 'available',
+            batteryPct: 100,
+          },
+        });
+        bikesToSpawn.push(newBike);
+      }
+    }
+
     const spawned: string[] = [];
-    for (let i = 0; i < count; i++) {
-      const newId = `BK-${Math.floor(Math.random() * 90000) + 10000}`;
+    for (const bike of bikesToSpawn) {
       const bLat = lat + (Math.random() - 0.5) * (radius * 0.01);
       const bLng = lng + (Math.random() - 0.5) * (radius * 0.01);
-      await FleetService.handleBikeTelemetry(newId, {
+      
+      // Update DB location
+      await prisma.bike.update({
+        where: { id: bike.id },
+        data: { locationLat: bLat, locationLng: bLng },
+      });
+
+      // Inject telemetry so it appears live on the map immediately
+      await FleetService.handleBikeTelemetry(bike.id, {
         lat: bLat,
         lng: bLng,
-        battery_pct: Math.floor(55 + Math.random() * 45),
+        battery_pct: bike.batteryPct ?? 100,
         speed_kmh: 0,
         docked_at: null,
         lock_status: 'LOCKED',
       });
-      spawned.push(newId);
+      spawned.push(bike.id);
     }
 
-    res.json({ success: true, message: `Spawned ${spawned.length} demo bikes near ${lat}, ${lng}`, bikeIds: spawned });
+    // Also move up to 3 docks to the user's location
+    const dbDocks = await prisma.dock.findMany({ take: 3 });
+    for (const dock of dbDocks) {
+      const dLat = lat + (Math.random() - 0.5) * (radius * 0.01);
+      const dLng = lng + (Math.random() - 0.5) * (radius * 0.01);
+      await prisma.dock.update({
+        where: { id: dock.id },
+        data: { locationLat: dLat, locationLng: dLng },
+      });
+    }
+
+    res.json({ success: true, message: `Spawned ${spawned.length} DB bikes and ${dbDocks.length} DB docks near ${lat}, ${lng}`, bikeIds: spawned });
   } catch (err) {
     console.error('[Fleet] Demo spawn error:', err);
     res.status(500).json({ success: false, error: 'Failed to trigger demo spawn' });
