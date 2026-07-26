@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-// mapboxgl is required lazily inside useEffect to avoid SSR crashes (browser APIs at init time)
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import Map, { MapRef, Marker, Source, Layer, MapMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
 import {
@@ -19,15 +19,12 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-// Set mapbox token (use environment variable in production)
 const MAPBOX_TOKEN =
   process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
   'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0.xxxxx';
 
 export default function SimulatorPage() {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
-  const markersRef = useRef<Map<string, any>>(new Map());
+  const mapRef = useRef<MapRef>(null);
   const commandSentAt = useRef<number>(0); // tracks last command time to prevent WebSocket override
   const { bikes, bikesMap } = useFleetSocket({});
 
@@ -41,134 +38,36 @@ export default function SimulatorPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navInterval, setNavInterval] = useState<NodeJS.Timeout | null>(null);
+  const [routeCoords, setRouteCoords] = useState<number[][]>([]);
 
-  // Initialize Map
+  const [viewState, setViewState] = useState({
+    latitude: 6.52,
+    longitude: 3.37,
+    zoom: 16,
+    pitch: 0,
+  });
+
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (!mapContainer.current || typeof window === 'undefined') return;
-    const mapboxgl = require('mapbox-gl'); // loaded lazily — browser only
-
-    try {
-      const initMap = (lng: number, lat: number) => {
-        if (!mapContainer.current) return;
-        mapboxgl.accessToken = MAPBOX_TOKEN;
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/dark-v11',
-          center: [lng, lat],
-          zoom: 16,
-        });
-
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-        // Add click handler to map to create new bikes
-        map.current.on('dblclick', async (e: any) => {
-          e.preventDefault();
-          const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
-          await updateBikeTelemetry(newId, e.lngLat.lat, e.lngLat.lng, 100, 'LOCKED');
-        });
-      };
-
-      // Initialize immediately with default coordinates to avoid blank screen while waiting for permission
-      initMap(3.37, 6.52);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            if (map.current) {
-              map.current.flyTo({
-                center: [position.coords.longitude, position.coords.latitude],
-                zoom: 16,
-                duration: 2000,
-              });
-            }
-          },
-          (err) => {
-            console.log('Geolocation denied or failed.', err);
-          },
-          { timeout: 10000 },
-        );
-      }
-    } catch (err) {
-      console.error('Failed to initialize map:', err);
+    setMounted(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setViewState((prev) => ({
+            ...prev,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            zoom: 16,
+          }));
+        },
+        (err) => {
+          console.log('Geolocation denied or failed.', err);
+        },
+        { timeout: 10000 },
+      );
     }
-
-    return () => {
-      map.current?.remove();
-    };
   }, []);
-
-  // Update markers
-  useEffect(() => {
-    if (!map.current) return;
-    const mapboxgl = require('mapbox-gl'); // loaded lazily — browser only
-
-    bikes.forEach((bike) => {
-      let marker = markersRef.current.get(bike.id);
-
-      if (!marker) {
-        // Create new draggable marker
-        const el = document.createElement('div');
-        el.className =
-          'w-10 h-10 cursor-pointer flex items-center justify-center transition-transform hover:scale-110';
-
-        el.innerHTML = `
-          <div class="relative flex flex-col items-center">
-            <div class="w-8 h-8 rounded-full bg-surface border-[3px] ${bike.status === 'in_use' ? 'border-[#00D4FF] shadow-[0_0_15px_rgba(0,212,255,0.6)]' : 'border-primary shadow-[0_0_15px_rgba(30, 215, 96,0.6)]'} flex items-center justify-center z-10 transition-colors">
-              <svg class="w-4 h-4 ${bike.status === 'in_use' ? 'text-[#00D4FF]' : 'text-primary'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-          </div>
-        `;
-
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          setSelectedBikeId(bike.id);
-          setBattery(bike.battery_pct);
-          setHardwareState(bike.lock_status as 'LOCKED' | 'UNLOCKED');
-        });
-
-        marker = new mapboxgl.Marker({ element: el, draggable: true })
-          .setLngLat([bike.lng, bike.lat])
-          .addTo(map.current!);
-
-        // On drag end, update telemetry
-        marker.on('dragend', async () => {
-          const lngLat = marker!.getLngLat();
-          await updateBikeTelemetry(
-            bike.id,
-            lngLat.lat,
-            lngLat.lng,
-            bike.battery_pct,
-            bike.lock_status,
-          );
-        });
-
-        markersRef.current.set(bike.id, marker);
-      } else {
-        // If not dragging, update position from WS
-        // Mapbox GL JS Marker doesn't expose isDragging in its public TS types
-        if (!(marker as any)._isDragging) {
-          marker.setLngLat([bike.lng, bike.lat]);
-
-          // Update icon color based on status dynamically
-          const isUnlocked = bike.lock_status === 'UNLOCKED';
-          const innerDiv = marker.getElement().querySelector('.rounded-full');
-          const svgIcon = marker.getElement().querySelector('svg');
-
-          if (innerDiv && svgIcon) {
-            if (isUnlocked) {
-              innerDiv.className =
-                'w-8 h-8 rounded-full bg-surface border-[3px] border-[#00D4FF] flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.6)] z-10 transition-all';
-              svgIcon.setAttribute('class', 'w-4 h-4 text-[#00D4FF] transition-colors');
-            } else {
-              innerDiv.className =
-                'w-8 h-8 rounded-full bg-surface border-[3px] border-primary flex items-center justify-center shadow-[0_0_15px_rgba(30, 215, 96,0.6)] z-10 transition-all';
-              svgIcon.setAttribute('class', 'w-4 h-4 text-primary transition-colors');
-            }
-          }
-        }
-      }
-    });
-  }, [bikes]);
 
   // Update selected bike state if it changes externally (from WebSocket)
   // Skip update for 3s after a command to avoid reverting optimistic UI state
@@ -269,31 +168,7 @@ export default function SimulatorPage() {
       if (!data.routes || data.routes.length === 0) return;
       const coords = data.routes[0].geometry.coordinates;
 
-      // Draw route on map
-      if (map.current?.getSource('route')) {
-        (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
-          type: 'Feature',
-          properties: {},
-          geometry: { type: 'LineString', coordinates: coords },
-        });
-      } else {
-        map.current?.addSource('route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: { type: 'LineString', coordinates: coords },
-          },
-        });
-        map.current?.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#00D4FF', 'line-width': 4, 'line-opacity': 0.6 },
-        });
-      }
-
+      setRouteCoords(coords);
       setIsNavigating(true);
       setHardwareState('UNLOCKED'); // Auto unlock for driving
       let step = 0;
@@ -322,20 +197,112 @@ export default function SimulatorPage() {
     if (navInterval) clearInterval(navInterval);
     setNavInterval(null);
     setIsNavigating(false);
-    if (map.current?.getLayer('route')) {
-      map.current.removeLayer('route');
-      map.current.removeSource('route');
-    }
+    setRouteCoords([]);
+  };
+
+  const onMapDblClick = async (e: MapMouseEvent) => {
+    e.preventDefault();
+    const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
+    await updateBikeTelemetry(newId, e.lngLat.lat, e.lngLat.lng, 100, 'LOCKED');
   };
 
   const selectedBike = selectedBikeId ? bikesMap.get(selectedBikeId) : undefined;
+
+  const routeGeoJSON = useMemo(() => {
+    if (routeCoords.length === 0) return null;
+    return {
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: routeCoords },
+      properties: {},
+    };
+  }, [routeCoords]);
 
   return (
     <div className="flex h-[calc(100dvh-64px)] overflow-hidden -m-4 md:-m-8 relative">
       {/* Map Area */}
       <div className="flex-1 relative bg-slate-900">
-        <div ref={mapContainer} className="absolute inset-0" />
+        <div className="absolute inset-0">
+          {mounted && (
+            <Map
+              ref={mapRef}
+              mapboxAccessToken={MAPBOX_TOKEN}
+              {...viewState}
+              onMove={(evt) => setViewState(evt.viewState)}
+              mapStyle="mapbox://styles/mapbox/dark-v11"
+              onDblClick={onMapDblClick}
+              doubleClickZoom={false}
+              reuseMaps
+            >
+              {routeGeoJSON && (
+                <Source id="route" type="geojson" data={routeGeoJSON as any}>
+                  <Layer
+                    id="route-layer"
+                    type="line"
+                    layout={{ 'line-join': 'round', 'line-cap': 'round' }}
+                    paint={{ 'line-color': '#00D4FF', 'line-width': 4, 'line-opacity': 0.6 }}
+                  />
+                </Source>
+              )}
 
+              {bikes.map((bike) => {
+                const isUnlocked = bike.lock_status === 'UNLOCKED';
+                const isSelected = selectedBikeId === bike.id;
+                
+                return (
+                  <Marker
+                    key={bike.id}
+                    longitude={bike.lng}
+                    latitude={bike.lat}
+                    draggable={true}
+                    onDragEnd={async (e) => {
+                      await updateBikeTelemetry(
+                        bike.id,
+                        e.lngLat.lat,
+                        e.lngLat.lng,
+                        bike.battery_pct,
+                        bike.lock_status,
+                      );
+                    }}
+                    onClick={(e) => {
+                      e.originalEvent.stopPropagation();
+                      setSelectedBikeId(bike.id);
+                      setBattery(bike.battery_pct);
+                      setHardwareState(bike.lock_status as 'LOCKED' | 'UNLOCKED');
+                    }}
+                  >
+                    <div className="w-10 h-10 cursor-pointer flex items-center justify-center transition-transform hover:scale-110">
+                      <div className="relative flex flex-col items-center">
+                        <div
+                          className={`w-8 h-8 rounded-full bg-surface border-[3px] ${
+                            isUnlocked || isSelected
+                              ? 'border-[#00D4FF] shadow-[0_0_15px_rgba(0,212,255,0.6)]'
+                              : 'border-primary shadow-[0_0_15px_rgba(30, 215, 96,0.6)]'
+                          } flex items-center justify-center z-10 transition-colors`}
+                        >
+                          <svg
+                            className={`w-4 h-4 ${
+                              isUnlocked || isSelected ? 'text-[#00D4FF]' : 'text-primary'
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </Marker>
+                );
+              })}
+            </Map>
+          )}
+        </div>
         {/* Top Info Bar */}
         <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
           <div className="glass-panel p-4 rounded-xl shadow-2xl pointer-events-auto flex items-center gap-4 max-w-sm">
