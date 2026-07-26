@@ -171,6 +171,7 @@ export const standardRateLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: {
     success: false,
     error: 'RATE_LIMITED',
@@ -186,6 +187,7 @@ export const userRateLimiter = rateLimit({
   keyGenerator: (req) => req.ip ?? 'unknown',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: { success: false, error: 'RATE_LIMITED', message: 'Request limit reached.' },
 });
 
@@ -193,6 +195,7 @@ export const userRateLimiter = rateLimit({
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10,
+  validate: { trustProxy: false },
   message: {
     success: false,
     error: 'AUTH_RATE_LIMITED',
