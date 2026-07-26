@@ -13,6 +13,19 @@ services:
         - ping
       interval: 5s
       retries: 5
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: scooterfy
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - 5672:5672
+      - 15672:15672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
   mosquitto:
     image: eclipse-mosquitto:2
     ports:
@@ -51,6 +64,7 @@ services:
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_REFRESH_EXPIRY: 30d
@@ -61,6 +75,7 @@ services:
       SMTP_PASS: ${SMTP_PASS}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD
@@ -86,12 +101,14 @@ services:
       PORT: 3002
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD
@@ -117,12 +134,14 @@ services:
       PORT: 3003
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD
@@ -148,9 +167,11 @@ services:
       PORT: 3005
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD
@@ -176,12 +197,14 @@ services:
       PORT: 3006
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
       FRONTEND_URL: ${FRONTEND_URL}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD
@@ -206,6 +229,7 @@ services:
     environment:
       PORT: 3007
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       SMTP_USER: ${SMTP_USER}
@@ -215,6 +239,7 @@ services:
       GMAIL_REFRESH_TOKEN: ${GMAIL_REFRESH_TOKEN}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD
@@ -239,9 +264,11 @@ services:
     environment:
       PORT: 3008
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD
@@ -267,12 +294,14 @@ services:
       PORT: 3009
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://scooterfy:${RABBITMQ_PASSWORD}@rabbitmq:5672
       MQTT_BROKER_URL: mqtt://mosquitto:1883
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
     depends_on:
       - redis
+      - rabbitmq
     healthcheck:
       test:
         - CMD

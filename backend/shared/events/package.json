@@ -8,11 +8,12 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "ioredis": "^5.3.2",
-    "@ebike/types": "*"
+    "@ebike/types": "*",
+    "amqplib": "^2.0.1"
   },
   "devDependencies": {
-    "typescript": "^7.0.0",
-    "@types/node": "^20.0.0"
+    "@types/amqplib": "^0.10.8",
+    "@types/node": "^20.0.0",
+    "typescript": "^7.0.0"
   }
 }

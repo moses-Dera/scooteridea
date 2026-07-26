@@ -1,33 +1,81 @@
-import Redis from 'ioredis';
+import amqp from 'amqplib';
 import { TOPICS } from './producer';
 
 export type MessageHandler<T> = (payload: T, raw: string, channel: string) => Promise<void>;
 
-/** Create a typed Redis subscriber. */
+const EXCHANGE = 'scooterfy_events';
+
+/** Create a typed RabbitMQ subscriber. */
 export function createConsumer(groupId?: string) {
-  // Redis pub/sub doesn't use consumer groups like Kafka does by default,
-  // but if you want persistence, you'd use Redis Streams. For MVP, we use basic Pub/Sub.
-  const subscriber = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+  let connection: amqp.ChannelModel | null = null;
+  let channel: amqp.Channel | null = null;
+  
+  // Use groupId as the queue name to allow consumer groups.
+  // If no groupId is provided, we create a temporary exclusive queue.
+  const queueName = groupId || '';
 
   return {
     /** Connect and subscribe to one or more topics, then start processing. */
     async subscribe(topics: string[], handler: MessageHandler<unknown>): Promise<void> {
-      await subscriber.subscribe(...topics);
+      const url = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+      try {
+        connection = await amqp.connect(url);
+        channel = await connection.createChannel();
+        
+        await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
+        
+        const q = await channel.assertQueue(queueName, { 
+          durable: !!groupId,
+          exclusive: !groupId,
+          autoDelete: !groupId // If no group id, delete queue when consumer disconnects
+        });
 
-      subscriber.on('message', async (channel, message) => {
-        if (!topics.includes(channel)) return;
-        try {
-          const payload = JSON.parse(message);
-          await handler(payload, message, channel);
-        } catch (err) {
-          console.error(`[Redis Subscriber] Failed to process message from ${channel}`, err);
+        // Bind the queue to all requested topics
+        for (const topic of topics) {
+          await channel.bindQueue(q.queue, EXCHANGE, topic);
         }
-      });
 
-      console.log(`[Redis Subscriber] Subscribed to ${topics.join(', ')}`);
+        // Prefetch to avoid overwhelming the consumer
+        await channel.prefetch(10);
+
+        await channel.consume(q.queue, async (msg) => {
+          if (msg !== null) {
+            try {
+              const raw = msg.content.toString();
+              const payload = JSON.parse(raw);
+              await handler(payload, raw, msg.fields.routingKey);
+              
+              // Acknowledge the message after successful processing
+              channel!.ack(msg);
+            } catch (err) {
+              console.error(`[RabbitMQ Subscriber] Failed to process message from ${msg.fields.routingKey}`, err);
+              // Nack the message and don't requeue (to prevent infinite loop of bad messages)
+              channel!.nack(msg, false, false); 
+            }
+          }
+        }, { noAck: false });
+
+        console.log(`[RabbitMQ Subscriber] Subscribed to ${topics.join(', ')} on queue ${q.queue}`);
+        
+        connection.on('error', (err) => {
+          console.error('[RabbitMQ Subscriber] Connection error', err);
+        });
+        connection.on('close', () => {
+          console.error('[RabbitMQ Subscriber] Connection closed');
+        });
+        
+      } catch (error) {
+         console.error('[RabbitMQ Subscriber] Failed to connect', error);
+         throw error;
+      }
     },
     async disconnect() {
-      await subscriber.quit();
+      if (channel) {
+        await channel.close();
+      }
+      if (connection) {
+        await connection.close();
+      }
     },
   };
 }

@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import amqp from 'amqplib';
 import type {
   KafkaFleetTelemetryEvent,
   KafkaDockStatusEvent,
@@ -29,19 +29,45 @@ export const TOPICS = {
   TWO_FACTOR_OTP_REQUESTED: 'two.factor.otp.requested',
 } as const;
 
-// ── Redis instance (singleton) ────────────────────────────────────────────────
-let redisClient: Redis | null = null;
+// ── RabbitMQ instance (singleton) ────────────────────────────────────────────────
+let connection: amqp.ChannelModel | null = null;
+let channel: amqp.Channel | null = null;
+const EXCHANGE = 'scooterfy_events';
 
 export async function connectProducer(): Promise<void> {
-  if (redisClient) return;
-  redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-  console.log('[Redis Publisher] Connected');
+  if (channel) return;
+  
+  const url = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+  try {
+    connection = await amqp.connect(url);
+    channel = await connection.createChannel();
+    await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
+    
+    connection.on('error', (err) => {
+      console.error('[RabbitMQ Publisher] Connection error', err);
+      channel = null;
+      connection = null;
+    });
+    connection.on('close', () => {
+      console.error('[RabbitMQ Publisher] Connection closed');
+      channel = null;
+      connection = null;
+    });
+    console.log('[RabbitMQ Publisher] Connected');
+  } catch (error) {
+    console.error('[RabbitMQ Publisher] Failed to connect', error);
+    throw error;
+  }
 }
 
 export async function disconnectProducer(): Promise<void> {
-  if (redisClient) {
-    await redisClient.quit();
-    redisClient = null;
+  if (channel) {
+    await channel.close();
+    channel = null;
+  }
+  if (connection) {
+    await connection.close();
+    connection = null;
   }
 }
 
@@ -53,12 +79,17 @@ export async function publish<T extends object>(
   payload: T,
   key?: string,
 ): Promise<void> {
-  if (!redisClient) throw new Error('Redis publisher not connected');
+  if (!channel) {
+    // Attempt to reconnect once if disconnected
+    console.warn('[RabbitMQ Publisher] Not connected. Attempting to reconnect...');
+    await connectProducer();
+    if (!channel) throw new Error('RabbitMQ publisher not connected');
+  }
+  
   const traceId = getTraceId();
-  await redisClient.publish(
-    topic,
-    JSON.stringify({ ...payload, ts: Date.now(), _traceId: traceId }),
-  );
+  const messageBuffer = Buffer.from(JSON.stringify({ ...payload, ts: Date.now(), _traceId: traceId }));
+  
+  channel.publish(EXCHANGE, topic, messageBuffer, { persistent: true });
 }
 
 // ── Typed publishers ──────────────────────────────────────────────────────────
