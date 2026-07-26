@@ -26,5 +26,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint"
+  },
+  "dependencies": {
+    "supertest": "^7.2.2"
   }
 }

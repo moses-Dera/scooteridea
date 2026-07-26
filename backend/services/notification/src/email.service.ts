@@ -1,15 +1,15 @@
 import nodemailer from 'nodemailer';
+import { google } from 'googleapis';
 import { logger } from '@ebike/core';
 
 export class EmailService {
-  private static getTransporter() {
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+  private static getGmailClient() {
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GMAIL_CLIENT_ID,
+      process.env.GMAIL_CLIENT_SECRET
+    );
+    oauth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
+    return google.gmail({ version: 'v1', auth: oauth2Client });
   }
 
   private static async sendEmail(
@@ -18,21 +18,37 @@ export class EmailService {
     text: string,
     html: string,
   ): Promise<void> {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      logger.warn({ to, subject }, '[Notification] SMTP not configured — skipping email');
+    if (!process.env.GMAIL_CLIENT_ID || !process.env.GMAIL_REFRESH_TOKEN) {
+      logger.warn({ to, subject }, '[Notification] Gmail API not configured — skipping email');
       return;
     }
     try {
-      await EmailService.getTransporter().sendMail({
-        from: `"Scooterfy" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        text,
-        html,
+      const from = `"Scooterfy" <${process.env.SMTP_USER || 'scooterfy.test@gmail.com'}>`;
+      
+      const emailLines = [
+        `From: ${from}`,
+        `To: ${to}`,
+        `Subject: =?utf-8?B?${Buffer.from(subject).toString('base64')}?=`,
+        `MIME-Version: 1.0`,
+        `Content-Type: text/html; charset=utf-8`,
+        ``,
+        html
+      ];
+      
+      const rawEmail = emailLines.join('\r\n');
+      const encodedMessage = Buffer.from(rawEmail).toString('base64url');
+
+      const gmail = EmailService.getGmailClient();
+      await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage,
+        },
       });
-      logger.info({ to, subject }, '[Notification] Email sent');
-    } catch (err) {
-      logger.error({ err }, '[Notification] Failed to send email');
+
+      logger.info({ to, subject }, '[Notification] Email sent via Gmail API');
+    } catch (err: any) {
+      logger.error({ err: err.message }, '[Notification] Failed to send email via Gmail API');
     }
   }
 

@@ -210,6 +210,9 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
+      GMAIL_CLIENT_ID: ${GMAIL_CLIENT_ID}
+      GMAIL_CLIENT_SECRET: ${GMAIL_CLIENT_SECRET}
+      GMAIL_REFRESH_TOKEN: ${GMAIL_REFRESH_TOKEN}
     depends_on:
       - redis
     healthcheck:
