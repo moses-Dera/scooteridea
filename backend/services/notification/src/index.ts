@@ -229,7 +229,7 @@ async function startConsumer() {
           if (p.rideId && p.userId) {
             await sendPushNotification(
               p.userId,
-              '🚴 Ride Started',
+              'Ride Started',
               'Your bike is unlocked — enjoy your ride!',
               { type: 'RIDE_STARTED', rideId: p.rideId },
             );
