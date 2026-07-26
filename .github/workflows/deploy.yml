@@ -191,7 +191,7 @@ jobs:
             set -a
             source .env
             set +a
-            docker-compose pull
+            docker compose pull
             docker stack deploy -c docker-compose.yml scooter_stack --with-registry-auth
 
             # 5. Force reload Nginx to pick up new upstream IPs
