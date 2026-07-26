@@ -95,32 +95,10 @@ jobs:
           cache-from: type=gha,scope=simulator
           cache-to: type=gha,mode=max,scope=simulator
 
-  migrate:
-    name: Run DB Migrations
-    needs: [build-and-push, build-simulator]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: '24'
-
-      - name: Install db dependencies
-        run: npm ci --workspace=@ebike/db
-
-      - name: Run Prisma migrations
-        working-directory: backend/shared/db
-        env:
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma migrate deploy
 
   deploy-backend:
     name: Deploy Backend (VPS)
-    needs: [migrate]
+    needs: [build-and-push, build-simulator]
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
@@ -187,12 +165,19 @@ jobs:
               "mosquitto_passwd -c -b /tmp/p '${{ secrets.MQTT_USERNAME }}' '${{ secrets.MQTT_PASSWORD }}' && cat /tmp/p" \
               > mosquitto.passwd
 
+            # 3c. Run Database Migrations on VPS
+            echo "Running Prisma migrations on VPS..."
+            docker run --rm -v /var/www/scooteridea/backend/shared/db:/app/db -w /app/db -e DIRECT_URL="${{ secrets.DIRECT_URL }}" -e DATABASE_URL="${{ secrets.DATABASE_URL }}" node:24-alpine sh -c "npm install && npx prisma migrate deploy"
+
             # 4. Pull latest images and Deploy
             set -a
             source .env
             set +a
             docker compose pull
             docker stack deploy -c docker-compose.yml scooter_stack --with-registry-auth
+
+            # 4b. Force restart notification-service to pick up new Gmail credentials
+            docker service update --force scooter_stack_notification-service
 
             # 5. Force reload Nginx to pick up new upstream IPs
             sleep 15

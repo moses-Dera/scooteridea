@@ -296,7 +296,7 @@ export class AuthService {
     const redis = await getRedisClient();
 
     // Store token in Redis, expires in 15 minutes
-    await redis.setEx(`reset:${resetToken}`, 15 * 60, user.id);
+    await redis.setEx(`reset_pwd:${resetToken}`, 15 * 60, user.email);
 
     let redirectType = 'WEB_DASHBOARD';
     let resetLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;

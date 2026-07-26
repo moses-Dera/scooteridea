@@ -66,9 +66,12 @@ export class EmailService {
     resetToken: string,
     role: string,
   ): Promise<void> {
-    let resetLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
+    const adminUrl = process.env.ADMIN_WEB_URL || 'https://scooterfy-admin.vercel.app';
+    const riderUrl = process.env.RIDER_WEB_URL || 'https://scooterfy.vercel.app';
+    
+    let resetLink = `${adminUrl}/reset-password?token=${resetToken}`;
     if (role === 'RIDER') {
-      resetLink = `scooterapp://reset-password?token=${resetToken}`;
+      resetLink = `${riderUrl}/reset-password?token=${resetToken}`;
     }
 
     await EmailService.sendEmail(
