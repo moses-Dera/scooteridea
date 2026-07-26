@@ -319,7 +319,7 @@ export class FleetService {
     const availableBikes = [];
     for (const bikeId of bikes as string[]) {
       const status = await redis.get(`bike:${bikeId}:status`);
-      if (status === 'available') {
+      if (status === 'available' || status === 'charging') {
         const location = await redisGetJson<{
           lat: number;
           lng: number;
