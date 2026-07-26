@@ -17,9 +17,20 @@ export function createConsumer(groupId?: string) {
   return {
     /** Connect and subscribe to one or more topics, then start processing. */
     async subscribe(topics: string[], handler: MessageHandler<unknown>): Promise<void> {
-      const url = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+      let connectOptions: string | amqp.Options.Connect = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+      
+      if (process.env.RABBITMQ_HOST) {
+        connectOptions = {
+          protocol: 'amqp',
+          hostname: process.env.RABBITMQ_HOST,
+          port: process.env.RABBITMQ_PORT ? parseInt(process.env.RABBITMQ_PORT) : 5672,
+          username: process.env.RABBITMQ_USER || 'scooterfy',
+          password: process.env.RABBITMQ_PASSWORD,
+        };
+      }
+
       try {
-        connection = await amqp.connect(url);
+        connection = await amqp.connect(connectOptions);
         channel = await connection.createChannel();
         
         await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
