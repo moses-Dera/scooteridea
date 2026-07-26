@@ -114,7 +114,7 @@ function ResetPasswordContent() {
           </button>
         </form>
       </div>
-      <p className="text-slate-500 text-sm mt-8">Secure BFF Access Portal</p>
+      <p className="text-slate-500 text-sm mt-8">Op Access Portal</p>
     </div>
   );
 }
