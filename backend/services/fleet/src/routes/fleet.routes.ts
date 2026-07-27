@@ -4,6 +4,7 @@ import { bikeCommander } from '@ebike/mqtt';
 import { prisma } from '@ebike/db';
 import { getRedisClient } from '@ebike/redis';
 import { jwtGuard, requireRole } from '@ebike/core';
+import { redisGetJson } from '@ebike/redis';
 
 import circle from '@turf/circle';
 import { point } from '@turf/helpers';
@@ -343,8 +344,23 @@ fleetRouter.post(
           res.status(400).json({ success: false, error: `Unknown command: ${command}` });
           return;
       }
+      
+      // Since we don't have physical hardware to acknowledge commands and push new telemetry,
+      // we'll simulate the hardware's response by manually triggering a telemetry update
+      // so the UI doesn't revert.
+      if (['LOCK', 'UNLOCK'].includes(command)) {
+        const currentLoc = await redisGetJson<{lat: number, lng: number, battery_pct: number, speed_kmh: number}>(`bike:${id}:location`);
+        if (currentLoc) {
+          await FleetService.handleBikeTelemetry(id, {
+            ...currentLoc,
+            lock_status: command === 'LOCK' ? 'LOCKED' : 'UNLOCKED',
+          });
+        }
+      }
+
       res.json({ success: true, message: `Command ${command} sent to bike ${id}` });
-    } catch {
+    } catch (err) {
+      console.error('Command delivery failed', err);
       res.status(500).json({ success: false, error: 'Command delivery failed' });
     }
   },
