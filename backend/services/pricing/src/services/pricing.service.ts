@@ -5,15 +5,24 @@ import { prisma } from '@ebike/db';
 export class PricingService {
   /** Helper to get global system configuration */
   static async getConfig() {
-    let config = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
-    if (!config) {
-      config = await prisma.systemConfig.create({ data: { id: 'global' } });
+    try {
+      let config = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
+      if (!config) {
+        config = await prisma.systemConfig.create({ data: { id: 'global' } });
+      }
+      return {
+        baseFare: config.unlockFeeCents / 100,
+        perMinute: config.perMinuteCents / 100,
+        perKm: config.perKmCents / 100,
+      };
+    } catch (err) {
+      console.warn('Failed to fetch systemConfig from DB, using fallback defaults:', err);
+      return {
+        baseFare: 0.0,
+        perMinute: 50.0,
+        perKm: 10.0,
+      };
     }
-    return {
-      baseFare: config.unlockFeeCents / 100,
-      perMinute: config.perMinuteCents / 100,
-      perKm: config.perKmCents / 100,
-    };
   }
   /**
    * Recalculate surge multipliers for all active demand cells.

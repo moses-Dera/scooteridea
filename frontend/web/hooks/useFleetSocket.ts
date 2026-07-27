@@ -89,8 +89,7 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
     if (!token) return;
 
     const tokenExpiryMs = getTokenExpiryMs(token);
-    const isExpiredOrNearExpiry =
-      tokenExpiryMs !== null && Date.now() >= tokenExpiryMs - 15 * 1000;
+    const isExpiredOrNearExpiry = tokenExpiryMs !== null && Date.now() >= tokenExpiryMs - 15 * 1000;
     if (isExpiredOrNearExpiry) {
       setConnected(false);
       setError('Session expired. Re-authenticating...');
@@ -116,12 +115,12 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
         if (!wsUrl) {
           let apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
           if (!apiUrl) {
-             const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-             wsUrl = `${proto}://${window.location.host}/live`;
+            const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            wsUrl = `${proto}://${window.location.host}/live`;
           } else {
-             const proto = apiUrl.startsWith('https') ? 'wss' : 'ws';
-             const host = apiUrl.replace(/^https?:\/\//, '');
-             wsUrl = `${proto}://${host}/live`;
+            const proto = apiUrl.startsWith('https') ? 'wss' : 'ws';
+            const host = apiUrl.replace(/^https?:\/\//, '');
+            wsUrl = `${proto}://${host}/live`;
           }
         } else if (wsUrl.startsWith('ss://')) {
           wsUrl = wsUrl.replace('ss://', 'wss://');

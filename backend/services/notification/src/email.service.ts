@@ -6,7 +6,7 @@ export class EmailService {
   private static getGmailClient() {
     const oauth2Client = new google.auth.OAuth2(
       process.env.GMAIL_CLIENT_ID,
-      process.env.GMAIL_CLIENT_SECRET
+      process.env.GMAIL_CLIENT_SECRET,
     );
     oauth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
     return google.gmail({ version: 'v1', auth: oauth2Client });
@@ -24,7 +24,7 @@ export class EmailService {
     }
     try {
       const from = `"Scooterfy" <${process.env.SMTP_USER || 'scooterfy.test@gmail.com'}>`;
-      
+
       const emailLines = [
         `From: ${from}`,
         `To: ${to}`,
@@ -32,9 +32,9 @@ export class EmailService {
         `MIME-Version: 1.0`,
         `Content-Type: text/html; charset=utf-8`,
         ``,
-        html
+        html,
       ];
-      
+
       const rawEmail = emailLines.join('\r\n');
       const encodedMessage = Buffer.from(rawEmail).toString('base64url');
 
@@ -68,7 +68,7 @@ export class EmailService {
   ): Promise<void> {
     const adminUrl = process.env.ADMIN_WEB_URL || 'https://scooterfy-admin.vercel.app';
     const riderUrl = process.env.RIDER_WEB_URL || 'https://scooterfy.vercel.app';
-    
+
     let resetLink = `${adminUrl}/reset-password?token=${resetToken}`;
     if (role === 'RIDER') {
       resetLink = `${riderUrl}/reset-password?token=${resetToken}`;

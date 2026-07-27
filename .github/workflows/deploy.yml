@@ -95,7 +95,6 @@ jobs:
           cache-from: type=gha,scope=simulator
           cache-to: type=gha,mode=max,scope=simulator
 
-
   deploy-backend:
     name: Deploy Backend (VPS)
     needs: [build-and-push, build-simulator]

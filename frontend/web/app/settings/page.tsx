@@ -178,12 +178,12 @@ export default function AdminSettings() {
         if (!wsUrl) {
           let apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
           if (!apiUrl) {
-             const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-             wsUrl = `${proto}://${window.location.host}/live`;
+            const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            wsUrl = `${proto}://${window.location.host}/live`;
           } else {
-             const proto = apiUrl.startsWith('https') ? 'wss' : 'ws';
-             const host = apiUrl.replace(/^https?:\/\//, '');
-             wsUrl = `${proto}://${host}/live`;
+            const proto = apiUrl.startsWith('https') ? 'wss' : 'ws';
+            const host = apiUrl.replace(/^https?:\/\//, '');
+            wsUrl = `${proto}://${host}/live`;
           }
         } else if (wsUrl.startsWith('ss://')) {
           wsUrl = wsUrl.replace('ss://', 'wss://');

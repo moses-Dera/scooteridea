@@ -359,12 +359,17 @@ fleetRouter.post(
           res.status(400).json({ success: false, error: `Unknown command: ${command}` });
           return;
       }
-      
+
       // Since we don't have physical hardware to acknowledge commands and push new telemetry,
       // we'll simulate the hardware's response by manually triggering a telemetry update
       // so the UI doesn't revert.
       if (['LOCK', 'UNLOCK'].includes(command)) {
-        const currentLoc = await redisGetJson<{lat: number, lng: number, battery_pct: number, speed_kmh: number}>(`bike:${id}:location`);
+        const currentLoc = await redisGetJson<{
+          lat: number;
+          lng: number;
+          battery_pct: number;
+          speed_kmh: number;
+        }>(`bike:${id}:location`);
         if (currentLoc) {
           await FleetService.handleBikeTelemetry(id, {
             ...currentLoc,
@@ -419,7 +424,7 @@ fleetRouter.post('/demo/spawn', async (req, res) => {
 
     // Spawn bikes directly via FleetService — using actual DB bikes!
     const dbBikes = await prisma.bike.findMany({ take: count });
-    
+
     // If no bikes exist in DB, create some real ones for them
     const bikesToSpawn = dbBikes.length > 0 ? dbBikes : [];
     if (bikesToSpawn.length === 0) {
@@ -442,7 +447,7 @@ fleetRouter.post('/demo/spawn', async (req, res) => {
     for (const bike of bikesToSpawn) {
       const bLat = lat + (Math.random() - 0.5) * (radius * 0.01);
       const bLng = lng + (Math.random() - 0.5) * (radius * 0.01);
-      
+
       // Update DB location
       await prisma.bike.update({
         where: { id: bike.id },
@@ -472,7 +477,11 @@ fleetRouter.post('/demo/spawn', async (req, res) => {
       });
     }
 
-    res.json({ success: true, message: `Spawned ${spawned.length} DB bikes and ${dbDocks.length} DB docks near ${lat}, ${lng}`, bikeIds: spawned });
+    res.json({
+      success: true,
+      message: `Spawned ${spawned.length} DB bikes and ${dbDocks.length} DB docks near ${lat}, ${lng}`,
+      bikeIds: spawned,
+    });
   } catch (err) {
     console.error('[Fleet] Demo spawn error:', err);
     res.status(500).json({ success: false, error: 'Failed to trigger demo spawn' });
@@ -480,10 +489,28 @@ fleetRouter.post('/demo/spawn', async (req, res) => {
 });
 
 // ==========================================
-// Admin: Geofence Zone Management
+// Admin & Rider: Geofence Zone Management
 // ==========================================
 
-// GET /fleet/zones — list all geofence zones
+// GET /fleet/geofences — public/rider endpoint to get geofences for the map
+fleetRouter.get('/geofences', async (req, res) => {
+  try {
+    const zones = await prisma.geofence.findMany({
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        speedCap: true,
+        boundary: true,
+      },
+    });
+    res.json({ success: true, data: zones });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch geofences' });
+  }
+});
+
+// GET /fleet/zones — list all geofence zones (Admin/Operator)
 fleetRouter.get('/zones', jwtGuard, requireRole('ADMIN', 'OPERATOR'), async (req, res) => {
   try {
     const zones = await prisma.geofence.findMany({

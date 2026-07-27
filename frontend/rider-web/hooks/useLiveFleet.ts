@@ -7,6 +7,7 @@ export interface LiveBike {
   lng: number;
   batteryPct: number;
   status: string;
+  zoneIds?: string[];
 }
 
 export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
@@ -33,12 +34,12 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
           // Derive WebSocket URL from NEXT_PUBLIC_API_URL
           let apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
           if (!apiUrl) {
-             const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-             wsUrl = `${proto}://${window.location.host}/live`;
+            const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            wsUrl = `${proto}://${window.location.host}/live`;
           } else {
-             const proto = apiUrl.startsWith('https') ? 'wss' : 'ws';
-             const host = apiUrl.replace(/^https?:\/\//, '');
-             wsUrl = `${proto}://${host}/live`;
+            const proto = apiUrl.startsWith('https') ? 'wss' : 'ws';
+            const host = apiUrl.replace(/^https?:\/\//, '');
+            wsUrl = `${proto}://${host}/live`;
           }
         } else if (wsUrl.startsWith('ss://')) {
           wsUrl = wsUrl.replace('ss://', 'wss://');
@@ -71,6 +72,7 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
                 lng: msg.lng,
                 batteryPct: msg.battery ?? current?.batteryPct ?? 100,
                 status: msg.status ?? current?.status ?? 'available',
+                zoneIds: msg.zoneIds ?? current?.zoneIds,
               };
               bikesMap.current.set(msg.bikeId, updated);
 
@@ -115,21 +117,6 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
-            // Demo mode logic - Respawn if empty and it's been at least 60 seconds
-            const lastSpawnTime = Number(window.sessionStorage.getItem('demo_spawn_ts') || '0');
-            const now = Date.now();
-            if (json.data.length === 0 && now - lastSpawnTime > 60000) {
-              window.sessionStorage.setItem('demo_spawn_ts', now.toString());
-              fetch('/api/proxy/fleet/demo/spawn', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat, lng, count: 12, radius: radius * 0.8 }),
-              }).then(() => {
-                // Fetch again after a delay to pick up the newly spawned bikes and subscribe to them
-                setTimeout(fetchNearbyBikes, 2000);
-              });
-            }
-
             const newSubscriptions: string[] = [];
 
             json.data.forEach((b: any) => {

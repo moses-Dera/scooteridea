@@ -227,8 +227,24 @@ export class FleetService {
       }
 
       if (zone.type === 'no_ride') {
-        await bikeCommander.disable(bikeId, 'NO_RIDE_ZONE');
-        await kafka.opsAlert({ type: 'ZONE_VIOLATION', bikeId, lat, lng, ts: Date.now() });
+        const graceKey = `bike:${bikeId}:zone_grace:${zone.id}`;
+        const graceStartRaw = await redis.get(graceKey);
+
+        if (!graceStartRaw) {
+          // Just entered! Start grace period
+          await redis.set(graceKey, Date.now());
+
+          // Apply safe deceleration to prevent accident (e.g. 5 km/h)
+          await bikeCommander.speedLimit(bikeId, 5);
+          await kafka.opsAlert({ type: 'ZONE_WARNING', bikeId, lat, lng, ts: Date.now() });
+        } else {
+          const elapsed = Date.now() - parseInt(graceStartRaw, 10);
+          if (elapsed > 60000) {
+            // Grace period expired (60s)
+            await bikeCommander.disable(bikeId, 'NO_RIDE_ZONE');
+            await kafka.opsAlert({ type: 'ZONE_VIOLATION', bikeId, lat, lng, ts: Date.now() });
+          }
+        }
       }
       if (zone.type === 'slow' && zone.speed_cap) {
         await bikeCommander.speedLimit(bikeId, zone.speed_cap);
@@ -239,6 +255,11 @@ export class FleetService {
     for (const prevZoneId of prevZoneIds) {
       if (!currentZoneIds.includes(prevZoneId)) {
         logger.info(`Bike ${sanitize(bikeId)} left zone ${sanitize(prevZoneId)}`);
+
+        // Clear grace period if exiting a no_ride zone
+        await redis.del(`bike:${bikeId}:zone_grace:${prevZoneId}`);
+        // Restore default speed limit (e.g., 25km/h) when leaving any restricted zone
+        await bikeCommander.speedLimit(bikeId, 25);
 
         await prisma.zoneTransition.create({
           data: {

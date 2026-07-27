@@ -118,14 +118,14 @@ export class RideService {
             data: { availableSlots: Math.min(dock.totalSlots, dock.availableSlots + 1) },
           });
         }
-        await tx.bike.update({ 
-          where: { id: bikeId }, 
-          data: { status: 'in_use', dockId: null } 
+        await tx.bike.update({
+          where: { id: bikeId },
+          data: { status: 'in_use', dockId: null },
         });
       } else {
-        await tx.bike.update({ 
-          where: { id: bikeId }, 
-          data: { status: 'in_use' } 
+        await tx.bike.update({
+          where: { id: bikeId },
+          data: { status: 'in_use' },
         });
       }
 

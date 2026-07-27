@@ -49,14 +49,16 @@ export class AuthService {
     const user = await UserRepository.create({ ...dto, passwordHash });
 
     // Fire-and-forget: do not fail registration if event publishing fails
-    kafka.userRegistered({
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      ts: Date.now(),
-    }).catch((err) => {
-      logger.warn({ userId: user.id, err }, '[Auth] Failed to publish user registered event');
-    });
+    kafka
+      .userRegistered({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        ts: Date.now(),
+      })
+      .catch((err) => {
+        logger.warn({ userId: user.id, err }, '[Auth] Failed to publish user registered event');
+      });
 
     // Omit sensitive / internal fields before returning
     const { ...safeUser } = user;
@@ -86,14 +88,19 @@ export class AuthService {
       await redis.setEx(`2fa_login:${tempToken}`, 300, JSON.stringify({ userId: user.id, otp }));
 
       // Fire-and-forget: don't fail the login flow if notification can't be sent
-      kafka.twoFactorOtpRequested({
-        userId: user.id,
-        email: user.email,
-        otp,
-        ts: Date.now(),
-      }).catch((err) => {
-        logger.warn({ userId: user.id, err }, '[Auth] Failed to publish 2FA login OTP event — user can still verify');
-      });
+      kafka
+        .twoFactorOtpRequested({
+          userId: user.id,
+          email: user.email,
+          otp,
+          ts: Date.now(),
+        })
+        .catch((err) => {
+          logger.warn(
+            { userId: user.id, err },
+            '[Auth] Failed to publish 2FA login OTP event — user can still verify',
+          );
+        });
 
       return { requires2FA: true, token: tempToken };
     }
@@ -111,14 +118,19 @@ export class AuthService {
     await redis.setEx(`2fa_setup:${userId}`, 300, otp);
 
     // Fire-and-forget: don't fail the 2FA setup if notification can't be sent
-    kafka.twoFactorOtpRequested({
-      userId: user.id,
-      email: user.email,
-      otp,
-      ts: Date.now(),
-    }).catch((err) => {
-      logger.warn({ userId: user.id, err }, '[Auth] Failed to publish 2FA setup OTP event — OTP still in Redis');
-    });
+    kafka
+      .twoFactorOtpRequested({
+        userId: user.id,
+        email: user.email,
+        otp,
+        ts: Date.now(),
+      })
+      .catch((err) => {
+        logger.warn(
+          { userId: user.id, err },
+          '[Auth] Failed to publish 2FA setup OTP event — OTP still in Redis',
+        );
+      });
   }
 
   static async verify2fa(userId: string, otp: string): Promise<void> {
@@ -315,15 +327,17 @@ export class AuthService {
       '[Auth] Generated Password Reset Token',
     );
 
-    kafka.passwordResetRequested({
-      userId: user.id,
-      email: user.email,
-      resetToken,
-      role: user.role,
-      ts: Date.now(),
-    }).catch((err) => {
-      logger.warn({ userId: user.id, err }, '[Auth] Failed to publish password reset event');
-    });
+    kafka
+      .passwordResetRequested({
+        userId: user.id,
+        email: user.email,
+        resetToken,
+        role: user.role,
+        ts: Date.now(),
+      })
+      .catch((err) => {
+        logger.warn({ userId: user.id, err }, '[Auth] Failed to publish password reset event');
+      });
 
     return {
       message: 'If an account exists for that email, a reset link has been sent.',

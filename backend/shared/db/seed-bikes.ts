@@ -30,7 +30,9 @@ async function main() {
     skipDuplicates: true,
   });
 
-  console.log(`Seeded bikes: ${result.count} inserted (${count - result.count} skipped duplicates)`);
+  console.log(
+    `Seeded bikes: ${result.count} inserted (${count - result.count} skipped duplicates)`,
+  );
 }
 
 main()

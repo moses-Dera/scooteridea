@@ -10,7 +10,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 
-type UnlockStep = 'confirm' | 'method' | 'scan-qr' | 'done';
+type UnlockStep = 'confirm' | 'done';
 
 interface UnlockModalProps {
   bikeId: string;
@@ -21,7 +21,8 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
   const { status } = useSession();
   const [step, setStep] = useState<UnlockStep>('confirm');
   const router = useRouter();
-  const { state, setActiveRide, setLoading, setError } = useRide();
+  const { state, setActiveRide, setLoading } = useRide();
+  const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [unlockPin, setUnlockPin] = useState<string>('');
   const [pricing, setPricing] = useState<{
@@ -49,15 +50,18 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
 
         // Fetch the bike's exact real-time coordinates from Swarm backend
         const bikeRes = await bikeApi.getById(bikeId);
-        if (bikeRes.success && bikeRes.data) {
-          const bike = bikeRes.data as any;
-          if (bike.hubId) {
-            setBikeHubId(bike.hubId);
-          }
-          if (bike.latitude && bike.longitude) {
-            lat = bike.latitude;
-            lng = bike.longitude;
-          }
+        if (!bikeRes || !bikeRes.success || !bikeRes.data) {
+          setError(`Bike ${bikeId} not found in the system.`);
+          return;
+        }
+
+        const bike = bikeRes.data as any;
+        if (bike.hubId) {
+          setBikeHubId(bike.hubId);
+        }
+        if (bike.latitude && bike.longitude) {
+          lat = bike.latitude;
+          lng = bike.longitude;
         }
 
         const res = await pricingApi.estimate(lat, lng);
@@ -110,31 +114,6 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
     }
   };
 
-  const handleQrResult = (detectedCodes: any[]) => {
-    if (detectedCodes && detectedCodes.length > 0) {
-      const rawValue = detectedCodes[0].rawValue;
-      // Expected format: "BK-12345" or URL like "scooterfy.vercel.app/?bike=BK-12345"
-      let scannedBikeId = '';
-      if (rawValue.includes('bike=')) {
-        try {
-          const url = new URL(rawValue.startsWith('http') ? rawValue : `https://${rawValue}`);
-          scannedBikeId = url.searchParams.get('bike') || '';
-        } catch {
-          scannedBikeId = rawValue;
-        }
-      } else {
-        scannedBikeId = rawValue;
-      }
-      
-      if (scannedBikeId === bikeId) {
-        handleStartRide();
-      } else {
-        setError(`Scanned QR code (${scannedBikeId}) does not match the bike you selected (${bikeId}).`);
-        setStep('method'); // Go back
-      }
-    }
-  };
-
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto animate-in fade-in duration-300">
       {/* Centered Modal */}
@@ -150,13 +129,10 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
         {/* Step Indicator */}
         <div className="flex items-center gap-2 mb-8 mt-2">
           <div
-            className={`h-1.5 flex-1 rounded-full ${step === 'confirm' || step === 'method' || step === 'done' || step === 'scan-qr' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
+            className={`h-1.5 flex-1 rounded-full ${step === 'confirm' || step === 'done' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
           ></div>
           <div
-            className={`h-1.5 flex-1 rounded-full ${step === 'method' || step === 'done' || step === 'scan-qr' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
-          ></div>
-          <div
-            className={`h-1.5 flex-1 rounded-full ${step === 'done' || step === 'scan-qr' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
+            className={`h-1.5 flex-1 rounded-full ${step === 'done' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
           ></div>
         </div>
 
@@ -164,26 +140,35 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
         {step === 'confirm' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
             <h2 className="text-2xl font-bold text-white mb-2">Confirm Unlock</h2>
-            <p className="text-slate-400 mb-6">
-              You are about to unlock bike <strong className="text-white">{bikeId}</strong>.
-              {pricing ? (
-                pricing.perMinute === 0 ? (
-                  <span>
-                    {' '}
-                    Rides are currently <strong className="text-primary">Free</strong> during the
-                    beta test.
-                  </span>
+            {error ? (
+              <div className="p-4 mb-6 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-3">
+                <div className="p-1 bg-danger/20 rounded-full text-danger mt-0.5">
+                  <X className="w-4 h-4" />
+                </div>
+                <div className="text-danger font-medium text-sm leading-relaxed">{error}</div>
+              </div>
+            ) : (
+              <p className="text-slate-400 mb-6">
+                You are about to unlock bike <strong className="text-white">{bikeId}</strong>.
+                {pricing ? (
+                  pricing.perMinute === 0 ? (
+                    <span>
+                      {' '}
+                      Rides are currently <strong className="text-primary">Free</strong> during the
+                      beta test.
+                    </span>
+                  ) : (
+                    <span>
+                      {' '}
+                      A standard fare of{' '}
+                      <strong className="text-white">₦{pricing.perMinute}/min</strong> applies.
+                    </span>
+                  )
                 ) : (
-                  <span>
-                    {' '}
-                    A standard fare of{' '}
-                    <strong className="text-white">₦{pricing.perMinute}/min</strong> applies.
-                  </span>
-                )
-              ) : (
-                <span> Checking pricing...</span>
-              )}
-            </p>
+                  <span> Checking pricing...</span>
+                )}
+              </p>
+            )}
 
             <div className="bg-black/30 rounded-xl p-4 mb-8 border border-white/5">
               <div className="flex justify-between mb-2">
@@ -213,76 +198,11 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
             </div>
 
             <button
-              onClick={() => setStep('method')}
-              className="w-full h-14 bg-primary text-black font-bold text-lg rounded-xl shadow-glow-primary flex items-center justify-center transform hover:scale-[1.02] transition-transform"
+              onClick={handleStartRide}
+              disabled={isStarting || !!error}
+              className="w-full h-14 bg-primary text-black font-bold text-lg rounded-xl shadow-glow-primary flex items-center justify-center transform hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Continue
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: Method Picker */}
-        {step === 'method' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="text-2xl font-bold mb-2">How to unlock</div>
-            <p className="text-slate-400 mb-6">Choose an unlock method for {bikeId}.</p>
-
-            <div className="flex flex-col gap-3 mb-8">
-              <button
-                onClick={() => setStep('scan-qr')}
-                disabled={isStarting}
-                className="w-full p-4 rounded-xl border border-primary bg-primary/10 flex items-center justify-between group hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center gap-4">
-                  <Scan className="w-6 h-6 text-primary" />
-                  <span className="font-medium text-white">Scan QR Code</span>
-                </div>
-                <span className="text-primary font-bold">➔</span>
-              </button>
-            </div>
-
-            <button
-              onClick={() => setStep('confirm')}
-              className="w-full text-center text-sm text-slate-500 hover:text-white font-medium transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
-        )}
-
-        {/* Step 3: Scan QR Flow */}
-        {step === 'scan-qr' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col items-center py-4">
-            <div className="text-2xl font-bold mb-2 text-center">Scan QR Code</div>
-            <p className="text-slate-400 text-center mb-6">
-              Scan the QR code on the scooter's handlebar to unlock {bikeId}.
-            </p>
-
-            <div className="w-full max-w-sm aspect-square bg-black rounded-2xl overflow-hidden mb-6 border-2 border-white/10 relative">
-              <Scanner
-                onScan={handleQrResult}
-                onError={(error) => console.error(error?.message)}
-                formats={['qr_code']}
-              />
-              
-              {/* Overlay targeting frame */}
-              <div className="absolute inset-0 pointer-events-none border-[40px] border-black/50">
-                <div className="w-full h-full border-2 border-primary border-dashed rounded-lg"></div>
-              </div>
-            </div>
-            
-            {isStarting && (
-               <div className="text-primary font-medium flex items-center gap-2 mb-4">
-                 <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-                 Unlocking...
-               </div>
-            )}
-
-            <button
-              onClick={() => setStep('method')}
-              className="w-full h-14 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-colors"
-            >
-              Go Back
+              {isStarting ? 'Unlocking...' : 'Unlock Now'}
             </button>
           </div>
         )}

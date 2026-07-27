@@ -9,7 +9,7 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  
+
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,10 +68,14 @@ function ResetPasswordContent() {
     <div className="min-h-screen bg-[#0A0F1E] flex flex-col items-center justify-center p-4">
       {/* Background Glows */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#1ED760]/10 rounded-full blur-[120px] pointer-events-none opacity-50 mix-blend-screen"></div>
-      
+
       <div className="w-full max-w-md p-8 bg-[#1A2235]/80 backdrop-blur-xl rounded-3xl border border-white/10 relative z-10 shadow-2xl">
         <div className="mb-8 text-center">
-          <img src="/wordmark-transparent.png" alt="Scooterfy" className="h-8 mx-auto mb-6 object-contain opacity-90" />
+          <img
+            src="/wordmark-transparent.png"
+            alt="Scooterfy"
+            className="h-8 mx-auto mb-6 object-contain opacity-90"
+          />
           <h1 className="text-2xl font-bold text-white mb-2">Reset Password</h1>
           <p className="text-slate-400">Enter your new password below.</p>
         </div>
@@ -124,7 +128,13 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center text-[#1ED760]">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center text-[#1ED760]">
+          Loading...
+        </div>
+      }
+    >
       <ResetPasswordContent />
     </Suspense>
   );

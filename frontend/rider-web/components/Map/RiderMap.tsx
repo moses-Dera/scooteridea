@@ -18,6 +18,8 @@ import * as turf from '@turf/turf';
 import { useNearbyDocks } from '@/hooks/useNearbyDocks';
 import { useNavigationEngine, NavigationProfile } from '@/hooks/useNavigationEngine';
 
+import { useGeofences } from '@/hooks/useGeofences';
+
 // Using a public demo token if env is missing, but env should be configured for production
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.dummy_token';
 
@@ -197,8 +199,10 @@ export default function RiderMap() {
   // Use live socket bikes ONLY for production (No hardcoding)
   const displayBikes = liveBikes;
 
-  // Fetch real docks from Postgres based on view center!
   const { docks } = useNearbyDocks(searchLat, searchLng);
+
+  // Fetch geofences (polygon zones)
+  const { zones } = useGeofences();
 
   // Prevent hydration mismatch and acquire initial GPS lock before rendering map
   const [mounted, setMounted] = useState(false);
@@ -264,6 +268,19 @@ export default function RiderMap() {
       })),
     }),
     [docks],
+  );
+
+  // Convert zones to GeoJSON
+  const zonesGeoJSON = useMemo(
+    () => ({
+      type: 'FeatureCollection',
+      features: zones.map((zone) => ({
+        type: 'Feature',
+        geometry: zone.boundary,
+        properties: { id: zone.id, name: zone.name, type: zone.type },
+      })),
+    }),
+    [zones],
   );
 
   // Handle WebGL Layer Clicks
@@ -649,6 +666,50 @@ export default function RiderMap() {
                 'line-color': '#00B3FF', // Neon blue core
                 'line-width': 6,
                 'line-opacity': 1.0,
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Render Zones (Geofences) */}
+        {zonesGeoJSON && (
+          <Source id="zones-source" type="geojson" data={zonesGeoJSON as any}>
+            <Layer
+              id="zones-fill-layer"
+              type="fill"
+              paint={{
+                'fill-color': [
+                  'match',
+                  ['get', 'type'],
+                  'no_ride',
+                  '#ef4444', // Red
+                  'slow',
+                  '#eab308', // Yellow
+                  'dock',
+                  '#00B3FF', // Blue
+                  '#1ED760', // Default (Green)
+                ],
+                'fill-opacity': 0.15,
+              }}
+            />
+            <Layer
+              id="zones-outline-layer"
+              type="line"
+              paint={{
+                'line-color': [
+                  'match',
+                  ['get', 'type'],
+                  'no_ride',
+                  '#ef4444',
+                  'slow',
+                  '#eab308',
+                  'dock',
+                  '#00B3FF',
+                  '#1ED760',
+                ],
+                'line-width': 1.5,
+                'line-dasharray': [1, 2], // Dotted pattern
+                'line-opacity': 0.4, // Fainter
               }}
             />
           </Source>

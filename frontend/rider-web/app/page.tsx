@@ -84,12 +84,17 @@ export default function RiderHome() {
   const originLat = isDestinationPreview ? userLoc?.lat : (selectedLat ?? searchLat);
   const originLng = isDestinationPreview ? userLoc?.lng : (selectedLng ?? searchLng);
 
-  const { bikes: liveBikes } = useLiveFleet(originLat, originLng, 2);
+  const { bikes: liveBikes } = useLiveFleet(originLat, originLng, 10);
   const { docks } = useNearbyDocks(selectedLat ?? searchLat, selectedLng ?? searchLng);
 
   const displayBikes = liveBikes;
 
-  const selectedBike = bikeId ? displayBikes.find((b) => b.id === bikeId) : null;
+  const selectedBike = bikeId
+    ? displayBikes.find((b) => b.id === bikeId) ||
+      (selectedLat && selectedLng
+        ? { id: bikeId, lat: selectedLat, lng: selectedLng, batteryPct: 100, status: 'available' }
+        : null)
+    : null;
   const selectedDock = dockId ? docks.find((d) => d.id === dockId) : null;
   // Dynamic Trip Estimations
   let estDistanceKm = 0;
@@ -648,46 +653,6 @@ export default function RiderHome() {
                   </button>
 
                   <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-400 font-medium tracking-wide">
-                    <span
-                      onClick={() => setIsScannerOpen(true)}
-                      className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>{' '}
-                      Scan QR
-                    </span>
-                    <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                    <span
-                      onClick={() => setIsManualEntryOpen(true)}
-                      className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                        />
-                      </svg>{' '}
-                      Enter Bike ID
-                    </span>
-                    <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                     <span
                       onClick={() =>
                         router.push(

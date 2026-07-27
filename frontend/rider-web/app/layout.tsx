@@ -87,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <head>
-        <title>Scooterfy - Premium Urban Mobility</title>
+        <title>Scooterfy</title>
         <meta name="description" content="Unlock and ride electric bikes in your city." />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#1ED760" />
@@ -153,7 +153,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                   d="M4 6h16M4 12h16M4 18h8"
                                 />
                               </svg>
-                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"></div>
                             </div>
                             <span
                               className={`font-semibold text-sm transition-colors hidden sm:block ${activePanel === 'menu' ? 'text-primary' : 'text-slate-300 group-hover:text-white'}`}

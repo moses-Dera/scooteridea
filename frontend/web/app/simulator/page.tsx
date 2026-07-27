@@ -247,7 +247,7 @@ export default function SimulatorPage() {
               {bikes.map((bike) => {
                 const isUnlocked = bike.lock_status === 'UNLOCKED';
                 const isSelected = selectedBikeId === bike.id;
-                
+
                 return (
                   <Marker
                     key={bike.id}

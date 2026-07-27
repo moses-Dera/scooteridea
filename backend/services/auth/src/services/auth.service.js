@@ -10,7 +10,16 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { kafka } from '@ebike/events';
-import { ConflictError, UnauthorizedError, NotFoundError, InternalError, ValidationError, ServiceUnavailableError, retry, logger, } from '@ebike/core';
+import {
+  ConflictError,
+  UnauthorizedError,
+  NotFoundError,
+  InternalError,
+  ValidationError,
+  ServiceUnavailableError,
+  retry,
+  logger,
+} from '@ebike/core';
 import { getRedisClient } from '@ebike/redis';
 import { UserRepository } from '../repositories/user.repository';
 import { prisma } from '@ebike/db';
@@ -20,344 +29,340 @@ const ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY ?? '15m';
 const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY ?? '30d';
 const REFRESH_TTL_S = 30 * 24 * 60 * 60; // 30 days
 const BCRYPT_ROUNDS = 12;
-if (!ACCESS_SECRET)
-    throw new Error('JWT_ACCESS_SECRET is not set');
+if (!ACCESS_SECRET) throw new Error('JWT_ACCESS_SECRET is not set');
 if (!REFRESH_SECRET)
-    throw new Error('JWT_REFRESH_SECRET is not set — do not share with ACCESS_SECRET');
+  throw new Error('JWT_REFRESH_SECRET is not set — do not share with ACCESS_SECRET');
 export class AuthService {
-    // ── Register ─────────────────────────────────────────────────────────────────
-    static async register(dto) {
-        const existing = await UserRepository.findByEmail(dto.email);
-        if (existing) {
-            throw new ConflictError('An account with this email already exists', { email: dto.email });
-        }
-        const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-        const user = await UserRepository.create({ ...dto, passwordHash });
-        await kafka.userRegistered({
-            userId: user.id,
-            email: user.email,
-            name: user.name,
-            ts: Date.now(),
+  // ── Register ─────────────────────────────────────────────────────────────────
+  static async register(dto) {
+    const existing = await UserRepository.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictError('An account with this email already exists', { email: dto.email });
+    }
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+    const user = await UserRepository.create({ ...dto, passwordHash });
+    await kafka.userRegistered({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      ts: Date.now(),
+    });
+    // Omit sensitive / internal fields before returning
+    const { ...safeUser } = user;
+    return safeUser;
+  }
+  // ── Login ────────────────────────────────────────────────────────────────────
+  static async login(dto) {
+    const user = await UserRepository.findByEmail(dto.email);
+    if (!user || !user.passwordHash) {
+      // Hash the provided password to prevent timing attacks, then reject
+      await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+      throw new UnauthorizedError('Invalid email or password');
+    }
+    const match = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!match) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+    if (user.twoFactorEnabled) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const tempToken = uuidv4();
+      const redis = await getRedisClient();
+      await redis.setEx(`2fa_login:${tempToken}`, 300, JSON.stringify({ userId: user.id, otp }));
+      try {
+        await kafka.twoFactorOtpRequested({
+          userId: user.id,
+          email: user.email,
+          otp,
+          ts: Date.now(),
         });
-        // Omit sensitive / internal fields before returning
-        const { ...safeUser } = user;
-        return safeUser;
+      } catch (err) {
+        await redis.del(`2fa_login:${tempToken}`);
+        logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA login OTP event');
+        throw new ServiceUnavailableError('notification pipeline');
+      }
+      return { requires2FA: true, token: tempToken };
     }
-    // ── Login ────────────────────────────────────────────────────────────────────
-    static async login(dto) {
-        const user = await UserRepository.findByEmail(dto.email);
-        if (!user || !user.passwordHash) {
-            // Hash the provided password to prevent timing attacks, then reject
-            await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-            throw new UnauthorizedError('Invalid email or password');
-        }
-        const match = await bcrypt.compare(dto.password, user.passwordHash);
-        if (!match) {
-            throw new UnauthorizedError('Invalid email or password');
-        }
-        if (user.twoFactorEnabled) {
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-            const tempToken = uuidv4();
-            const redis = await getRedisClient();
-            await redis.setEx(`2fa_login:${tempToken}`, 300, JSON.stringify({ userId: user.id, otp }));
-            try {
-                await kafka.twoFactorOtpRequested({
-                    userId: user.id,
-                    email: user.email,
-                    otp,
-                    ts: Date.now(),
-                });
-            }
-            catch (err) {
-                await redis.del(`2fa_login:${tempToken}`);
-                logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA login OTP event');
-                throw new ServiceUnavailableError('notification pipeline');
-            }
-            return { requires2FA: true, token: tempToken };
-        }
-        return AuthService.issueTokenPair(user);
+    return AuthService.issueTokenPair(user);
+  }
+  // ── Two Factor Auth ──────────────────────────────────────────────────────────
+  static async setup2fa(userId) {
+    const user = await UserRepository.findById(userId);
+    if (!user) throw new NotFoundError('User', userId);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const redis = await getRedisClient();
+    await redis.setEx(`2fa_setup:${userId}`, 300, otp);
+    try {
+      await kafka.twoFactorOtpRequested({
+        userId: user.id,
+        email: user.email,
+        otp,
+        ts: Date.now(),
+      });
+    } catch (err) {
+      await redis.del(`2fa_setup:${userId}`);
+      logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA setup OTP event');
+      throw new ServiceUnavailableError('notification pipeline');
     }
-    // ── Two Factor Auth ──────────────────────────────────────────────────────────
-    static async setup2fa(userId) {
-        const user = await UserRepository.findById(userId);
-        if (!user)
-            throw new NotFoundError('User', userId);
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+  static async verify2fa(userId, otp) {
+    const redis = await getRedisClient();
+    const stored = await redis.get(`2fa_setup:${userId}`);
+    if (!stored || stored !== otp) {
+      throw new UnauthorizedError('Invalid or expired OTP');
+    }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: true }, // TS recheck
+    });
+    await redis.del(`2fa_setup:${userId}`);
+  }
+  static async login2fa(token, otp) {
+    const redis = await getRedisClient();
+    const storedStr = await redis.get(`2fa_login:${token}`);
+    if (!storedStr) {
+      throw new UnauthorizedError('Invalid or expired session token');
+    }
+    const { userId, otp: storedOtp } = JSON.parse(storedStr);
+    if (otp !== storedOtp) {
+      throw new UnauthorizedError('Invalid OTP');
+    }
+    const user = await UserRepository.findById(userId);
+    if (!user) throw new NotFoundError('User', userId);
+    await redis.del(`2fa_login:${token}`);
+    return AuthService.issueTokenPair(user);
+  }
+  // ── Refresh ──────────────────────────────────────────────────────────────────
+  static async refresh(refreshToken) {
+    let payload;
+    try {
+      payload = jwt.verify(refreshToken, REFRESH_SECRET);
+    } catch (err) {
+      throw new UnauthorizedError('Refresh token is invalid or expired');
+    }
+    const redis = await getRedisClient();
+    // Per-device key: refresh:{userId}:{jti}
+    const stored = await redis.get(`refresh:${payload.sub}:${payload.jti}`);
+    // Use timing-safe comparison to prevent timing attacks
+    if (!stored || !crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(refreshToken))) {
+      // Token has been rotated or revoked — potential replay attack
+      throw new UnauthorizedError('Refresh token has been revoked');
+    }
+    const user = await UserRepository.findById(payload.sub);
+    if (!user) throw new NotFoundError('User', payload.sub);
+    return AuthService.issueTokenPair(user);
+  }
+  // ── Logout ───────────────────────────────────────────────────────────────────
+  static async logout(jti, userId, refreshJti) {
+    const redis = await getRedisClient();
+    // Blacklist the access token JTI for the remainder of the access token's lifetime
+    await redis.setEx(`blacklist:${jti}`, 60 * 15, '1');
+    // Delete only this device's refresh token (per-device key)
+    await redis.del(`refresh:${userId}:${refreshJti}`);
+  }
+  // ── Get User ─────────────────────────────────────────────────────────────────
+  static async getUser(userId) {
+    const user = await UserRepository.findById(userId);
+    if (!user) throw new NotFoundError('User', userId);
+    return user;
+  }
+  // ── OAuth Google ──────────────────────────────────────────────────────────────
+  static async oauthGoogle(idToken) {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw new InternalError('GOOGLE_CLIENT_ID is not configured');
+    }
+    const client = new OAuth2Client(clientId);
+    let email;
+    let name;
+    try {
+      const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+      const payload = ticket.getPayload();
+      if (!payload?.email) {
+        throw new ValidationError('Google token payload missing email');
+      }
+      email = payload.email;
+      name = payload.name ?? payload.email.split('@')[0];
+    } catch (err) {
+      if (err.name === 'ValidationError') throw err;
+      throw new UnauthorizedError('Invalid Google ID token');
+    }
+    const { user, isNew } = await UserRepository.findOrCreateOAuth(email, name);
+    if (isNew) {
+      kafka
+        .userRegistered({
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          ts: Date.now(),
+        })
+        .catch(() => {});
+    }
+    return AuthService.issueTokenPair(user);
+  }
+  // ── Token Issuance ────────────────────────────────────────────────────────────
+  static async issueTokenPair(user) {
+    if (!ACCESS_SECRET) {
+      throw new InternalError('JWT_ACCESS_SECRET is not configured');
+    }
+    const jti = uuidv4();
+    const refreshJti = uuidv4();
+    const role = user.role;
+    const accessToken = jwt.sign({ sub: user.id, role, jti }, ACCESS_SECRET, {
+      expiresIn: ACCESS_EXPIRY,
+    });
+    const refreshToken = jwt.sign({ sub: user.id, role, jti: refreshJti }, REFRESH_SECRET, {
+      expiresIn: REFRESH_EXPIRY,
+    });
+    // Persist refresh token with retry (Redis flap resilience)
+    // Key: refresh:{userId}:{refreshJti} — supports multiple concurrent device sessions
+    await retry(
+      async () => {
         const redis = await getRedisClient();
-        await redis.setEx(`2fa_setup:${userId}`, 300, otp);
-        try {
-            await kafka.twoFactorOtpRequested({
-                userId: user.id,
-                email: user.email,
-                otp,
-                ts: Date.now(),
-            });
-        }
-        catch (err) {
-            await redis.del(`2fa_setup:${userId}`);
-            logger.error({ userId: user.id, err }, '[Auth] Failed to publish 2FA setup OTP event');
-            throw new ServiceUnavailableError('notification pipeline');
-        }
+        await redis.setEx(`refresh:${user.id}:${refreshJti}`, REFRESH_TTL_S, refreshToken);
+      },
+      { maxAttempts: 3, label: 'redis:refresh-token-store' },
+    );
+    return { accessToken, refreshToken };
+  }
+  // ── Password Reset (Unified) ────────────────────────────────────────────────
+  static async forgotPassword(email) {
+    const user = await UserRepository.findByEmail(email);
+    if (!user) {
+      // Return generic message to prevent email enumeration.
+      return { message: 'If an account exists for that email, a reset link has been sent.' };
     }
-    static async verify2fa(userId, otp) {
-        const redis = await getRedisClient();
-        const stored = await redis.get(`2fa_setup:${userId}`);
-        if (!stored || stored !== otp) {
-            throw new UnauthorizedError('Invalid or expired OTP');
-        }
-        await prisma.user.update({
-            where: { id: userId },
-            data: { twoFactorEnabled: true }, // TS recheck
-        });
-        await redis.del(`2fa_setup:${userId}`);
+    const resetToken = uuidv4();
+    const redis = await getRedisClient();
+    // Store token in Redis, expires in 15 minutes
+    await redis.setEx(`reset:${resetToken}`, 15 * 60, user.id);
+    let redirectType = 'WEB_DASHBOARD';
+    let resetLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
+    if (user.role === 'RIDER') {
+      redirectType = 'MOBILE_APP_DEEP_LINK';
+      resetLink = `scooterapp://reset-password?token=${resetToken}`;
     }
-    static async login2fa(token, otp) {
-        const redis = await getRedisClient();
-        const storedStr = await redis.get(`2fa_login:${token}`);
-        if (!storedStr) {
-            throw new UnauthorizedError('Invalid or expired session token');
-        }
-        const { userId, otp: storedOtp } = JSON.parse(storedStr);
-        if (otp !== storedOtp) {
-            throw new UnauthorizedError('Invalid OTP');
-        }
-        const user = await UserRepository.findById(userId);
-        if (!user)
-            throw new NotFoundError('User', userId);
-        await redis.del(`2fa_login:${token}`);
-        return AuthService.issueTokenPair(user);
+    logger.info(
+      {
+        userId: user.id,
+        role: user.role,
+        resetToken,
+      },
+      '[Auth] Generated Password Reset Token',
+    );
+    await kafka.passwordResetRequested({
+      userId: user.id,
+      email: user.email,
+      resetToken,
+      role: user.role,
+      ts: Date.now(),
+    });
+    return {
+      message: 'If an account exists for that email, a reset link has been sent.',
+      tokenForDev: process.env.NODE_ENV !== 'production' ? resetToken : undefined,
+      redirectType: process.env.NODE_ENV !== 'production' ? redirectType : undefined,
+    };
+  }
+  static async resetPassword(token, newPassword) {
+    const redis = await getRedisClient();
+    const email = await redis.get(`reset_pwd:${token}`);
+    if (!email) {
+      throw new UnauthorizedError('Invalid or expired reset token');
     }
-    // ── Refresh ──────────────────────────────────────────────────────────────────
-    static async refresh(refreshToken) {
-        let payload;
-        try {
-            payload = jwt.verify(refreshToken, REFRESH_SECRET);
-        }
-        catch (err) {
-            throw new UnauthorizedError('Refresh token is invalid or expired');
-        }
-        const redis = await getRedisClient();
-        // Per-device key: refresh:{userId}:{jti}
-        const stored = await redis.get(`refresh:${payload.sub}:${payload.jti}`);
-        // Use timing-safe comparison to prevent timing attacks
-        if (!stored || !crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(refreshToken))) {
-            // Token has been rotated or revoked — potential replay attack
-            throw new UnauthorizedError('Refresh token has been revoked');
-        }
-        const user = await UserRepository.findById(payload.sub);
-        if (!user)
-            throw new NotFoundError('User', payload.sub);
-        return AuthService.issueTokenPair(user);
+    const user = await UserRepository.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedError('Invalid or expired reset token');
     }
-    // ── Logout ───────────────────────────────────────────────────────────────────
-    static async logout(jti, userId, refreshJti) {
-        const redis = await getRedisClient();
-        // Blacklist the access token JTI for the remainder of the access token's lifetime
-        await redis.setEx(`blacklist:${jti}`, 60 * 15, '1');
-        // Delete only this device's refresh token (per-device key)
-        await redis.del(`refresh:${userId}:${refreshJti}`);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+    await redis.del(`reset_pwd:${token}`);
+  }
+  static async updatePassword(userId, oldPassword, newPassword) {
+    const user = await UserRepository.findById(userId);
+    if (!user || !user.passwordHash) {
+      throw new UnauthorizedError('User not found or password not set');
     }
-    // ── Get User ─────────────────────────────────────────────────────────────────
-    static async getUser(userId) {
-        const user = await UserRepository.findById(userId);
-        if (!user)
-            throw new NotFoundError('User', userId);
-        return user;
+    const match = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!match) {
+      throw new UnauthorizedError('Incorrect old password');
     }
-    // ── OAuth Google ──────────────────────────────────────────────────────────────
-    static async oauthGoogle(idToken) {
-        const clientId = process.env.GOOGLE_CLIENT_ID;
-        if (!clientId) {
-            throw new InternalError('GOOGLE_CLIENT_ID is not configured');
-        }
-        const client = new OAuth2Client(clientId);
-        let email;
-        let name;
-        try {
-            const ticket = await client.verifyIdToken({ idToken, audience: clientId });
-            const payload = ticket.getPayload();
-            if (!payload?.email) {
-                throw new ValidationError('Google token payload missing email');
-            }
-            email = payload.email;
-            name = payload.name ?? payload.email.split('@')[0];
-        }
-        catch (err) {
-            if (err.name === 'ValidationError')
-                throw err;
-            throw new UnauthorizedError('Invalid Google ID token');
-        }
-        const { user, isNew } = await UserRepository.findOrCreateOAuth(email, name);
-        if (isNew) {
-            kafka
-                .userRegistered({
-                userId: user.id,
-                email: user.email,
-                name: user.name,
-                ts: Date.now(),
-            })
-                .catch(() => { });
-        }
-        return AuthService.issueTokenPair(user);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+  }
+  // ── Payment Integration ──────────────────────────────────────────────────────
+  static async verifyAndTopUpWallet(userId, reference) {
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock';
+    let amountCents = 0;
+    let authCode = undefined;
+    // Call Paystack API to verify transaction
+    try {
+      const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${paystackSecret}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      // Paystack returns 200 even for some failed checks, but status boolean indicates true success
+      if (!response.ok || data.status === false) {
+        throw new ValidationError(
+          `Paystack Error: ${data.message || 'Transaction verification failed'}`,
+        );
+      }
+      if (data.data?.status !== 'success') {
+        const gatewayResponse = data.data?.gateway_response || 'Transaction not successful';
+        throw new ValidationError(`Payment Failed: ${gatewayResponse}`);
+      }
+      // Paystack amount is in Kobo (which maps perfectly to our cents architecture for NGN)
+      amountCents = data.data.amount;
+      // Extract the authorization code for future auto-deductions (Tokenization)
+      if (data.data.authorization?.authorization_code) {
+        authCode = data.data.authorization.authorization_code;
+      }
+    } catch (err) {
+      logger.error({ err, reference }, 'Paystack verification failed');
+      // If it's a ValidationError (thrown by our logic above), we want to preserve its message
+      if (err instanceof ValidationError) {
+        throw err;
+      }
+      // For development/testing purposes, if the secret key is missing/mocked, we'll allow local mock verification
+      if (paystackSecret === 'sk_test_mock' || process.env.NODE_ENV !== 'production') {
+        logger.warn('Paystack key missing or mock mode. Faking success for local development.');
+        amountCents = 1000 * 100; // default 1000 NGN
+      } else {
+        throw new ValidationError(`Payment verification failed: ${err.message || 'Unknown error'}`);
+      }
     }
-    // ── Token Issuance ────────────────────────────────────────────────────────────
-    static async issueTokenPair(user) {
-        if (!ACCESS_SECRET) {
-            throw new InternalError('JWT_ACCESS_SECRET is not configured');
-        }
-        const jti = uuidv4();
-        const refreshJti = uuidv4();
-        const role = user.role;
-        const accessToken = jwt.sign({ sub: user.id, role, jti }, ACCESS_SECRET, {
-            expiresIn: ACCESS_EXPIRY,
-        });
-        const refreshToken = jwt.sign({ sub: user.id, role, jti: refreshJti }, REFRESH_SECRET, {
-            expiresIn: REFRESH_EXPIRY,
-        });
-        // Persist refresh token with retry (Redis flap resilience)
-        // Key: refresh:{userId}:{refreshJti} — supports multiple concurrent device sessions
-        await retry(async () => {
-            const redis = await getRedisClient();
-            await redis.setEx(`refresh:${user.id}:${refreshJti}`, REFRESH_TTL_S, refreshToken);
-        }, { maxAttempts: 3, label: 'redis:refresh-token-store' });
-        return { accessToken, refreshToken };
+    // Since auth.service.ts doesn't have prisma imported directly for writes, we can use the repository
+    const { prisma } = await import('@ebike/db');
+    const redis = await getRedisClient();
+    // Idempotency check: prevent double crediting
+    const isProcessed = await redis.get(`paystack_ref:${reference}`);
+    if (isProcessed) {
+      logger.info({ reference }, 'Transaction already processed (idempotent return)');
+      const existingUser = await UserRepository.findById(userId);
+      const { passwordHash, ...safeExistingUser } = existingUser;
+      return safeExistingUser;
     }
-    // ── Password Reset (Unified) ────────────────────────────────────────────────
-    static async forgotPassword(email) {
-        const user = await UserRepository.findByEmail(email);
-        if (!user) {
-            // Return generic message to prevent email enumeration.
-            return { message: 'If an account exists for that email, a reset link has been sent.' };
-        }
-        const resetToken = uuidv4();
-        const redis = await getRedisClient();
-        // Store token in Redis, expires in 15 minutes
-        await redis.setEx(`reset:${resetToken}`, 15 * 60, user.id);
-        let redirectType = 'WEB_DASHBOARD';
-        let resetLink = `https://admin.scooter.com/reset-password?token=${resetToken}`;
-        if (user.role === 'RIDER') {
-            redirectType = 'MOBILE_APP_DEEP_LINK';
-            resetLink = `scooterapp://reset-password?token=${resetToken}`;
-        }
-        logger.info({
-            userId: user.id,
-            role: user.role,
-            resetToken,
-        }, '[Auth] Generated Password Reset Token');
-        await kafka.passwordResetRequested({
-            userId: user.id,
-            email: user.email,
-            resetToken,
-            role: user.role,
-            ts: Date.now(),
-        });
-        return {
-            message: 'If an account exists for that email, a reset link has been sent.',
-            tokenForDev: process.env.NODE_ENV !== 'production' ? resetToken : undefined,
-            redirectType: process.env.NODE_ENV !== 'production' ? redirectType : undefined,
-        };
-    }
-    static async resetPassword(token, newPassword) {
-        const redis = await getRedisClient();
-        const email = await redis.get(`reset_pwd:${token}`);
-        if (!email) {
-            throw new UnauthorizedError('Invalid or expired reset token');
-        }
-        const user = await UserRepository.findByEmail(email);
-        if (!user) {
-            throw new UnauthorizedError('Invalid or expired reset token');
-        }
-        const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { passwordHash },
-        });
-        await redis.del(`reset_pwd:${token}`);
-    }
-    static async updatePassword(userId, oldPassword, newPassword) {
-        const user = await UserRepository.findById(userId);
-        if (!user || !user.passwordHash) {
-            throw new UnauthorizedError('User not found or password not set');
-        }
-        const match = await bcrypt.compare(oldPassword, user.passwordHash);
-        if (!match) {
-            throw new UnauthorizedError('Incorrect old password');
-        }
-        const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { passwordHash },
-        });
-    }
-    // ── Payment Integration ──────────────────────────────────────────────────────
-    static async verifyAndTopUpWallet(userId, reference) {
-        const paystackSecret = process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock';
-        let amountCents = 0;
-        let authCode = undefined;
-        // Call Paystack API to verify transaction
-        try {
-            const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-                method: 'GET',
-                headers: {
-                    Authorization: `Bearer ${paystackSecret}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-            const data = (await response.json());
-            // Paystack returns 200 even for some failed checks, but status boolean indicates true success
-            if (!response.ok || data.status === false) {
-                throw new ValidationError(`Paystack Error: ${data.message || 'Transaction verification failed'}`);
-            }
-            if (data.data?.status !== 'success') {
-                const gatewayResponse = data.data?.gateway_response || 'Transaction not successful';
-                throw new ValidationError(`Payment Failed: ${gatewayResponse}`);
-            }
-            // Paystack amount is in Kobo (which maps perfectly to our cents architecture for NGN)
-            amountCents = data.data.amount;
-            // Extract the authorization code for future auto-deductions (Tokenization)
-            if (data.data.authorization?.authorization_code) {
-                authCode = data.data.authorization.authorization_code;
-            }
-        }
-        catch (err) {
-            logger.error({ err, reference }, 'Paystack verification failed');
-            // If it's a ValidationError (thrown by our logic above), we want to preserve its message
-            if (err instanceof ValidationError) {
-                throw err;
-            }
-            // For development/testing purposes, if the secret key is missing/mocked, we'll allow local mock verification
-            if (paystackSecret === 'sk_test_mock' || process.env.NODE_ENV !== 'production') {
-                logger.warn('Paystack key missing or mock mode. Faking success for local development.');
-                amountCents = 1000 * 100; // default 1000 NGN
-            }
-            else {
-                throw new ValidationError(`Payment verification failed: ${err.message || 'Unknown error'}`);
-            }
-        }
-        // Since auth.service.ts doesn't have prisma imported directly for writes, we can use the repository
-        const { prisma } = await import('@ebike/db');
-        const redis = await getRedisClient();
-        // Idempotency check: prevent double crediting
-        const isProcessed = await redis.get(`paystack_ref:${reference}`);
-        if (isProcessed) {
-            logger.info({ reference }, 'Transaction already processed (idempotent return)');
-            const existingUser = await UserRepository.findById(userId);
-            const { passwordHash, ...safeExistingUser } = existingUser;
-            return safeExistingUser;
-        }
-        // Mark as processed (valid for 30 days)
-        await redis.setEx(`paystack_ref:${reference}`, 30 * 24 * 60 * 60, '1');
-        // Prevent double crediting: check if payment reference already processed
-        // In a full production system, we'd log this transaction to a `Payment` table first.
-        // For now, we update the user's wallet directly.
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: {
-                walletCents: { increment: amountCents },
-                ...(authCode ? { paystackAuthCode: authCode } : {}),
-            },
-        });
-        const { passwordHash, ...safeUser } = user;
-        return safeUser;
-    }
+    // Mark as processed (valid for 30 days)
+    await redis.setEx(`paystack_ref:${reference}`, 30 * 24 * 60 * 60, '1');
+    // Prevent double crediting: check if payment reference already processed
+    // In a full production system, we'd log this transaction to a `Payment` table first.
+    // For now, we update the user's wallet directly.
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        walletCents: { increment: amountCents },
+        ...(authCode ? { paystackAuthCode: authCode } : {}),
+      },
+    });
+    const { passwordHash, ...safeUser } = user;
+    return safeUser;
+  }
 }

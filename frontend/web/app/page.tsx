@@ -407,10 +407,7 @@ export default function DashboardOverview() {
       </div>
 
       {showAddBike && (
-        <AddBikeModal
-          onClose={() => setShowAddBike(false)}
-          onAdded={() => fetchAllData()}
-        />
+        <AddBikeModal onClose={() => setShowAddBike(false)} onAdded={() => fetchAllData()} />
       )}
     </div>
   );

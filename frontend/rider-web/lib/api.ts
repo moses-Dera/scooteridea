@@ -116,9 +116,7 @@ function handleApiError(error: AxiosError<any>): ApiError {
     const status = error.response.status;
     const code = data?.code || data?.error || `HTTP_${status}`;
     const upstreamFailure =
-      code === 'UPSTREAM_UNAVAILABLE' ||
-      code === 'UPSTREAM_INVALID_RESPONSE' ||
-      status >= 500;
+      code === 'UPSTREAM_UNAVAILABLE' || code === 'UPSTREAM_INVALID_RESPONSE' || status >= 500;
     const message = upstreamFailure
       ? 'Service temporarily unavailable'
       : data?.message || data?.error || error.message || 'An error occurred';

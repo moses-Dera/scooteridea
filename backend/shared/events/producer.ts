@@ -36,9 +36,10 @@ const EXCHANGE = 'scooterfy_events';
 
 export async function connectProducer(): Promise<void> {
   if (channel) return;
-  
-  let connectOptions: string | amqp.Options.Connect = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
-  
+
+  let connectOptions: string | amqp.Options.Connect =
+    process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+
   if (process.env.RABBITMQ_HOST) {
     connectOptions = {
       protocol: 'amqp',
@@ -53,7 +54,7 @@ export async function connectProducer(): Promise<void> {
     connection = await amqp.connect(connectOptions);
     channel = await connection.createChannel();
     await channel.assertExchange(EXCHANGE, 'topic', { durable: true });
-    
+
     connection.on('error', (err) => {
       console.error('[RabbitMQ Publisher] Connection error', err);
       channel = null;
@@ -96,10 +97,12 @@ export async function publish<T extends object>(
     await connectProducer();
     if (!channel) throw new Error('RabbitMQ publisher not connected');
   }
-  
+
   const traceId = getTraceId();
-  const messageBuffer = Buffer.from(JSON.stringify({ ...payload, ts: Date.now(), _traceId: traceId }));
-  
+  const messageBuffer = Buffer.from(
+    JSON.stringify({ ...payload, ts: Date.now(), _traceId: traceId }),
+  );
+
   channel.publish(EXCHANGE, topic, messageBuffer, { persistent: true });
 }
 

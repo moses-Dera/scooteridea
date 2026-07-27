@@ -40,7 +40,9 @@ export default function TopUpCallbackPage() {
           }
 
           const paymentStatus = String(data.paymentStatus || '').toLowerCase();
-          const isTransient = ['pending', 'ongoing', 'processing', 'queued'].includes(paymentStatus);
+          const isTransient = ['pending', 'ongoing', 'processing', 'queued'].includes(
+            paymentStatus,
+          );
 
           if (!isTransient || attempt === MAX_VERIFICATION_ATTEMPTS) {
             if (!cancelled) {
@@ -72,7 +74,6 @@ export default function TopUpCallbackPage() {
 
   return (
     <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-sm text-white flex flex-col items-center justify-center px-6 text-center overflow-hidden pointer-events-auto">
-
       <div className="relative z-10 glass-panel p-8 rounded-3xl border border-white/10 max-w-sm w-full flex flex-col items-center shadow-2xl shadow-primary/20 pointer-events-auto">
         {status === 'verifying' && (
           <>

@@ -3,7 +3,16 @@
 import { signOut, useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Wallet, BarChart, MapPin, Settings, HelpCircle, Shield, AlertTriangle, X } from 'lucide-react';
+import {
+  Wallet,
+  BarChart,
+  MapPin,
+  Settings,
+  HelpCircle,
+  Shield,
+  AlertTriangle,
+  X,
+} from 'lucide-react';
 
 interface MenuPanelProps {
   onClose: () => void;

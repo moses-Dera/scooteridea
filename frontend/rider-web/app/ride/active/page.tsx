@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { DestinationSearch } from '@/components/Map/DestinationSearch';
+import { useGeofences } from '@/hooks/useGeofences';
 
 type EndRideStep = 'idle' | 'ending' | 'done';
 
@@ -38,6 +39,38 @@ export default function ActiveRide() {
     : null;
   const { docks } = useNearbyDocks(liveBike?.lat, liveBike?.lng);
   const nearestDock = docks.length > 0 ? docks[0] : null;
+
+  const { zones } = useGeofences();
+  const [restrictedTimer, setRestrictedTimer] = useState<number | null>(null);
+
+  // Monitor bike zone changes for restricted zones
+  useEffect(() => {
+    if (!liveBike?.zoneIds) {
+      setRestrictedTimer(null);
+      return;
+    }
+
+    const inRestrictedZone = liveBike.zoneIds.some((zId) => {
+      const zone = zones.find((z) => z.id === zId);
+      return zone?.type === 'no_ride';
+    });
+
+    if (inRestrictedZone && restrictedTimer === null) {
+      // Just entered a restricted zone, start 60s countdown
+      setRestrictedTimer(60);
+    } else if (!inRestrictedZone) {
+      setRestrictedTimer(null);
+    }
+  }, [liveBike?.zoneIds, zones]);
+
+  // Tick the countdown
+  useEffect(() => {
+    if (restrictedTimer === null || restrictedTimer <= 0) return;
+    const interval = setInterval(() => {
+      setRestrictedTimer((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [restrictedTimer]);
 
   // Developer Feature: Tether Bike to Phone's GPS
   useEffect(() => {
@@ -150,8 +183,25 @@ export default function ActiveRide() {
       </div>
 
       {/* 🔍 Top-Center: Destination Search */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 w-[90%] md:w-auto">
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 w-[90%] md:w-auto flex flex-col gap-4">
         <DestinationSearch />
+
+        {/* ⚠️ Restricted Zone Warning */}
+        {restrictedTimer !== null && (
+          <div className="w-full max-w-[400px] mx-auto bg-red-500/90 backdrop-blur-md border-2 border-red-400 rounded-2xl p-4 shadow-2xl flex flex-col items-center text-center animate-in slide-in-from-top duration-300">
+            <div className="flex items-center gap-2 text-white mb-2">
+              <AlertTriangle className="w-6 h-6 animate-pulse" />
+              <h3 className="font-extrabold text-lg uppercase tracking-wider">Restricted Zone</h3>
+            </div>
+            <p className="text-white/90 text-sm font-semibold mb-3">
+              You have entered a no-ride zone. Scooter speed is limited. Please exit the zone or the
+              ride will end.
+            </p>
+            <div className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center text-white font-black text-2xl animate-pulse">
+              {restrictedTimer}s
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 🧭 Top-Right: Nearest Dock Navigation */}
@@ -261,19 +311,6 @@ export default function ActiveRide() {
           ) : (
             <Smartphone className="w-5 h-5 text-slate-300" />
           )}
-        </button>
-
-        <button
-          className="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-          title="Pause Ride"
-        >
-          <Pause className="w-5 h-5" />
-        </button>
-        <button
-          className="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-slate-300 hover:text-danger hover:bg-white/10 transition-colors"
-          title="Report Issue"
-        >
-          <AlertTriangle className="w-5 h-5" />
         </button>
       </div>
     </div>
