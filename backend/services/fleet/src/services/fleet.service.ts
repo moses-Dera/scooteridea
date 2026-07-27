@@ -265,6 +265,40 @@ export class FleetService {
     return currentZoneIds;
   }
 
+  static async getBikeById(bikeId: string) {
+    const redis = await getRedisClient();
+    const [status, location, zonesRaw] = await Promise.all([
+      redis.get(`bike:${bikeId}:status`),
+      redisGetJson<{
+        lat: number;
+        lng: number;
+        battery_pct: number;
+        speed_kmh: number;
+        lock_status?: string;
+      }>(`bike:${bikeId}:location`),
+      redis.get(`bike:${bikeId}:zones`),
+    ]);
+
+    if (!status && !location) return null;
+
+    return {
+      id: bikeId,
+      bikeId,
+      status: status || 'available',
+      ...(location || {}),
+      lock_status: location?.lock_status || 'LOCKED',
+      zoneIds: zonesRaw
+        ? (() => {
+            try {
+              return JSON.parse(zonesRaw);
+            } catch {
+              return [];
+            }
+          })()
+        : [],
+    };
+  }
+
   /** Get all bikes from Redis (live state). */
   static async getAllBikes() {
     const redis = await getRedisClient();

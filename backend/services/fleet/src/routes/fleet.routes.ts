@@ -119,6 +119,21 @@ fleetRouter.post(
   },
 );
 
+// GET /fleet/bikes/:id — get a single bike
+fleetRouter.get('/bikes/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const bike = await FleetService.getBikeById(id);
+    if (!bike) {
+      res.status(404).json({ success: false, error: 'Bike not found' });
+      return;
+    }
+    res.json({ success: true, data: bike });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch bike' });
+  }
+});
+
 // DELETE /fleet/bikes/:id — remove a bike
 fleetRouter.delete(
   '/bikes/:id',
