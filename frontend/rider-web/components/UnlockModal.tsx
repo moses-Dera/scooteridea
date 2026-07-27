@@ -8,8 +8,9 @@ import { useRide } from '@/context/RideContext';
 import { Smartphone, Scan, KeyRound, Unlock, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
+import { Scanner } from '@yudiel/react-qr-scanner';
 
-type UnlockStep = 'confirm' | 'method' | 'manual-pin' | 'done';
+type UnlockStep = 'confirm' | 'method' | 'scan-qr' | 'done';
 
 interface UnlockModalProps {
   bikeId: string;
@@ -109,39 +110,28 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
     }
   };
 
-  const handleStartManualPin = async () => {
-    try {
-      setIsStarting(true);
-      setLoading(true);
-      setError(null);
-
-      let rideId = state.activeRide?.id;
-      let actualPin = state.activeRide?.bike?.currentPin;
-
-      // If no active ride exists, create one now!
-      if (!rideId) {
-        // Use dynamic hubId if the bike is currently docked, else pass undefined for free-floating
-        const newRide = await ridesService.reserve(bikeId, bikeHubId || undefined);
-        setActiveRide(newRide);
-        rideId = newRide.id;
-        actualPin = newRide.bike?.currentPin;
+  const handleQrResult = (detectedCodes: any[]) => {
+    if (detectedCodes && detectedCodes.length > 0) {
+      const rawValue = detectedCodes[0].rawValue;
+      // Expected format: "BK-12345" or URL like "scooterfy.vercel.app/?bike=BK-12345"
+      let scannedBikeId = '';
+      if (rawValue.includes('bike=')) {
+        try {
+          const url = new URL(rawValue.startsWith('http') ? rawValue : `https://${rawValue}`);
+          scannedBikeId = url.searchParams.get('bike') || '';
+        } catch {
+          scannedBikeId = rawValue;
+        }
+      } else {
+        scannedBikeId = rawValue;
       }
-
-      // Read the secure PIN from the backend, or fallback to a generated one if not populated yet
-      const pin = actualPin || Math.floor(1000 + Math.random() * 9000).toString();
-      setUnlockPin(pin);
-
-      // Mark ride as started in backend
-      await ridesService.startRide(rideId!);
-
-      setStep('manual-pin');
-      setIsStarting(false);
-      setLoading(false);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to start ride';
-      setError(message);
-      setIsStarting(false);
-      setLoading(false);
+      
+      if (scannedBikeId === bikeId) {
+        handleStartRide();
+      } else {
+        setError(`Scanned QR code (${scannedBikeId}) does not match the bike you selected (${bikeId}).`);
+        setStep('method'); // Go back
+      }
     }
   };
 
@@ -160,13 +150,13 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
         {/* Step Indicator */}
         <div className="flex items-center gap-2 mb-8 mt-2">
           <div
-            className={`h-1.5 flex-1 rounded-full ${step === 'confirm' || step === 'method' || step === 'done' || step === 'manual-pin' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
+            className={`h-1.5 flex-1 rounded-full ${step === 'confirm' || step === 'method' || step === 'done' || step === 'scan-qr' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
           ></div>
           <div
-            className={`h-1.5 flex-1 rounded-full ${step === 'method' || step === 'done' || step === 'manual-pin' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
+            className={`h-1.5 flex-1 rounded-full ${step === 'method' || step === 'done' || step === 'scan-qr' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
           ></div>
           <div
-            className={`h-1.5 flex-1 rounded-full ${step === 'done' || step === 'manual-pin' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
+            className={`h-1.5 flex-1 rounded-full ${step === 'done' || step === 'scan-qr' ? 'bg-primary shadow-glow-primary' : 'bg-white/10'}`}
           ></div>
         </div>
 
@@ -239,37 +229,15 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
 
             <div className="flex flex-col gap-3 mb-8">
               <button
-                onClick={handleStartRide}
+                onClick={() => setStep('scan-qr')}
                 disabled={isStarting}
                 className="w-full p-4 rounded-xl border border-primary bg-primary/10 flex items-center justify-between group hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center gap-4">
-                  <Smartphone className="w-6 h-6 text-primary" />
-                  <span className="font-medium text-white">
-                    {isStarting ? 'Unlocking...' : 'Unlock via App'}
-                  </span>
+                  <Scan className="w-6 h-6 text-primary" />
+                  <span className="font-medium text-white">Scan QR Code</span>
                 </div>
                 <span className="text-primary font-bold">➔</span>
-              </button>
-
-              <button className="w-full p-4 rounded-xl border border-white/10 bg-white/5 flex items-center justify-between hover:border-white/20 transition-colors opacity-50 cursor-not-allowed">
-                <div className="flex items-center gap-4">
-                  <Scan className="w-6 h-6 text-slate-400" />
-                  <span className="font-medium text-slate-300">Scan QR Code</span>
-                </div>
-              </button>
-
-              <button
-                onClick={handleStartManualPin}
-                disabled={isStarting}
-                className="w-full p-4 rounded-xl border border-white/10 bg-white/5 flex items-center justify-between hover:border-white/20 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <KeyRound className="w-6 h-6 text-slate-300" />
-                  <span className="font-medium text-slate-300">
-                    {isStarting ? 'Generating Pass...' : 'Get Unlock Pass (PIN)'}
-                  </span>
-                </div>
               </button>
             </div>
 
@@ -282,29 +250,39 @@ export function UnlockModal({ bikeId, onClose }: UnlockModalProps) {
           </div>
         )}
 
-        {/* Step 3: Manual PIN Flow */}
-        {step === 'manual-pin' && (
+        {/* Step 3: Scan QR Flow */}
+        {step === 'scan-qr' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col items-center py-4">
-            <div className="text-2xl font-bold mb-2 text-center">Your Unlock Pass</div>
+            <div className="text-2xl font-bold mb-2 text-center">Scan QR Code</div>
             <p className="text-slate-400 text-center mb-6">
-              Punch this code into the scooter&apos;s keypad to unlock.
+              Scan the QR code on the scooter's handlebar to unlock {bikeId}.
             </p>
 
-            <div className="w-full bg-[#00D4FF]/10 border-2 border-[#00D4FF]/30 rounded-2xl p-6 flex flex-col items-center justify-center mb-8 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-[#00D4FF]/5 to-transparent"></div>
-              <span className="text-sm font-bold text-[#00D4FF] uppercase tracking-widest mb-2 relative z-10">
-                One-Time PIN
-              </span>
-              <span className="text-6xl font-mono font-black text-white tracking-[0.2em] ml-4 relative z-10 drop-shadow-[0_0_15px_rgba(0,212,255,0.4)]">
-                {unlockPin}
-              </span>
+            <div className="w-full max-w-sm aspect-square bg-black rounded-2xl overflow-hidden mb-6 border-2 border-white/10 relative">
+              <Scanner
+                onScan={handleQrResult}
+                onError={(error) => console.error(error?.message)}
+                formats={['qr_code']}
+              />
+              
+              {/* Overlay targeting frame */}
+              <div className="absolute inset-0 pointer-events-none border-[40px] border-black/50">
+                <div className="w-full h-full border-2 border-primary border-dashed rounded-lg"></div>
+              </div>
             </div>
+            
+            {isStarting && (
+               <div className="text-primary font-medium flex items-center gap-2 mb-4">
+                 <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                 Unlocking...
+               </div>
+            )}
 
             <button
-              onClick={() => router.push('/ride/active')}
-              className="w-full h-14 bg-primary text-black font-bold text-lg rounded-xl shadow-glow-primary flex items-center justify-center transform hover:scale-[1.02] transition-transform"
+              onClick={() => setStep('method')}
+              className="w-full h-14 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl transition-colors"
             >
-              I&apos;ve Unlocked It
+              Go Back
             </button>
           </div>
         )}

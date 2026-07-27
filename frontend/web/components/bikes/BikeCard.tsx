@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useBikeCommand } from '@/hooks/useBikeCommand';
-import { FaLock, FaUnlock, FaBell, FaXmark } from 'react-icons/fa6';
+import { FaLock, FaUnlock, FaBell, FaXmark, FaDownload } from 'react-icons/fa6';
+import QRCode from 'react-qr-code';
 
 interface BikeCardProps {
   bike: {
@@ -62,6 +63,35 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
     }
   };
 
+  const handleDownloadQR = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const svg = document.getElementById(`qr-${bike.id}`);
+    if (!svg) return;
+    
+    // Serialize the SVG to string
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svg);
+    // Add xml namespaces
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+    }
+
+    // Add a white background rectangle
+    source = source.replace('>', '><rect width="100%" height="100%" fill="white"/>');
+
+    const url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `QR_${bike.id}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const statusColor =
     {
       available: 'text-green-400',
@@ -108,6 +138,21 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
               <p className="text-slate-400">Speed</p>
               <p className="text-white">{bike.speed_kmh} km/h</p>
             </div>
+          </div>
+          
+          <div className="flex flex-col items-center justify-center p-4 bg-white rounded-lg my-2 relative group">
+            <QRCode id={`qr-${bike.id}`} value={bike.id} size={120} />
+            <p className="text-xs text-slate-500 mt-2 font-mono">{bike.id}</p>
+            <button
+              onClick={handleDownloadQR}
+              className="absolute top-2 right-2 bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Download QR Code"
+            >
+              <FaDownload size={14} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
