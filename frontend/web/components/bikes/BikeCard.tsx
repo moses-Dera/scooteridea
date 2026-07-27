@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBikeCommand } from '@/hooks/useBikeCommand';
 import { FaLock, FaUnlock, FaBell, FaXmark } from 'react-icons/fa6';
 
