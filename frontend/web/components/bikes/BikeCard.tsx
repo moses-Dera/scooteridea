@@ -22,8 +22,19 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [localLockStatus, setLocalLockStatus] = useState<string | null>(null);
 
-  const handleCommand = async (action: () => Promise<any>) => {
+  // Clear optimistic state when the actual state from socket catches up
+  useEffect(() => {
+    setLocalLockStatus(null);
+  }, [bike.lock_status]);
+
+  const currentLockStatus = localLockStatus || bike.lock_status;
+
+  const handleCommand = async (action: () => Promise<any>, optimisticState?: string) => {
+    if (optimisticState) {
+      setLocalLockStatus(optimisticState);
+    }
     setCommandError(null);
     const result = await action();
     if (!result.success && result.error) {
@@ -115,35 +126,35 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleCommand(() => unlock(bike.id));
+                handleCommand(() => unlock(bike.id), 'UNLOCKED');
               }}
-              disabled={loading || bike.lock_status === 'UNLOCKED'}
+              disabled={loading || currentLockStatus === 'UNLOCKED'}
               className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm transition-colors ${
-                bike.lock_status === 'UNLOCKED'
+                currentLockStatus === 'UNLOCKED'
                   ? 'bg-blue-500 text-white ring-2 ring-blue-300 font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)]'
                   : 'bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white'
               }`}
               title="Unlock bike"
             >
               <FaUnlock size={12} />
-              {bike.lock_status === 'UNLOCKED' ? 'Unlocked' : 'Unlock'}
+              {currentLockStatus === 'UNLOCKED' ? 'Unlocked' : 'Unlock'}
             </button>
 
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleCommand(() => lock(bike.id));
+                handleCommand(() => lock(bike.id), 'LOCKED');
               }}
-              disabled={loading || bike.lock_status === 'LOCKED'}
+              disabled={loading || currentLockStatus === 'LOCKED'}
               className={`flex items-center gap-1 px-3 py-1.5 rounded text-sm transition-colors ${
-                bike.lock_status === 'LOCKED'
+                currentLockStatus === 'LOCKED'
                   ? 'bg-amber-500 text-white ring-2 ring-amber-300 font-bold shadow-[0_0_10px_rgba(245,158,11,0.5)]'
                   : 'bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white'
               }`}
               title="Lock bike"
             >
               <FaLock size={12} />
-              {bike.lock_status === 'LOCKED' ? 'Locked' : 'Lock'}
+              {currentLockStatus === 'LOCKED' ? 'Locked' : 'Lock'}
             </button>
 
             <button

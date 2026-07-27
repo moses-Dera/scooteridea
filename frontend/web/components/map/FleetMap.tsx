@@ -221,12 +221,17 @@ export function FleetMapComponent({
   const onMapClick = useCallback(
     (e: mapboxgl.MapLayerMouseEvent) => {
       const feature = e.features && e.features[0];
-      if (!feature) return;
+      if (!feature) {
+        handleSelectBike(null);
+        return;
+      }
 
       if (feature.layer?.id === 'bikes-circle-layer' || feature.layer?.id === 'bikes-core-layer') {
         const bikeId = feature.properties?.id;
         const bike = bikes.find((b) => b.id === bikeId);
         if (bike) handleSelectBike(bike);
+      } else {
+        handleSelectBike(null);
       }
     },
     [bikes, handleSelectBike],
