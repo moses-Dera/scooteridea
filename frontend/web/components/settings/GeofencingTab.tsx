@@ -1,39 +1,55 @@
-import { FiX, FiMapPin, FiTrash2 } from 'react-icons/fi';
+import React, { useMemo } from 'react';
+import { FiX, FiMapPin, FiTrash2, FiEdit2 } from 'react-icons/fi';
 import Map, { Source, Layer, Marker } from 'react-map-gl';
+import DrawControl from '../map/DrawControl';
 
 interface GeofencingTabProps {
   mapboxToken?: string;
   zones: any[];
-  geoJsonZones: any;
-  previewGeoJson: any;
   heatmapGeoJson: any;
   showHeatmap: boolean;
   setShowHeatmap: (v: boolean) => void;
-  newZoneMarker: { lng: number; lat: number } | null;
-  setNewZoneMarker: (v: any) => void;
-  newZoneData: { name: string; type: string; radiusKm: number; speedCap: string };
+  newZoneData: { name: string; type: string; speed_limit_kmh: string };
   setNewZoneData: (v: any) => void;
-  handleMapClick: (e: any) => void;
-  handleSaveNewZone: () => void;
+  drawnGeometry: any;
+  setDrawnGeometry: (v: any) => void;
+  handleCreateZone: () => void;
   handleDeleteZone: (id: string) => void;
 }
 
 export default function GeofencingTab({
   mapboxToken,
   zones,
-  geoJsonZones,
-  previewGeoJson,
   heatmapGeoJson,
   showHeatmap,
   setShowHeatmap,
-  newZoneMarker,
-  setNewZoneMarker,
   newZoneData,
   setNewZoneData,
-  handleMapClick,
-  handleSaveNewZone,
+  drawnGeometry,
+  setDrawnGeometry,
+  handleCreateZone,
   handleDeleteZone,
 }: GeofencingTabProps) {
+  const geoJsonZones = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: zones.map((z) => ({
+        type: 'Feature',
+        geometry: z.boundary, // The backend now stores raw Polygon GeoJSON here
+        properties: { id: z.id, type: z.type, name: z.name },
+      })),
+    };
+  }, [zones]);
+  const onDrawUpdate = (e: any) => {
+    if (e.features && e.features.length > 0) {
+      setDrawnGeometry(e.features[0].geometry);
+    }
+  };
+
+  const onDrawDelete = () => {
+    setDrawnGeometry(null);
+  };
+
   return (
     <div className="min-h-[600px] md:h-[600px] flex flex-col md:flex-row gap-4">
       {/* Map Area */}
@@ -47,9 +63,19 @@ export default function GeofencingTab({
             mapboxAccessToken={mapboxToken}
             initialViewState={{ longitude: 3.3792, latitude: 6.5244, zoom: 11 }}
             mapStyle="mapbox://styles/mapbox/dark-v11"
-            onClick={handleMapClick}
-            cursor={newZoneMarker ? 'default' : 'crosshair'}
+            cursor={drawnGeometry ? 'default' : 'crosshair'}
           >
+            <DrawControl
+              position="top-right"
+              onCreate={onDrawUpdate}
+              onUpdate={onDrawUpdate}
+              onDelete={onDrawDelete}
+              displayControlsDefault={false}
+              controls={{
+                polygon: true,
+                trash: true,
+              }}
+            />
             {/* Existing Zones */}
             <Source id="zones" type="geojson" data={geoJsonZones as any}>
               <Layer
@@ -94,21 +120,7 @@ export default function GeofencingTab({
               />
             </Source>
 
-            {/* Preview New Zone */}
-            {previewGeoJson && (
-              <Source id="new-zone" type="geojson" data={previewGeoJson as any}>
-                <Layer
-                  id="new-zone-fill"
-                  type="fill"
-                  paint={{ 'fill-color': '#ffffff', 'fill-opacity': 0.3 }}
-                />
-                <Layer
-                  id="new-zone-line"
-                  type="line"
-                  paint={{ 'line-color': '#ffffff', 'line-width': 2, 'line-dasharray': [2, 2] }}
-                />
-              </Source>
-            )}
+            {/* Preview New Zone (handled by DrawControl natively) */}
 
             {/* Heatmap Layer */}
             {showHeatmap && heatmapGeoJson && (
@@ -143,25 +155,21 @@ export default function GeofencingTab({
               </Source>
             )}
 
-            {newZoneMarker && (
-              <Marker longitude={newZoneMarker.lng} latitude={newZoneMarker.lat} anchor="bottom">
-                <FiMapPin className="text-white w-8 h-8 -mt-8" />
-              </Marker>
-            )}
+            {/* User Location could go here */}
           </Map>
         )}
 
         {/* Instructions Overlay */}
-        {!newZoneMarker && (
+        {!drawnGeometry && (
           <div className="absolute top-4 left-4 bg-slate-900/80 backdrop-blur text-white px-4 py-2 rounded-lg border border-white/10 shadow-xl pointer-events-none text-sm">
-            Click anywhere on the map to place a new zone.
+            Draw a custom polygon to create a new zone.
           </div>
         )}
       </div>
 
       {/* Sidebar */}
       <div className="w-full md:w-80 flex flex-col gap-4">
-        {!newZoneMarker && (
+        {!drawnGeometry && (
           <div className="glass-panel p-4 rounded-xl border border-white/5 space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-bold text-white">Heatmap Data</h3>
@@ -180,12 +188,14 @@ export default function GeofencingTab({
             </div>
           </div>
         )}
-        {newZoneMarker ? (
+        {drawnGeometry ? (
           <div className="glass-panel p-4 rounded-xl border border-primary/50 bg-primary/5">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-white">Create New Zone</h3>
               <button
-                onClick={() => setNewZoneMarker(null)}
+                onClick={() => {
+                  setDrawnGeometry(null);
+                }}
                 className="text-slate-400 hover:text-white"
               >
                 <FiX />
@@ -193,16 +203,13 @@ export default function GeofencingTab({
             </div>
 
             <div className="space-y-4 text-sm">
-              <div>
-                <label className="text-slate-400 block mb-1">Zone Name</label>
-                <input
-                  type="text"
-                  value={newZoneData.name}
-                  onChange={(e) => setNewZoneData({ ...newZoneData, name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white outline-none focus:border-primary"
-                  placeholder="e.g., Downtown Core"
-                />
-              </div>
+              <input
+                type="text"
+                value={newZoneData.name}
+                onChange={(e) => setNewZoneData({ ...newZoneData, name: e.target.value })}
+                className="bg-slate-900 border border-white/10 rounded-lg px-4 py-2 text-white w-full outline-none focus:border-primary"
+                placeholder="Zone Name"
+              />
               <div>
                 <label className="text-slate-400 block mb-1">Type</label>
                 <select
@@ -216,35 +223,24 @@ export default function GeofencingTab({
                   <option value="dock">Parking Dock (Blue)</option>
                 </select>
               </div>
-              <div>
-                <label className="text-slate-400 block mb-1">Radius (km)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={newZoneData.radiusKm}
-                  onChange={(e) =>
-                    setNewZoneData({ ...newZoneData, radiusKm: Number(e.target.value) })
-                  }
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white outline-none focus:border-primary"
-                />
-              </div>
               {newZoneData.type === 'slow' && (
                 <div>
-                  <label className="text-slate-400 block mb-1">Speed Cap (km/h)</label>
+                  <label className="text-xs text-slate-400">Speed Limit (km/h)</label>
                   <input
                     type="number"
-                    value={newZoneData.speedCap}
-                    onChange={(e) => setNewZoneData({ ...newZoneData, speedCap: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white outline-none focus:border-primary"
-                    placeholder="e.g., 10"
+                    className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2 text-white"
+                    placeholder="e.g. 15 (Optional)"
+                    value={newZoneData.speed_limit_kmh}
+                    onChange={(e) => setNewZoneData({ ...newZoneData, speed_limit_kmh: e.target.value })}
                   />
                 </div>
               )}
               <button
-                onClick={handleSaveNewZone}
-                className="w-full bg-primary text-black font-bold py-2 rounded mt-2 hover:bg-primary/90"
+                onClick={handleCreateZone}
+                disabled={!drawnGeometry || !newZoneData.name}
+                className="w-full mt-4 bg-primary text-black font-bold py-2 rounded-lg hover:bg-primary-hover disabled:opacity-50"
               >
-                Save Zone
+                Create Zone
               </button>
             </div>
           </div>

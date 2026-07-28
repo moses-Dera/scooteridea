@@ -75,13 +75,12 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false);
 
   // Map Editor State
-  const [newZoneMarker, setNewZoneMarker] = useState<{ lng: number; lat: number } | null>(null);
   const [newZoneData, setNewZoneData] = useState({
     name: '',
     type: 'operational',
-    radiusKm: 2,
-    speedCap: '',
+    speed_limit_kmh: '',
   });
+  const [drawnGeometry, setDrawnGeometry] = useState<any>(null);
 
   // Zone Assignment State
   const [editingUser, setEditingUser] = useState<any>(null);
@@ -368,22 +367,15 @@ export default function AdminSettings() {
   // GEOFENCING MAP EDITOR
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
-  const handleMapClick = (e: any) => {
-    if (newZoneMarker) return; // if already editing a new zone, ignore
-    setNewZoneMarker({ lng: e.lngLat.lng, lat: e.lngLat.lat });
-  };
-
-  const handleSaveNewZone = async () => {
-    if (!newZoneMarker || !newZoneData.name) return alert('Name is required');
+  const handleCreateZone = async () => {
+    if (!drawnGeometry || !newZoneData.name) return alert('Name and geometry are required');
 
     try {
       const payload = {
         name: newZoneData.name,
         type: newZoneData.type,
-        lat: newZoneMarker.lat,
-        lng: newZoneMarker.lng,
-        radiusKm: Number(newZoneData.radiusKm),
-        speedCap: newZoneData.speedCap ? Number(newZoneData.speedCap) : undefined,
+        speed_limit_kmh: newZoneData.speed_limit_kmh,
+        geometry: drawnGeometry,
       };
 
       const res = await fetch(`/api/proxy/fleet/zones`, {
@@ -395,8 +387,8 @@ export default function AdminSettings() {
       if (res.ok) {
         const json = await res.json();
         setZones([json.data, ...zones]);
-        setNewZoneMarker(null);
-        setNewZoneData({ name: '', type: 'operational', radiusKm: 2, speedCap: '' });
+        setDrawnGeometry(null);
+        setNewZoneData({ name: '', type: 'operational', speed_limit_kmh: '' });
       } else {
         alert('Failed to create zone');
       }
@@ -415,26 +407,19 @@ export default function AdminSettings() {
     }
   };
 
-  const geoJsonZones = useMemo(() => {
+  const activeZoneSource = useMemo(() => {
+    if (!drawnGeometry) return null;
     return {
       type: 'FeatureCollection',
-      features: zones.map((z) => {
-        const feature = createGeoJSONCircle(z.boundary.lng, z.boundary.lat, z.boundary.radiusKm);
-        return {
-          ...feature,
-          properties: { id: z.id, type: z.type, name: z.name },
-        };
-      }),
+      features: [
+        {
+          type: 'Feature',
+          geometry: drawnGeometry,
+          properties: {},
+        },
+      ],
     };
-  }, [zones]);
-
-  const previewGeoJson = useMemo(() => {
-    if (!newZoneMarker) return null;
-    return {
-      type: 'FeatureCollection',
-      features: [createGeoJSONCircle(newZoneMarker.lng, newZoneMarker.lat, newZoneData.radiusKm)],
-    };
-  }, [newZoneMarker, newZoneData.radiusKm]);
+  }, [drawnGeometry]);
 
   const heatmapGeoJson = useMemo(() => {
     return {
@@ -522,17 +507,14 @@ export default function AdminSettings() {
               <GeofencingTab
                 mapboxToken={mapboxToken}
                 zones={zones}
-                geoJsonZones={geoJsonZones}
-                previewGeoJson={previewGeoJson}
                 heatmapGeoJson={heatmapGeoJson}
                 showHeatmap={showHeatmap}
                 setShowHeatmap={setShowHeatmap}
-                newZoneMarker={newZoneMarker}
-                setNewZoneMarker={setNewZoneMarker}
+                drawnGeometry={drawnGeometry}
+                setDrawnGeometry={setDrawnGeometry}
                 newZoneData={newZoneData}
                 setNewZoneData={setNewZoneData}
-                handleMapClick={handleMapClick}
-                handleSaveNewZone={handleSaveNewZone}
+                handleCreateZone={handleCreateZone}
                 handleDeleteZone={handleDeleteZone}
               />
             )}

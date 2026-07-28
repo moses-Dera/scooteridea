@@ -113,6 +113,34 @@ export function FleetMapComponent({
     if (session) fetchDocks();
   }, [session]);
 
+  const [zones, setZones] = useState<any[]>([]);
+
+  // Fetch geofences (polygon zones)
+  useEffect(() => {
+    let isMounted = true;
+    const fetchZones = async () => {
+      try {
+        const token = (session as any)?.accessToken || '';
+        const res = await fetch(`/api/proxy/fleet/geofences`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!isMounted) return;
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setZones(json.data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load geofences:', err);
+      }
+    };
+    if (session) fetchZones();
+    return () => {
+      isMounted = false;
+    };
+  }, [session]);
+
   const [bikeTrail, setBikeTrail] = useState<{ lat: number; lng: number; ts: number }[]>([]);
 
   // Fetch trail when a bike is selected
@@ -204,6 +232,19 @@ export function FleetMapComponent({
       }),
     }),
     [docks],
+  );
+
+  // Convert zones to GeoJSON
+  const zonesGeoJSON = useMemo(
+    () => ({
+      type: 'FeatureCollection',
+      features: zones.map((zone) => ({
+        type: 'Feature',
+        geometry: zone.boundary,
+        properties: { id: zone.id, name: zone.name, type: zone.type },
+      })),
+    }),
+    [zones],
   );
 
   const routeToDraw = historicalRoute && historicalRoute.length > 0 ? historicalRoute : bikeTrail;
@@ -375,6 +416,50 @@ export function FleetMapComponent({
                   'text-offset': [0, 2],
                 }}
                 paint={{ 'text-color': '#ffffff' }}
+              />
+            </Source>
+          )}
+
+          {/* Zones */}
+          {zonesGeoJSON && (
+            <Source id="zones-source" type="geojson" data={zonesGeoJSON as any}>
+              <Layer
+                id="zones-fill-layer"
+                type="fill"
+                paint={{
+                  'fill-color': [
+                    'match',
+                    ['get', 'type'],
+                    'no_ride',
+                    '#ef4444',
+                    'slow',
+                    '#eab308',
+                    'dock',
+                    '#00B3FF',
+                    '#1ED760',
+                  ],
+                  'fill-opacity': 0.15,
+                }}
+              />
+              <Layer
+                id="zones-outline-layer"
+                type="line"
+                paint={{
+                  'line-color': [
+                    'match',
+                    ['get', 'type'],
+                    'no_ride',
+                    '#ef4444',
+                    'slow',
+                    '#eab308',
+                    'dock',
+                    '#00B3FF',
+                    '#1ED760',
+                  ],
+                  'line-width': 1.5,
+                  'line-dasharray': [1, 2],
+                  'line-opacity': 0.4,
+                }}
               />
             </Source>
           )}

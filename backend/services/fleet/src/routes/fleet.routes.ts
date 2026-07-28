@@ -546,22 +546,45 @@ fleetRouter.get(
 // POST /fleet/zones — create a new geofence zone
 fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {
   try {
-    const { name, type, lat, lng, radiusKm, speedCap, baseFareOverride, perMinuteOverride } =
-      req.body;
-    if (!name || !type || lat === undefined || lng === undefined || !radiusKm) {
-      res.status(400).json({ success: false, error: 'name, type, lat, lng, radiusKm required' });
+    const {
+      name,
+      type,
+      lat,
+      lng,
+      radiusKm,
+      speedCap,
+      baseFareOverride,
+      perMinuteOverride,
+      geometry,
+    } = req.body;
+
+    if (!name || !type) {
+      res.status(400).json({ success: false, error: 'name and type are required' });
       return;
     }
 
-    const center = point([lng, lat]);
-    const circlePolygon = circle(center, radiusKm, { steps: 32, units: 'kilometers' });
+    let finalGeometry = geometry;
+
+    // Fallback to circle generation if raw geometry isn't provided but lat/lng/radius are
+    if (!finalGeometry && lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+      const center = point([lng, lat]);
+      const circlePolygon = circle(center, radiusKm, { steps: 32, units: 'kilometers' });
+      finalGeometry = circlePolygon.geometry;
+    }
+
+    if (!finalGeometry) {
+      res
+        .status(400)
+        .json({ success: false, error: 'Must provide either geometry OR lat/lng/radiusKm' });
+      return;
+    }
 
     const zone = await prisma.geofence.create({
       data: {
         name,
         type,
         speedCap: speedCap ?? null,
-        boundary: circlePolygon.geometry as any,
+        boundary: finalGeometry as any,
         baseFareOverride: baseFareOverride ?? null,
         perMinuteOverride: perMinuteOverride ?? null,
       },
@@ -576,11 +599,20 @@ fleetRouter.post('/zones', jwtGuard, requireRole('ADMIN'), async (req, res) => {
 fleetRouter.put('/zones/:id', jwtGuard, requireRole('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, type, lat, lng, radiusKm, speedCap, baseFareOverride, perMinuteOverride } =
-      req.body;
+    const {
+      name,
+      type,
+      lat,
+      lng,
+      radiusKm,
+      speedCap,
+      baseFareOverride,
+      perMinuteOverride,
+      geometry,
+    } = req.body;
 
-    let boundaryInput = undefined;
-    if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+    let boundaryInput = geometry;
+    if (!boundaryInput && lat !== undefined && lng !== undefined && radiusKm !== undefined) {
       const center = point([lng, lat]);
       const circlePolygon = circle(center, radiusKm, { steps: 32, units: 'kilometers' });
       boundaryInput = circlePolygon.geometry as any;

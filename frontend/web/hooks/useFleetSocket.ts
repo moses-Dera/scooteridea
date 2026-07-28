@@ -114,7 +114,15 @@ export function useFleetSocket({ onBikeUpdate, onBikesUpdate, zones }: UseFleetS
         let wsUrl = process.env.NEXT_PUBLIC_WS_URL || '';
         if (!wsUrl) {
           let apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-          if (!apiUrl) {
+
+          if (apiUrl.includes('localhost') && window.location.hostname !== 'localhost') {
+            const port = apiUrl.match(/:(\d+)/)?.[1] || '';
+            const hostWithPort = port
+              ? `${window.location.hostname}:${port}`
+              : window.location.hostname;
+            const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            wsUrl = `${proto}://${hostWithPort}/live`;
+          } else if (!apiUrl) {
             const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
             wsUrl = `${proto}://${window.location.host}/live`;
           } else {

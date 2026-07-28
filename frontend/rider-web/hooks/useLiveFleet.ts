@@ -33,7 +33,16 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
         if (!wsUrl) {
           // Derive WebSocket URL from NEXT_PUBLIC_API_URL
           let apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-          if (!apiUrl) {
+
+          if (apiUrl.includes('localhost') && window.location.hostname !== 'localhost') {
+            // Fix for testing on mobile devices on LAN when API_URL is left as localhost
+            const port = apiUrl.match(/:(\d+)/)?.[1] || '';
+            const hostWithPort = port
+              ? `${window.location.hostname}:${port}`
+              : window.location.hostname;
+            const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            wsUrl = `${proto}://${hostWithPort}/live`;
+          } else if (!apiUrl) {
             const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
             wsUrl = `${proto}://${window.location.host}/live`;
           } else {
