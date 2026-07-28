@@ -295,7 +295,8 @@ export interface KafkaOpsAlertEvent {
     | 'ZONE_VIOLATION'
     | 'LOW_BATTERY'
     | 'BIKE_OFFLINE'
-    | 'ZONE_TRANSITION';
+    | 'ZONE_TRANSITION'
+    | 'ZONE_WARNING';
   message?: string;
   bikeId?: string;
   dockId?: string;

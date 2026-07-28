@@ -374,6 +374,7 @@ fleetRouter.post(
           await FleetService.handleBikeTelemetry(id, {
             ...currentLoc,
             lock_status: command === 'LOCK' ? 'LOCKED' : 'UNLOCKED',
+            docked_at: null,
           });
         }
       }
