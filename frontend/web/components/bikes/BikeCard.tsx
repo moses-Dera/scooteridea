@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useBikeCommand } from '@/hooks/useBikeCommand';
 import { FaLock, FaUnlock, FaBell, FaXmark, FaDownload } from 'react-icons/fa6';
 import QRCode from 'react-qr-code';
+import ConfirmModal from '../ConfirmModal';
+import toast from 'react-hot-toast';
 
 interface BikeCardProps {
   bike: {
@@ -23,6 +25,7 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [localLockStatus, setLocalLockStatus] = useState<string | null>(null);
 
   // Clear optimistic state when the actual state from socket catches up
@@ -43,8 +46,7 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${bike.id}?`)) return;
+  const executeDelete = async () => {
     setIsDeleting(true);
     setCommandError(null);
     try {
@@ -54,12 +56,14 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       if (!res.ok) throw new Error('Failed to delete bike');
-      // On success, we don't necessarily update local state, as the socket might sync, or we can reload
-      // But we can just show a success message
+      toast.success('Bike deleted successfully');
     } catch (err) {
-      setCommandError(err instanceof Error ? err.message : 'Failed to delete bike');
+      const msg = err instanceof Error ? err.message : 'Failed to delete bike';
+      setCommandError(msg);
+      toast.error(msg);
     } finally {
       setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -112,6 +116,13 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
       className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-all cursor-pointer"
       onClick={() => setShowDetails(!showDetails)}
     >
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Bike"
+        message={`Are you sure you want to delete ${bike.id}? This action cannot be undone.`}
+        onConfirm={executeDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
@@ -156,7 +167,7 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleDelete();
+                setShowDeleteConfirm(true);
               }}
               disabled={isDeleting || loading}
               className="col-span-2 flex items-center justify-center gap-2 bg-red-600/10 hover:bg-red-600/20 text-red-500 py-2 rounded-lg font-medium transition-colors"
@@ -220,11 +231,11 @@ export function BikeCard({ bike, onSelect }: BikeCardProps) {
                 e.stopPropagation();
                 handleCommand(() => disable(bike.id));
               }}
-              disabled={loading}
-              className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-800 text-white rounded text-sm transition-colors"
-              title="Disable motor"
+              disabled={isDeleting}
+              className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-800 rounded-lg transition-colors"
+              title="Delete Bike"
             >
-              <FaXmark size={12} />
+              <FaXmark className="w-5 h-5" />
               Disable
             </button>
 

@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiCheck, FiZap, FiCircle } from 'react-icons/fi';
 import { MdCircle } from 'react-icons/md';
+import { Trash2 } from 'lucide-react';
 import { AddDockModal } from './AddDockModal';
+import ConfirmModal from '../ConfirmModal';
 
 interface DockSlot {
   id: string;
@@ -31,6 +33,7 @@ export function DockGridComponent() {
   const [selectedDock, setSelectedDock] = useState<Dock | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [dockToDelete, setDockToDelete] = useState<string | null>(null);
 
   const fetchDocks = async () => {
     try {
@@ -61,8 +64,9 @@ export function DockGridComponent() {
   if (error) return <div className="text-red-400">Error: {error}</div>;
   if (!docks.length) return <div className="text-slate-400">No docks found</div>;
 
-  const handleDeleteDock = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this dock?')) return;
+  const executeDeleteDock = async () => {
+    if (!dockToDelete) return;
+    const id = dockToDelete;
     setIsDeleting(true);
     try {
       const token = localStorage.getItem('token') || '';
@@ -81,6 +85,7 @@ export function DockGridComponent() {
       toast.error('Error deleting dock');
     } finally {
       setIsDeleting(false);
+      setDockToDelete(null);
     }
   };
 
@@ -96,6 +101,14 @@ export function DockGridComponent() {
       </div>
 
       {showAddModal && <AddDockModal onClose={() => setShowAddModal(false)} onAdded={fetchDocks} />}
+
+      <ConfirmModal
+        isOpen={!!dockToDelete}
+        title="Delete Dock"
+        message="Are you sure you want to delete this dock? This action cannot be undone."
+        onConfirm={executeDeleteDock}
+        onCancel={() => setDockToDelete(null)}
+      />
 
       {/* Dock cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
