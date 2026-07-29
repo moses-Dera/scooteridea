@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useReducer, ReactNode, useCallback, useContext } from 'react';
+import React, { createContext, useReducer, ReactNode, useCallback, useContext, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Ride } from '@/lib/types';
 
 // ============================================================================
@@ -130,6 +131,7 @@ interface RideProviderProps {
 
 export function RideProvider({ children }: RideProviderProps) {
   const [state, dispatch] = useReducer(rideReducer, initialState);
+  const { status } = useSession();
 
   const setActiveRide = useCallback((ride: Ride) => {
     dispatch({ type: 'SET_ACTIVE_RIDE', payload: ride });
@@ -178,6 +180,19 @@ export function RideProvider({ children }: RideProviderProps) {
     updateNearestDock,
     reset,
   };
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetch('/api/proxy/rides/active')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data) {
+            setActiveRide(data.data);
+          }
+        })
+        .catch((err) => console.error('Failed to fetch active ride:', err));
+    }
+  }, [status, setActiveRide]);
 
   return <RideContext.Provider value={value}>{children}</RideContext.Provider>;
 }

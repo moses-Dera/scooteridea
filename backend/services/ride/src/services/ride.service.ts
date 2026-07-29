@@ -80,6 +80,19 @@ function totalDistanceKm(pts: Array<{ lat: number; lng: number }>): number {
 }
 
 export class RideService {
+  // ── Get Active Ride ──────────────────────────────────────────────────────────
+  static async getActiveRide(userId: string) {
+    return await prisma.ride.findFirst({
+      where: {
+        userId,
+        status: { in: ['RESERVED', 'ACTIVE'] },
+      },
+      include: {
+        bike: true,
+      },
+    });
+  }
+
   // ── Reserve ──────────────────────────────────────────────────────────────────
   static async reserve(bikeId: string, userId: string) {
     const redis = await getRedisClient();

@@ -23,6 +23,16 @@ export class RideController {
     }
   }
 
+  static async getActive(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.sub;
+      const ride = await RideService.getActiveRide(userId);
+      res.json({ success: true, data: ride });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async end(req: Request, res: Response, next: NextFunction) {
     try {
       const { dockId } = req.body;

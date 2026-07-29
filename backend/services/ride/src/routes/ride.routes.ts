@@ -9,8 +9,9 @@ export const rideRouter = Router();
 rideRouter.use(jwtGuard);
 
 const reserveSchema = z.object({ bikeId: z.string().min(1, 'bikeId is required') });
-const endSchema = z.object({ dockId: z.string().min(1, 'dockId is required') });
+const endSchema = z.object({ dockId: z.string().optional() });
 
+rideRouter.get('/active', asyncHandler(RideController.getActive));
 rideRouter.post('/', validate({ body: reserveSchema }), asyncHandler(RideController.reserve));
 rideRouter.post('/:id/start', asyncHandler(RideController.start));
 rideRouter.post('/:id/end', validate({ body: endSchema }), asyncHandler(RideController.end));
