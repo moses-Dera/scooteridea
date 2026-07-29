@@ -48,42 +48,6 @@ export default function RiderMap() {
     heading?: number | null;
   } | null>(null);
 
-  const [allowFleetTeleport, setAllowFleetTeleport] = useState(false);
-  const [isTeleporting, setIsTeleporting] = useState(false);
-
-  useEffect(() => {
-    configApi
-      .getPublic()
-      .then((res) => {
-        if (res.success && res.data) {
-          setAllowFleetTeleport(res.data.allowFleetTeleport);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleTeleportFleet = async () => {
-    if (!userLocation) return;
-    const confirmed = window.confirm(
-      'Are you sure you want to summon all available bikes to your location?',
-    );
-    if (!confirmed) return;
-
-    setIsTeleporting(true);
-    try {
-      const res = await bikeApi.teleportFleet(userLocation.lat, userLocation.lng);
-      if (res.success) {
-        toast.success((res as any).message);
-      } else {
-        toast.error(res.error || 'Failed to teleport fleet');
-      }
-    } catch (err) {
-      toast.error('Failed to teleport fleet');
-    } finally {
-      setIsTeleporting(false);
-    }
-  };
-
   // Camera Lock for Navigation
   const [isCameraLocked, setIsCameraLocked] = useState(true);
 
@@ -636,19 +600,6 @@ export default function RiderMap() {
           </div>
         )}
 
-        {/* Developer / Testing Feature: Fleet Teleport */}
-        {allowFleetTeleport && !isNavigating && userLocation && (
-          <div className="absolute top-24 right-4 z-20">
-            <button
-              onClick={handleTeleportFleet}
-              disabled={isTeleporting}
-              className="bg-primary hover:bg-primary/90 text-black font-bold py-3 px-4 rounded-xl shadow-2xl transition-all border border-black/20 text-sm flex items-center gap-2"
-            >
-              <LocateFixed className="w-5 h-5" />
-              {isTeleporting ? 'Summoning...' : 'Summon Bikes Here'}
-            </button>
-          </div>
-        )}
 
         <NavigationControl
           position="bottom-right"
