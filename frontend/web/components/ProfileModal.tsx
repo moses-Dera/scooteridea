@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FiX, FiShield, FiLock, FiCreditCard, FiTrash2 } from 'react-icons/fi';
 import { useSession } from 'next-auth/react';
+import ConfirmModal from './ConfirmModal';
 
 export default function ProfileModal({
   isOpen,
@@ -30,6 +31,7 @@ export default function ProfileModal({
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentMsg, setPaymentMsg] = useState('');
+  const [deleteMethodId, setDeleteMethodId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && activeTab === 'payment') {
@@ -126,8 +128,8 @@ export default function ProfileModal({
     }
   };
 
-  const handleDeletePaymentMethod = async (id: string) => {
-    if (!confirm('Remove this payment method?')) return;
+  const executeDeletePaymentMethod = async () => {
+    if (!deleteMethodId) return;
     try {
       const res = await fetch('/api/proxy/payments/methods', { method: 'DELETE' });
       const data = await res.json();
@@ -139,11 +141,20 @@ export default function ProfileModal({
       }
     } catch (err) {
       setPaymentMsg('Error occurred.');
+    } finally {
+      setDeleteMethodId(null);
     }
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <ConfirmModal
+        isOpen={!!deleteMethodId}
+        title="Remove Payment Method"
+        message="Are you sure you want to remove this payment method?"
+        onConfirm={executeDeletePaymentMethod}
+        onCancel={() => setDeleteMethodId(null)}
+      />
       <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 border-b border-white/10 bg-slate-800/50">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -304,8 +315,8 @@ export default function ProfileModal({
                         </div>
                       </div>
                       <button
-                        onClick={() => handleDeletePaymentMethod(pm.id)}
-                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                          onClick={() => setDeleteMethodId(pm.id)}
+                          className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-700 rounded transition-colors"
                         title="Remove Payment Method"
                       >
                         <FiTrash2 />

@@ -184,7 +184,7 @@ export function DockGridComponent() {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => handleDeleteDock(selectedDock.id)}
+                onClick={() => setDockToDelete(selectedDock.id)}
                 disabled={isDeleting}
                 className="text-red-400 hover:text-red-300 border border-red-500/30 hover:bg-red-500/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
               >

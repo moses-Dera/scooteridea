@@ -17,6 +17,11 @@ import {
   FiMapPin,
   FiMessageSquare,
 } from 'react-icons/fi';
+import { MdElectricBike, MdWarning } from 'react-icons/md';
+import { BiMoney } from 'react-icons/bi';
+import MapboxDraw from '@mapbox/mapbox-gl-draw';
+import ConfirmModal from '@/components/ConfirmModal';
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import Map, { Source, Layer, Marker } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import PricingTab from '@/components/settings/PricingTab';
@@ -71,10 +76,14 @@ export default function AdminSettings() {
   const [zones, setZones] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [transitions, setTransitions] = useState<any[]>([]);
+  const [drawInstance, setDrawInstance] = useState<MapboxDraw | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Deletion state for ConfirmModal
+  const [itemToDelete, setItemToDelete] = useState<{type: 'user'|'zone', id: string} | null>(null);
 
   // Map Editor State
   const [newZoneData, setNewZoneData] = useState({
@@ -282,18 +291,20 @@ export default function AdminSettings() {
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const executeDeleteUser = async () => {
+    if (!itemToDelete || itemToDelete.type !== 'user') return;
     try {
-      const res = await fetch(`/api/proxy/auth/admin/users/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/proxy/auth/admin/users/${itemToDelete.id}`, { method: 'DELETE' });
       if (res.ok) {
-        setUsers(users.filter((u) => u.id !== id));
+        setUsers(users.filter((u) => u.id !== itemToDelete.id));
         toast.success('User deleted');
       } else {
         toast.error('Failed to delete user');
       }
     } catch (e) {
       toast.error('Error deleting user');
+    } finally {
+      setItemToDelete(null);
     }
   };
 
@@ -404,13 +415,20 @@ export default function AdminSettings() {
     }
   };
 
-  const handleDeleteZone = async (id: string) => {
-    if (!confirm('Delete this zone?')) return;
+  const executeDeleteZone = async () => {
+    if (!itemToDelete || itemToDelete.type !== 'zone') return;
     try {
-      const res = await fetch(`/api/proxy/fleet/zones/${id}`, { method: 'DELETE' });
-      if (res.ok) setZones(zones.filter((z) => z.id !== id));
+      const res = await fetch(`/api/proxy/fleet/zones/${itemToDelete.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setZones(zones.filter((z) => z.id !== itemToDelete.id));
+        toast.success('Zone deleted');
+      } else {
+        toast.error('Failed to delete zone');
+      }
     } catch (e) {
-      alert('Failed to delete zone');
+      toast.error('Failed to delete zone');
+    } finally {
+      setItemToDelete(null);
     }
   };
 
@@ -441,6 +459,17 @@ export default function AdminSettings() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20 h-full flex flex-col">
+      <ConfirmModal
+        isOpen={!!itemToDelete}
+        title={itemToDelete?.type === 'user' ? 'Delete User' : 'Delete Zone'}
+        message={itemToDelete?.type === 'user' ? 'Are you sure you want to delete this user? This action cannot be undone.' : 'Are you sure you want to delete this zone? This action cannot be undone.'}
+        onConfirm={() => {
+          if (itemToDelete?.type === 'user') executeDeleteUser();
+          else if (itemToDelete?.type === 'zone') executeDeleteZone();
+        }}
+        onCancel={() => setItemToDelete(null)}
+      />
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white tracking-tight">System Settings</h1>
@@ -499,7 +528,7 @@ export default function AdminSettings() {
                 setTempAssignedZones={setTempAssignedZones}
                 zones={zones}
                 handleAddOperator={handleAddOperator}
-                handleDeleteUser={handleDeleteUser}
+                handleDeleteUser={(id: string) => setItemToDelete({type: 'user', id})}
                 handleSaveUserZones={handleSaveUserZones}
               />
             )}
@@ -522,7 +551,7 @@ export default function AdminSettings() {
                 newZoneData={newZoneData}
                 setNewZoneData={setNewZoneData}
                 handleCreateZone={handleCreateZone}
-                handleDeleteZone={handleDeleteZone}
+                handleDeleteZone={(id: string) => setItemToDelete({type: 'zone', id})}
               />
             )}
 
