@@ -152,6 +152,7 @@ async function startConsumer() {
       TOPICS.PAYMENT_RESULT,
       TOPICS.USER_REGISTERED,
       TOPICS.PASSWORD_RESET_REQUESTED,
+      TOPICS.TWO_FACTOR_OTP_REQUESTED,
     ],
     async (payload: unknown, raw: string, channel: string) => {
       const p = payload as NotificationPayload;
