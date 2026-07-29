@@ -27,11 +27,25 @@ fleetRouter.get('/config', jwtGuard, requireRole('ADMIN', 'OPERATOR'), async (re
 
 fleetRouter.put('/config', jwtGuard, requireRole('ADMIN'), async (req, res) => {
   try {
-    const { unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents } = req.body;
+    const { unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents, allowFleetTeleport } =
+      req.body;
     const config = await prisma.systemConfig.upsert({
       where: { id: 'global' },
-      update: { unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents },
-      create: { id: 'global', unlockFeeCents, perMinuteCents, maxSurgeMult, outOfDockFeeCents },
+      update: {
+        unlockFeeCents,
+        perMinuteCents,
+        maxSurgeMult,
+        outOfDockFeeCents,
+        allowFleetTeleport,
+      },
+      create: {
+        id: 'global',
+        unlockFeeCents,
+        perMinuteCents,
+        maxSurgeMult,
+        outOfDockFeeCents,
+        allowFleetTeleport,
+      },
     });
     res.json({ success: true, data: config });
   } catch (err) {
@@ -40,6 +54,72 @@ fleetRouter.put('/config', jwtGuard, requireRole('ADMIN'), async (req, res) => {
 });
 
 // ==========================================
+// Public: System Config (For Rider App features)
+// ==========================================
+fleetRouter.get('/config/public', async (req, res) => {
+  try {
+    let config = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
+    res.json({
+      success: true,
+      data: {
+        allowFleetTeleport: config?.allowFleetTeleport || false,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch public config' });
+  }
+});
+
+// ==========================================
+
+// POST /fleet/bikes/teleport-fleet — Instantly teleport all available bikes to a specific coordinate
+fleetRouter.post('/bikes/teleport-fleet', jwtGuard, async (req: Request, res: Response) => {
+  try {
+    const { lat, lng } = req.body;
+    if (lat === undefined || lng === undefined) {
+      res.status(400).json({ success: false, error: 'lat, lng are required' });
+      return;
+    }
+
+    const config = await prisma.systemConfig.findUnique({ where: { id: 'global' } });
+    if (!config?.allowFleetTeleport) {
+      res.status(403).json({ success: false, error: 'Teleport feature is disabled' });
+      return;
+    }
+
+    const bikes = await FleetService.getAllBikes();
+    const availableBikes = bikes.filter((b) => b.status === 'AVAILABLE');
+
+    // Create a 500m radius circle around the target to scatter bikes
+    const options = { steps: availableBikes.length, units: 'meters' as const };
+    const radiusPolygon = circle(point([lng, lat]), 500, options);
+
+    // Distribute bikes evenly along the circle outline
+    let updatedCount = 0;
+    const coordinates = radiusPolygon.geometry.coordinates[0]; // outer ring
+
+    for (let i = 0; i < availableBikes.length; i++) {
+      const bike = availableBikes[i];
+      // Pick a coordinate from the circle (wrap around if somehow more bikes than steps)
+      const coordIdx = Math.floor((i / availableBikes.length) * (coordinates.length - 1));
+      const [newLng, newLat] = coordinates[coordIdx];
+
+      await prisma.bike.update({
+        where: { id: bike.id },
+        data: { locationLat: newLat, locationLng: newLng },
+      });
+
+      // Update Redis via MQTT (this triggers WS broadcast)
+      bikeCommander.broadcastLocation(bike.id, newLat, newLng);
+      updatedCount++;
+    }
+
+    res.json({ success: true, message: `Teleported ${updatedCount} bikes to your location.` });
+  } catch (err) {
+    console.error('Teleport error:', err);
+    res.status(500).json({ success: false, error: 'Failed to teleport fleet' });
+  }
+});
 
 // GET /fleet/bikes — live fleet snapshot from Redis
 fleetRouter.get('/bikes', jwtGuard, async (req: Request, res: Response) => {

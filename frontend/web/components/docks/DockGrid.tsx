@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { FiCheck, FiZap, FiCircle } from 'react-icons/fi';
 import { MdCircle } from 'react-icons/md';
 import { AddDockModal } from './AddDockModal';
@@ -70,12 +71,14 @@ export function DockGridComponent() {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
       if (res.ok) {
+        toast.success('Dock deleted successfully');
         setSelectedDock(null);
         fetchDocks();
+      } else {
+        toast.error('Failed to delete dock');
       }
-    } catch (err) {
-      console.error(err);
-      alert('Failed to delete dock');
+    } catch (e) {
+      toast.error('Error deleting dock');
     } finally {
       setIsDeleting(false);
     }

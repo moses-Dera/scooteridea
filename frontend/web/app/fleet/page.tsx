@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { FleetMapComponent } from '@/components/map/FleetMap';
 import { BikeCard } from '@/components/bikes/BikeCard';
 import { useFleetSocket } from '@/hooks/useFleetSocket';
@@ -43,7 +44,7 @@ export default function FleetMapPage() {
       setHistoricalRoute(ride.routeGeometry);
       setShowList(false);
     } else {
-      alert('No GPS route data available for this ride.');
+      toast.error('No GPS route data available for this ride.');
     }
   };
 

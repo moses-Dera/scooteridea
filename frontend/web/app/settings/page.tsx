@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
+import toast from 'react-hot-toast';
 import {
   FiUsers,
   FiDollarSign,
@@ -61,6 +62,7 @@ export default function AdminSettings() {
     perMinuteCents: 2000,
     maxSurgeMult: 2.5,
     outOfDockFeeCents: 50000,
+    allowFleetTeleport: false,
   });
 
   // Data States
@@ -93,50 +95,51 @@ export default function AdminSettings() {
   const [toastMsg, setToastMsg] = useState<{ title: string; message: string } | null>(null);
 
   // Fetch all admin data
-  useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        const [configRes, usersRes, walletsRes, zonesRes, ticketsRes, transitionsRes] =
-          await Promise.all([
-            fetch(`/api/proxy/fleet/config`),
-            fetch(`/api/proxy/auth/admin/users`),
-            fetch(`/api/proxy/auth/admin/finance/wallets?limit=50`),
-            fetch(`/api/proxy/fleet/zones`),
-            fetch(`/api/proxy/auth/admin/support`),
-            fetch(`/api/proxy/fleet/zones/transitions`),
-          ]);
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [configRes, usersRes, walletsRes, zonesRes, ticketsRes, transitionsRes] =
+        await Promise.all([
+          fetch(`/api/proxy/fleet/config`),
+          fetch(`/api/proxy/auth/admin/users`),
+          fetch(`/api/proxy/auth/admin/finance/wallets?limit=50`),
+          fetch(`/api/proxy/fleet/zones`),
+          fetch(`/api/proxy/auth/admin/support`),
+          fetch(`/api/proxy/fleet/zones/transitions`),
+        ]);
 
-        if (configRes.ok) {
-          const json = await configRes.json();
-          if (json.success && json.data) setConfig(json.data);
-        }
-        if (usersRes.ok) {
-          const json = await usersRes.json();
-          if (json.success && json.data) setUsers(json.data);
-        }
-        if (walletsRes.ok) {
-          const json = await walletsRes.json();
-          if (json.success && json.data) setWallets(json.data);
-        }
-        if (zonesRes.ok) {
-          const json = await zonesRes.json();
-          if (json.success && json.data) setZones(json.data);
-        }
-        if (ticketsRes.ok) {
-          const json = await ticketsRes.json();
-          if (json.success && json.data) setTickets(json.data);
-        }
-        if (transitionsRes.ok) {
-          const json = await transitionsRes.json();
-          if (json.success && json.data) setTransitions(json.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch admin data', err);
-      } finally {
-        setLoading(false);
+      if (configRes.ok) {
+        const json = await configRes.json();
+        if (json.success && json.data) setConfig(json.data);
       }
-    };
+      if (usersRes.ok) {
+        const json = await usersRes.json();
+        if (json.success && json.data) setUsers(json.data);
+      }
+      if (walletsRes.ok) {
+        const json = await walletsRes.json();
+        if (json.success && json.data) setWallets(json.data);
+      }
+      if (zonesRes.ok) {
+        const json = await zonesRes.json();
+        if (json.success && json.data) setZones(json.data);
+      }
+      if (ticketsRes.ok) {
+        const json = await ticketsRes.json();
+        if (json.success && json.data) setTickets(json.data);
+      }
+      if (transitionsRes.ok) {
+        const json = await transitionsRes.json();
+        if (json.success && json.data) setTransitions(json.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch admin data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAllData();
   }, []);
 
@@ -194,7 +197,6 @@ export default function AdminSettings() {
         ws = new WebSocket(`${wsUrl}?token=${token}`);
 
         ws.onopen = () => {
-          // Subscribe to global support tickets channel
           ws.send(JSON.stringify({ subscribe: ['support:all'] }));
         };
 
@@ -202,14 +204,11 @@ export default function AdminSettings() {
           try {
             const msg = JSON.parse(event.data);
             if (msg.event === 'support_ticket_created') {
-              // Show notification instantly
               setToastMsg({
                 title: 'New Support Ticket',
                 message: `Ticket "${msg.subject}" was just submitted.`,
               });
               setTimeout(() => setToastMsg(null), 6000);
-
-              // Refetch the tickets list silently to update the table
               fetch(`/api/proxy/auth/admin/support`).then((res) => {
                 if (res.ok) {
                   res.json().then((json) => {
@@ -248,11 +247,11 @@ export default function AdminSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
-      if (res.ok) alert('Pricing Configuration Saved Successfully!');
-      else alert('Failed to save config.');
+      if (res.ok) toast.success('Pricing Configuration Saved Successfully!');
+      else toast.error('Failed to save config.');
     } catch (err) {
       console.error(err);
-      alert('Error saving config.');
+      toast.error('Error saving config.');
     } finally {
       setSaving(false);
     }
@@ -272,15 +271,14 @@ export default function AdminSettings() {
         body: JSON.stringify({ email, name, password, role: 'OPERATOR' }),
       });
       if (res.ok) {
-        const json = await res.json();
-        setUsers([json.data, ...users]);
-        alert('Operator created!');
+        toast.success('Operator created!');
+        fetchAllData();
       } else {
         const err = await res.json();
-        alert(`Failed: ${err.error}`);
+        toast.error(`Failed: ${err.error}`);
       }
     } catch (e) {
-      alert('Error creating operator');
+      toast.error('Error creating operator');
     }
   };
 
@@ -288,9 +286,14 @@ export default function AdminSettings() {
     if (!confirm('Are you sure you want to delete this user?')) return;
     try {
       const res = await fetch(`/api/proxy/auth/admin/users/${id}`, { method: 'DELETE' });
-      if (res.ok) setUsers(users.filter((u) => u.id !== id));
+      if (res.ok) {
+        setUsers(users.filter((u) => u.id !== id));
+        toast.success('User deleted');
+      } else {
+        toast.error('Failed to delete user');
+      }
     } catch (e) {
-      alert('Failed to delete user');
+      toast.error('Error deleting user');
     }
   };
 
@@ -309,12 +312,12 @@ export default function AdminSettings() {
           ),
         );
         setEditingUser(null);
-        alert('Zones updated successfully!');
+        toast.success('Zones updated successfully!');
       } else {
-        alert('Failed to update zones');
+        toast.error('Failed to update zones');
       }
     } catch (e) {
-      alert('Error updating zones');
+      toast.error('Error updating zones');
     }
   };
 
@@ -325,7 +328,7 @@ export default function AdminSettings() {
     );
     if (!amountStr) return;
     const amountCents = parseInt(amountStr) * 100;
-    if (isNaN(amountCents)) return alert('Invalid amount');
+    if (isNaN(amountCents)) return toast.error('Invalid amount');
 
     try {
       const res = await fetch(`/api/proxy/auth/admin/finance/wallets/${id}`, {
@@ -338,10 +341,12 @@ export default function AdminSettings() {
         setWallets(
           wallets.map((w) => (w.id === id ? { ...w, walletCents: json.data.walletCents } : w)),
         );
-        alert('Wallet adjusted successfully');
+        toast.success('Wallet adjusted successfully');
+      } else {
+        toast.error('Failed to adjust wallet');
       }
     } catch (e) {
-      alert('Failed to adjust wallet');
+      toast.error('Error adjusting wallet');
     }
   };
 
@@ -356,11 +361,12 @@ export default function AdminSettings() {
       });
       if (res.ok) {
         setTickets(tickets.map((t) => (t.id === id ? { ...t, status: newStatus } : t)));
+        toast.success('Ticket status updated');
       } else {
-        alert('Failed to update ticket');
+        toast.error('Failed to update ticket');
       }
     } catch (e) {
-      alert('Error updating ticket');
+      toast.error('Error updating ticket');
     }
   };
 
@@ -368,7 +374,7 @@ export default function AdminSettings() {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   const handleCreateZone = async () => {
-    if (!drawnGeometry || !newZoneData.name) return alert('Name and geometry are required');
+    if (!drawnGeometry || !newZoneData.name) return toast.error('Name and geometry are required');
 
     try {
       const payload = {
@@ -389,11 +395,12 @@ export default function AdminSettings() {
         setZones([json.data, ...zones]);
         setDrawnGeometry(null);
         setNewZoneData({ name: '', type: 'operational', speed_limit_kmh: '' });
+        toast.success('Zone created successfully');
       } else {
-        alert('Failed to create zone');
+        toast.error('Failed to create zone');
       }
     } catch (e) {
-      alert('Error creating zone');
+      toast.error('Error creating zone');
     }
   };
 

@@ -8,7 +8,7 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
-  const targetPath = '/' + (params.path || []).join('/');
+  const targetPath = req.nextUrl.pathname.replace(/^\/api\/proxy/, '');
   const queryString = req.nextUrl.search || '';
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest, { params }: { params: { path: string
 
 export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
-  const targetPath = '/' + (params.path || []).join('/');
+  const targetPath = req.nextUrl.pathname.replace(/^\/api\/proxy/, '');
   const queryString = req.nextUrl.search || '';
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest, { params }: { params: { path: strin
 
 export async function PUT(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
-  const targetPath = '/' + (params.path || []).join('/');
+  const targetPath = req.nextUrl.pathname.replace(/^\/api\/proxy/, '');
   const queryString = req.nextUrl.search || '';
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;
@@ -156,7 +156,7 @@ export async function PUT(req: NextRequest, { params }: { params: { path: string
 
 export async function DELETE(req: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await getServerSession(authOptions);
-  const targetPath = '/' + (params.path || []).join('/');
+  const targetPath = req.nextUrl.pathname.replace(/^\/api\/proxy/, '');
   const queryString = req.nextUrl.search || '';
   const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:80').replace(/\/+$/, '');
   const backendUrl = `${baseUrl}${targetPath}${queryString}`;

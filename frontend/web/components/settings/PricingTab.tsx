@@ -70,6 +70,29 @@ export default function PricingTab({
         </div>
       </div>
 
+      <div className="glass-panel p-6 rounded-xl border border-white/10">
+        <h2 className="text-xl font-bold text-white mb-4">Developer Settings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-lg px-4 py-3">
+            <div>
+              <p className="text-white font-medium">Allow Fleet Teleport</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Allows riders to summon all available bikes to their location (for testing).
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={config.allowFleetTeleport}
+                onChange={(e) => setConfig({ ...config, allowFleetTeleport: e.target.checked })}
+              />
+              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-end pt-4">
         <button
           onClick={handleSavePricing}

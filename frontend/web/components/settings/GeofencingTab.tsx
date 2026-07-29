@@ -231,7 +231,9 @@ export default function GeofencingTab({
                     className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2 text-white"
                     placeholder="e.g. 15 (Optional)"
                     value={newZoneData.speed_limit_kmh}
-                    onChange={(e) => setNewZoneData({ ...newZoneData, speed_limit_kmh: e.target.value })}
+                    onChange={(e) =>
+                      setNewZoneData({ ...newZoneData, speed_limit_kmh: e.target.value })
+                    }
                   />
                 </div>
               )}

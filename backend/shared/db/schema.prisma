@@ -214,8 +214,9 @@ model SystemConfig {
   perMinuteCents    Int      @default(2000) @map("per_minute_cents")
   perKmCents        Int      @default(3000) @map("per_km_cents")
   maxSurgeMult      Decimal  @default(2.5) @map("max_surge_mult") @db.Decimal(3, 2)
-  outOfDockFeeCents Int      @default(50000) @map("out_of_dock_fee_cents")
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  outOfDockFeeCents  Int      @default(50000) @map("out_of_dock_fee_cents")
+  allowFleetTeleport Boolean  @default(false) @map("allow_fleet_teleport")
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("system_config")
 }

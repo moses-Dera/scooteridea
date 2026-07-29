@@ -106,4 +106,16 @@ export const bikeCommander = {
     publishBikeCommand(bikeId, { command: 'SPEED_LIMIT', value: kmh }),
 
   setPin: (bikeId: string, pin: string) => publishBikeCommand(bikeId, { command: 'SET_PIN', pin }),
+
+  broadcastLocation: (bikeId: string, lat: number, lng: number) => {
+    const c = getMqttClient();
+    const topic = `telemetry/bikes/${bikeId}`;
+    const message = JSON.stringify({ location: { lat, lng }, ts: Date.now() });
+    return new Promise<void>((resolve, reject) => {
+      c.publish(topic, message, { qos: 1 }, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+  },
 };

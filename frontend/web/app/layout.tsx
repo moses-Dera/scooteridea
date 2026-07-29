@@ -18,6 +18,7 @@ import SessionWatcher from '@/components/SessionWatcher';
 import SessionProviderWrapper from '@/components/SessionProviderWrapper';
 import DesktopProfileActions from '@/components/DesktopProfileActions';
 
+import { Toaster } from 'react-hot-toast';
 import { Outfit } from 'next/font/google';
 
 const outfit = Outfit({
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" className={`dark ${outfit.variable}`}>
       <body className="h-[100dvh] overflow-hidden bg-background text-white antialiased flex flex-col md:flex-row font-sans">
+        <Toaster position="top-right" />
         <SessionProviderWrapper>
           <SessionWatcher sessionError={(session as any)?.error} />
           {!session ? (

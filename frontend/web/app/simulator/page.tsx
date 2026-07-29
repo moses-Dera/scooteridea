@@ -23,6 +23,8 @@ const MAPBOX_TOKEN =
   process.env.NEXT_PUBLIC_MAPBOX_TOKEN ||
   'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0.xxxxx';
 
+import toast from 'react-hot-toast';
+
 export default function SimulatorPage() {
   const mapRef = useRef<MapRef>(null);
   const commandSentAt = useRef<number>(0); // tracks last command time to prevent WebSocket override
@@ -135,7 +137,7 @@ export default function SimulatorPage() {
 
   const triggerAlarm = async () => {
     if (!selectedBikeId) return;
-    alert(`ALARM TRIGGERED FOR ${selectedBikeId}! (Simulated)`);
+    toast.error(`ALARM TRIGGERED FOR ${selectedBikeId}! (Simulated)`);
   };
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -209,7 +209,7 @@ export const authApi = {
 };
 
 export const dockApi = {
-  list: () => api.get('/docks'),
+  list: () => api.get('/docks/'),
 
   nearest: (latitude: number, longitude: number, limit = 5) =>
     api.get(`/docks/nearest?lat=${latitude}&lng=${longitude}&limit=${limit}`),
@@ -220,16 +220,23 @@ export const dockApi = {
 };
 
 export const bikeApi = {
-  list: () => api.get('/fleet/bikes'),
+  list: () => api.get('/fleet/bikes/'),
 
   nearest: (latitude: number, longitude: number, limit = 5) =>
     api.get(`/fleet/nearby?lat=${latitude}&lng=${longitude}&limit=${limit}`),
 
   getById: (id: string) => api.get(`/fleet/bikes/${id}`),
+
+  teleportFleet: (latitude: number, longitude: number) =>
+    api.post('/fleet/bikes/teleport-fleet', { lat: latitude, lng: longitude }),
+};
+
+export const configApi = {
+  getPublic: () => api.get('/fleet/config/public'),
 };
 
 export const rideApi = {
-  reserve: (bikeId: string, startDockId?: string) => api.post('/rides', { bikeId, startDockId }),
+  reserve: (bikeId: string, startDockId?: string) => api.post('/rides/', { bikeId, startDockId }),
 
   start: (rideId: string) => api.post(`/rides/${rideId}/start`, {}),
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CreditCard, Plus, History, ChevronRight, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { paymentApi, userApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function WalletPage() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function WalletPage() {
 
   const handleTopUp = async () => {
     if (!session?.user?.email) {
-      alert('Please log in first');
+      toast.error('Please log in first');
       return;
     }
 
@@ -49,10 +50,10 @@ export default function WalletPage() {
         // Redirect browser to Paystack's secure checkout page
         window.location.href = json.authorization_url;
       } else {
-        alert(json?.message || 'Failed to initialize payment');
+        toast.error(json?.message || 'Failed to initialize payment');
       }
     } catch (e) {
-      alert('Network error while initializing payment.');
+      toast.error('Network error while initializing payment.');
     } finally {
       setIsTopUpLoading(false);
     }
