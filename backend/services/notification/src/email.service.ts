@@ -23,7 +23,19 @@ export class EmailService {
       return;
     }
     try {
-      const from = `"Scooterfy" <${process.env.SMTP_USER || 'scooterfy.test@gmail.com'}>`;
+      const gmail = EmailService.getGmailClient();
+      
+      let fromAddress = process.env.SMTP_USER;
+      if (!fromAddress) {
+        try {
+          const profile = await gmail.users.getProfile({ userId: 'me' });
+          fromAddress = profile.data.emailAddress || 'scooterfy.test@gmail.com';
+        } catch (e) {
+          fromAddress = 'scooterfy.test@gmail.com';
+        }
+      }
+
+      const from = `"Scooterfy" <${fromAddress}>`;
 
       const emailLines = [
         `From: ${from}`,
@@ -37,8 +49,6 @@ export class EmailService {
 
       const rawEmail = emailLines.join('\r\n');
       const encodedMessage = Buffer.from(rawEmail).toString('base64url');
-
-      const gmail = EmailService.getGmailClient();
       await gmail.users.messages.send({
         userId: 'me',
         requestBody: {
