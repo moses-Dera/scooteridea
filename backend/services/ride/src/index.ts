@@ -34,6 +34,7 @@ import { getRedisClient, disconnectRedis } from '@ebike/redis';
 import { connectProducer, disconnectProducer } from '@ebike/events';
 
 import { rideRouter } from './routes/ride.routes';
+import { processDebtRecovery } from './services/debtRecovery.cron';
 
 // ── Prisma (shared singleton from @ebike/db) ─────────────────────────────────
 
@@ -108,6 +109,16 @@ async function bootstrap(): Promise<void> {
   registerCleanup('Postgres', () => prisma.$disconnect());
   registerCleanup('Redis', () => disconnectRedis());
   registerCleanup('Events Producer', () => disconnectProducer());
+
+  // Schedule debt recovery cron — runs every minute
+  const debtInterval = setInterval(
+    () =>
+      processDebtRecovery().catch((err) =>
+        logger.warn({ err }, '[Ride] Debt recovery cron failed'),
+      ),
+    60_000, // 60 seconds
+  );
+  registerCleanup('Debt Recovery Cron', () => Promise.resolve(clearInterval(debtInterval)));
 
   const server = http.createServer(app);
   setupGracefulShutdown(server, 10_000);

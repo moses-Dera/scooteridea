@@ -226,13 +226,9 @@ export class RideService {
   }
 
   // ── End ──────────────────────────────────────────────────────────────────────
-  static async endRide(rideId: string, dockId: string): Promise<{ fareCents: number }> {
-    const ride = await prisma.ride.findUnique({
-      where: { id: rideId },
-      include: { user: true },
-    });
+  static async calculateLiveFare(rideId: string): Promise<{ fareCents: number, distanceKm: number, endBatteryPct: number | null, batteryUsedPct: number | null, durationMin: number, waypoints: any[], surgeMult: number }> {
+    const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride) throw new NotFoundError('Ride', rideId);
-    if (ride.status !== 'ACTIVE') throw new RideNotActiveError(rideId, ride.status);
 
     const durationMin = (Date.now() - (ride.startedAt?.getTime() ?? Date.now())) / 60_000;
 
@@ -278,6 +274,19 @@ export class RideService {
       Math.round(baseFare * 100), // minimum fare is base fare
       Math.round((baseFare + perMinute * durationMin + perKm * distanceKm) * surgeMult * 100),
     );
+
+    return { fareCents, distanceKm, endBatteryPct, batteryUsedPct, durationMin, waypoints, surgeMult };
+  }
+
+  static async endRide(rideId: string, dockId: string): Promise<{ fareCents: number }> {
+    const ride = await prisma.ride.findUnique({
+      where: { id: rideId },
+      include: { user: true },
+    });
+    if (!ride) throw new NotFoundError('Ride', rideId);
+    if (ride.status !== 'ACTIVE') throw new RideNotActiveError(rideId, ride.status);
+
+    const { fareCents, distanceKm, endBatteryPct, batteryUsedPct, durationMin, waypoints, surgeMult } = await RideService.calculateLiveFare(rideId);
 
     // ── Generate Rolling PIN ────────────────────────────────────────────────
     const newPin = randomInt(1000, 10000).toString();
