@@ -105,7 +105,7 @@ export class EmailService {
   static async sendPaymentFailedEmail(email: string): Promise<void> {
     await EmailService.sendEmail(
       email,
-      'Scooterfy Payment Failed 💳',
+      'Scooterfy Payment Failed',
       'We were unable to process payment for your recent ride. Please top up your wallet in the app to continue riding.',
       '<strong>We were unable to process payment for your recent ride.</strong><br><br>Please top up your wallet in the app to continue riding.',
     );
@@ -114,7 +114,7 @@ export class EmailService {
   static async sendTwoFactorOtpEmail(email: string, otp: string): Promise<void> {
     await EmailService.sendEmail(
       email,
-      'Your Scooterfy Security Code 🔒',
+      'Your Scooterfy Security Code',
       `Your security code is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
       `Your security code is: <strong>${otp}</strong>.<br><br>This code expires in 5 minutes. Do not share this code with anyone.`,
     );
