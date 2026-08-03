@@ -1,5 +1,5 @@
 configs:
-  rabbitmq_config_v2:
+  rabbitmq_config_v3:
     file: ./rabbitmq.conf
 
 services:
@@ -23,7 +23,7 @@ services:
       RABBITMQ_DEFAULT_USER: scooterfy
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     configs:
-      - source: rabbitmq_config_v2
+      - source: rabbitmq_config_v3
         target: /etc/rabbitmq/rabbitmq.conf
     ports:
       - 5672:5672
