@@ -39,7 +39,7 @@ export async function processDebtRecovery() {
       if (balance < -50000) { // -₦500
         if (speedKmh === 0) {
           logger.info({ rideId: ride.id, balance }, '[DebtRecoveryCron] Debt exceeds -₦500 and bike is stopped. Forcing end ride.');
-          await RideService.endRide(ride.id, ride.endDockId ?? '');
+          await RideService.endRide(ride.id, ride.endDockId || null);
         } else {
           logger.info({ rideId: ride.id, balance, speedKmh }, '[DebtRecoveryCron] Debt exceeds -₦500 but bike is moving. Throttling and waiting for stop.');
           await bikeCommander.speedLimit(ride.bikeId, 5).catch((err: any) => logger.warn({ err }, 'Failed to set speed limit'));

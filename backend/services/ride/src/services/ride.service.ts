@@ -278,7 +278,7 @@ export class RideService {
     return { fareCents, distanceKm, endBatteryPct, batteryUsedPct, durationMin, waypoints, surgeMult };
   }
 
-  static async endRide(rideId: string, dockId: string): Promise<{ fareCents: number }> {
+  static async endRide(rideId: string, dockId?: string | null): Promise<{ fareCents: number }> {
     const ride = await prisma.ride.findUnique({
       where: { id: rideId },
       include: { user: true },
