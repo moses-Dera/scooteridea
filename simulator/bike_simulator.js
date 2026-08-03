@@ -54,11 +54,15 @@ class BikeSimulator {
       this.battery = Math.max(0, this.battery - 0.1);
     } else {
       this.speed = 0;
-      // 5% chance to start riding if battery > 20% and not charging
-      if (!this.charging && this.battery > 20 && Math.random() < 0.05) {
+      // 5% chance to start riding if battery > 20%
+      if (this.battery > 20 && Math.random() < 0.05) {
         this.isMoving = true;
         this.lockStatus = 'UNLOCKED';
         this.dockedAt = null;
+        this.charging = false;
+      } else {
+        // If it's locked and not moving, simulate a battery swap/charge
+        this.charging = true;
       }
       if (this.charging && this.battery < 100) {
         this.battery = Math.min(100, this.battery + 0.5);
