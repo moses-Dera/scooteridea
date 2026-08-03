@@ -1,3 +1,8 @@
+configs:
+  rabbitmq_config:
+    content: |
+      vm_memory_high_watermark.relative = 0.99
+
 services:
   redis:
     image: redis:7-alpine
@@ -18,8 +23,9 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: scooterfy
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-      # Tell RabbitMQ to use 99% of its perceived RAM before triggering the alarm
-      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit vm_memory_high_watermark 0.99"
+    configs:
+      - source: rabbitmq_config
+        target: /etc/rabbitmq/rabbitmq.conf
     ports:
       - 5672:5672
       - 15672:15672
