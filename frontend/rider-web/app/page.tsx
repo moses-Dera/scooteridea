@@ -7,6 +7,7 @@ import { UnlockModal } from '@/components/UnlockModal';
 import { DestinationSearch } from '@/components/Map/DestinationSearch';
 import { QRScannerOverlay } from '@/components/panels/QRScannerOverlay';
 import { ManualEntryModal } from '@/components/ManualEntryModal';
+import { useRide } from '@/context/RideContext';
 
 export default function RiderHome() {
   const searchParams = useSearchParams();
@@ -29,6 +30,14 @@ export default function RiderHome() {
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(userLoc);
   const searchLat = searchCenter?.lat ?? userLoc?.lat;
   const searchLng = searchCenter?.lng ?? userLoc?.lng;
+
+  const { state: rideState } = useRide();
+
+  useEffect(() => {
+    if (rideState.activeRide) {
+      router.replace('/ride/active');
+    }
+  }, [rideState.activeRide, router]);
 
   useEffect(() => {
     let fallbackTimer: NodeJS.Timeout;
