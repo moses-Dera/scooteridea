@@ -11,8 +11,6 @@ import { useNearbyDocks } from '@/hooks/useNearbyDocks';
 import { ridesService } from '@/lib/ridesService';
 import {
   CheckCircle,
-  Navigation,
-  Pause,
   AlertTriangle,
   Link2,
   Smartphone,
