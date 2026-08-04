@@ -65,6 +65,7 @@ describe('Payment Service - processPaymentCharge', () => {
     // Mock findUniqueOrThrow to return user with enough balance
     (prisma.user.findUniqueOrThrow as jest.Mock).mockResolvedValue({
       id: 'user-123',
+      email: 'test@scooterfy.com',
       walletCents: 2000,
     });
 
@@ -98,7 +99,7 @@ describe('Payment Service - processPaymentCharge', () => {
     );
   });
 
-  it('should record failure, emit failure, and throw error if balance is insufficient', async () => {
+  it('should deduct wallet, record failure, and emit failure if balance is insufficient', async () => {
     const event: KafkaPaymentChargeEvent = {
       rideId: 'ride-123',
       userId: 'user-123',
@@ -109,13 +110,17 @@ describe('Payment Service - processPaymentCharge', () => {
     // Mock findUniqueOrThrow to return user with NOT enough balance
     (prisma.user.findUniqueOrThrow as jest.Mock).mockResolvedValue({
       id: 'user-123',
+      email: 'test@scooterfy.com',
       walletCents: 500,
     });
 
-    await expect(processPaymentCharge(event)).rejects.toThrow(InsufficientBalanceError);
+    await processPaymentCharge(event);
 
-    // 1. Verify wallet NOT deducted
-    expect(prisma.user.update).not.toHaveBeenCalled();
+    // 1. Verify wallet IS deducted (putting user in debt)
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-123' },
+      data: { walletCents: { decrement: 1500 } },
+    });
 
     // 2. Verify failed payment record created
     expect(prisma.payment.create).toHaveBeenCalledWith({
