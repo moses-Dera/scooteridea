@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLiveFleet } from '@/hooks/useLiveFleet';
+import { useRide } from '@/context/RideContext';
 import { useNearbyDocks } from '@/hooks/useNearbyDocks';
 import { UnlockModal } from '@/components/UnlockModal';
 import { DestinationSearch } from '@/components/Map/DestinationSearch';
@@ -14,6 +15,15 @@ export default function RiderHome() {
   const bikeId = searchParams.get('bike');
   const dockId = searchParams.get('dock');
   const action = searchParams.get('action');
+  
+  const { state } = useRide();
+
+  // Redirect to active ride if one exists
+  useEffect(() => {
+    if (state.activeRide) {
+      router.replace('/ride/active');
+    }
+  }, [state.activeRide, router]);
 
   // Extract the exact coordinates of the clicked item from the URL
   const selectedLat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : undefined;
