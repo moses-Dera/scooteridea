@@ -14,8 +14,8 @@ export default function RideHistoryPage() {
     const fetchHistory = async () => {
       try {
         const res = await rideApi.getHistory(1, 20);
-        // Backend wraps history inside res.data for PaginatedResponse
-        setHistory((res.data as any[]) || []);
+        // Backend wraps history inside res.data.items for PaginatedResponse
+        setHistory((res.data?.items as any[]) || []);
       } catch (err) {
         console.error('Failed to load ride history:', err);
       } finally {
@@ -73,11 +73,11 @@ export default function RideHistoryPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
                     <Calendar className="w-4 h-4 text-primary" />{' '}
-                    {new Date(trip.startTime).toLocaleDateString()}
+                    {trip.startedAt ? new Date(trip.startedAt).toLocaleDateString() : 'N/A'}
                   </div>
                 </div>
                 <div className="text-lg font-black text-white">
-                  ₦ {(trip.costCents / 100).toFixed(2)}
+                  ₦ {((trip.fareCents || 0) / 100).toFixed(2)}
                 </div>
               </div>
 
@@ -97,11 +97,11 @@ export default function RideHistoryPage() {
               <div className="flex items-center gap-6 pt-4 border-t border-white/5 text-sm text-slate-400 font-medium">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  {trip.endTime
+                  {trip.endedAt && trip.startedAt
                     ? Math.max(
                         1,
                         Math.round(
-                          (new Date(trip.endTime).getTime() - new Date(trip.startTime).getTime()) /
+                          (new Date(trip.endedAt).getTime() - new Date(trip.startedAt).getTime()) /
                             60000,
                         ),
                       )

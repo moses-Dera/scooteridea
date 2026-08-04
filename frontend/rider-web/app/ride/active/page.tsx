@@ -27,7 +27,7 @@ type EndRideStep = 'idle' | 'ending' | 'done';
 export default function ActiveRide() {
   const router = useRouter();
   const { state, setError } = useRide();
-  const { bikes } = useLiveFleet();
+  const { bikes } = useLiveFleet(undefined, undefined, 2, state.activeRide?.bikeId);
   const [isEndingRide, setIsEndingRide] = useState(false);
   const [tetherEnabled, setTetherEnabled] = useState(false);
   const [endStep, setEndStep] = useState<EndRideStep>('idle');
@@ -211,27 +211,13 @@ export default function ActiveRide() {
             <div className="flex items-center justify-between mb-1">
               <div className="text-xs font-bold text-slate-400 uppercase">Nearest Dock</div>
               <div className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-md font-bold">
-                {nearestDock.availableSlots} slots
-              </div>
-            </div>
-            <div className="font-semibold text-white truncate text-base md:text-lg">
-              {nearestDock.name}
-            </div>
-            <div className="text-slate-400 text-sm">{nearestDock.distanceKm} km away</div>
-            <button className="mt-2 w-full h-10 bg-white/10 hover:bg-white/20 transition-colors rounded-xl text-sm font-semibold flex items-center justify-center gap-2 group">
-              <Navigation className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />{' '}
-              Navigate
-            </button>
+          <div className="bg-[#0A0D14]/90 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-white">
+              {(nearestDock.distanceKm * 1000).toFixed(0)}m to Dock
+            </span>
           </div>
         )}
-
-        {/* DEV ONLY: Tether Toggle */}
-        <button
-          onClick={() => setTetherEnabled(!tetherEnabled)}
-          className={`px-3 py-2 rounded-xl text-xs font-bold shadow-lg transition-colors border ${tetherEnabled ? 'bg-primary text-black border-primary' : 'bg-surfaceLight text-slate-400 border-white/10'}`}
-        >
-          {tetherEnabled ? '🌍 GPS TETHER: ON' : '📡 ENABLE TETHERING'}
-        </button>
       </div>
 
       {/* 🛑 Bottom Bar: End Ride Controls */}
@@ -253,22 +239,18 @@ export default function ActiveRide() {
           </div>
         </div>
 
-        {/* End Ride Button */}
-        {nearestDock && nearestDock.distanceKm <= 0.03 ? (
-          <button
-            onClick={initiateEndRide}
-            disabled={isEndingRide}
-            className="h-14 px-6 bg-danger text-white font-bold rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.4)] flex items-center justify-center transform hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            End Ride
-          </button>
-        ) : (
-          <div className="h-14 px-4 bg-surface text-slate-400 border border-white/5 font-bold rounded-2xl flex items-center justify-center text-xs text-center leading-tight">
-            Park at a Dock
-            <br />
-            to End Ride
-          </div>
-        )}
+        {/* Primary Action Button */}
+        <button
+          onClick={initiateEndRide}
+          disabled={isEndingRide}
+          className="h-14 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold rounded-2xl flex items-center justify-center text-lg transition-colors shadow-lg shadow-red-500/20 disabled:opacity-50"
+        >
+          {isEndingRide ? (
+            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            'End Ride'
+          )}
+        </button>
       </div>
 
       {/* End Ride Modal */}

@@ -10,7 +10,7 @@ export interface LiveBike {
   zoneIds?: string[];
 }
 
-export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
+export function useLiveFleet(lat?: number, lng?: number, radius: number = 2, activeBikeId?: string) {
   const { data: session } = useSession();
   const [bikes, setBikes] = useState<LiveBike[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -65,6 +65,9 @@ export function useLiveFleet(lat?: number, lng?: number, radius: number = 2) {
           setIsConnected(true);
           // Re-subscribe to everything we know about if we disconnected
           const toSubscribe = Array.from(subscribedBikes.current).map((id) => `bike:${id}`);
+          if (activeBikeId && !toSubscribe.includes(`bike:${activeBikeId}`)) {
+            toSubscribe.push(`bike:${activeBikeId}`);
+          }
           if (toSubscribe.length > 0) {
             ws.send(JSON.stringify({ subscribe: toSubscribe }));
           }
