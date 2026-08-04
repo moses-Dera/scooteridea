@@ -20,9 +20,8 @@ class BikeSimulator {
     this.lockStatus = 'LOCKED';
     this.dockedAt = null;
     this.charging = false;
-    this.isMoving = Math.random() > 0.5; // 50% of bikes start moving
-    this.heading = Math.random() * Math.PI * 2; // Random initial heading
-    if (this.isMoving) this.lockStatus = 'UNLOCKED';
+    this.isMoving = false; // Bikes are stationary by default
+    this.heading = 0;
   }
 
   generateTelemetry() {
@@ -41,32 +40,17 @@ class BikeSimulator {
 
   updatePosition() {
     if (this.isMoving && this.lockStatus === 'UNLOCKED') {
-      // 1% chance to stop each tick (was 10%)
-      if (Math.random() < 0.01) {
-        this.isMoving = false;
-        this.lockStatus = 'LOCKED';
-        this.speed = 0;
-        return;
-      }
-      
-      // Update heading slightly for a smooth curve
-      this.heading += (Math.random() - 0.5) * 0.5;
-      const moved = movePointWithHeading(this.lat, this.lng, 0.01, this.heading); // move ~10 meters
+      // Allow manual movement if tethered/forced via commands, but don't auto-stop
+      const moved = movePointWithHeading(this.lat, this.lng, 0.01, this.heading);
       this.lat = moved.lat;
       this.lng = moved.lng;
-      this.speed = Math.floor(Math.random() * 15) + 10;
+      this.speed = 15;
       this.battery = Math.max(0, this.battery - 0.1);
     } else {
       this.speed = 0;
-      // 0.5% chance to start riding if battery > 20% (was 5%)
-      if (this.battery > 20 && Math.random() < 0.005) {
-        this.isMoving = true;
-        this.lockStatus = 'UNLOCKED';
-        this.dockedAt = null;
-        this.charging = false;
-      } else {
-        // If it's locked and not moving, simulate a battery swap/charge
-        this.charging = true;
+      // If it's locked, simulate a slow charge if it was docked, otherwise no auto-unlocking
+      if (this.lockStatus === 'LOCKED' && !this.isMoving) {
+        this.charging = this.dockedAt != null;
       }
       if (this.charging && this.battery < 100) {
         this.battery = Math.min(100, this.battery + 0.5);
