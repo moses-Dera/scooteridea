@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mqtt = require('mqtt');
 const chalk = require('chalk');
-const { randomPointInRadius, movePoint } = require('./utils/geo');
+const { randomPointInRadius, movePointWithHeading } = require('./utils/geo');
 
 const MQTT_BROKER = process.env.MQTT_BROKER || 'mqtt://localhost:1883';
 const NUM_BIKES = parseInt(process.env.NUM_BIKES) || 10;
@@ -21,6 +21,7 @@ class BikeSimulator {
     this.dockedAt = null;
     this.charging = false;
     this.isMoving = Math.random() > 0.5; // 50% of bikes start moving
+    this.heading = Math.random() * Math.PI * 2; // Random initial heading
     if (this.isMoving) this.lockStatus = 'UNLOCKED';
   }
 
@@ -40,22 +41,25 @@ class BikeSimulator {
 
   updatePosition() {
     if (this.isMoving && this.lockStatus === 'UNLOCKED') {
-      // 10% chance to stop each tick
-      if (Math.random() < 0.1) {
+      // 1% chance to stop each tick (was 10%)
+      if (Math.random() < 0.01) {
         this.isMoving = false;
         this.lockStatus = 'LOCKED';
         this.speed = 0;
         return;
       }
-      const moved = movePoint(this.lat, this.lng, 0.05);
+      
+      // Update heading slightly for a smooth curve
+      this.heading += (Math.random() - 0.5) * 0.5;
+      const moved = movePointWithHeading(this.lat, this.lng, 0.01, this.heading); // move ~10 meters
       this.lat = moved.lat;
       this.lng = moved.lng;
       this.speed = Math.floor(Math.random() * 15) + 10;
       this.battery = Math.max(0, this.battery - 0.1);
     } else {
       this.speed = 0;
-      // 5% chance to start riding if battery > 20%
-      if (this.battery > 20 && Math.random() < 0.05) {
+      // 0.5% chance to start riding if battery > 20% (was 5%)
+      if (this.battery > 20 && Math.random() < 0.005) {
         this.isMoving = true;
         this.lockStatus = 'UNLOCKED';
         this.dockedAt = null;

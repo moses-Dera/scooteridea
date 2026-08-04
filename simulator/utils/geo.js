@@ -26,7 +26,38 @@ function randomPointInRadius(centerLat, centerLng, radiusKm) {
 }
 
 /**
- * Move a point slightly (simulate bike movement)
+ * Move a point in a specific heading
+ * @param {number} lat - Current latitude
+ * @param {number} lng - Current longitude
+ * @param {number} distanceKm - Distance to move in km
+ * @param {number} heading - Heading in radians (0 = North, PI/2 = East, etc.)
+ * @returns {{lat: number, lng: number}}
+ */
+function movePointWithHeading(lat, lng, distanceKm, heading) {
+  const R = 6371; // Earth radius in km
+  const latRad = (lat * Math.PI) / 180;
+  const lngRad = (lng * Math.PI) / 180;
+
+  const newLatRad = Math.asin(
+    Math.sin(latRad) * Math.cos(distanceKm / R) +
+      Math.cos(latRad) * Math.sin(distanceKm / R) * Math.cos(heading)
+  );
+
+  const newLngRad =
+    lngRad +
+    Math.atan2(
+      Math.sin(heading) * Math.sin(distanceKm / R) * Math.cos(latRad),
+      Math.cos(distanceKm / R) - Math.sin(latRad) * Math.sin(newLatRad)
+    );
+
+  return {
+    lat: (newLatRad * 180) / Math.PI,
+    lng: (newLngRad * 180) / Math.PI,
+  };
+}
+
+/**
+ * Move a point slightly (randomly)
  * @param {number} lat - Current latitude
  * @param {number} lng - Current longitude
  * @param {number} maxDistanceKm - Maximum movement distance in km
@@ -63,5 +94,6 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
 module.exports = {
   randomPointInRadius,
   movePoint,
+  movePointWithHeading,
   haversineDistance,
 };
