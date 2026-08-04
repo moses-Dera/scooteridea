@@ -104,7 +104,7 @@ export default function RiderHome() {
         ? { id: bikeId, lat: selectedLat, lng: selectedLng, batteryPct: 100, status: 'available' }
         : null)
     : null;
-  const selectedDock = dockId ? docks.find((d) => d.id === dockId) : null;
+  const selectedDock = dockId ? docks.find((d: any) => d.id === dockId) : null;
   // Dynamic Trip Estimations
   let estDistanceKm = 0;
   let estRideTimeMins = 0;
@@ -803,9 +803,9 @@ export default function RiderHome() {
                 {/* 2. Destination Docks Check */}
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${docks.some((d) => d.availableSlots > 0) ? 'bg-[#00B3FF]/20 border border-[#00B3FF]/30 text-[#00B3FF]' : 'bg-warning/20 border border-warning/30 text-warning'}`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${docks.some((d: any) => d.availableSlots > 0) ? 'bg-[#00B3FF]/20 border border-[#00B3FF]/30 text-[#00B3FF]' : 'bg-warning/20 border border-warning/30 text-warning'}`}
                   >
-                    {docks.some((d) => d.availableSlots > 0) ? (
+                    {docks.some((d: any) => d.availableSlots > 0) ? (
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -838,7 +838,7 @@ export default function RiderHome() {
                   <div>
                     <div className="text-white font-bold text-sm">Destination Parking</div>
                     <div className="text-slate-400 text-xs">
-                      {docks.some((d) => d.availableSlots > 0)
+                      {docks.some((d: any) => d.availableSlots > 0)
                         ? 'Parking docks available near destination'
                         : 'Free-parking permitted (Convenience fee applies)'}
                     </div>
