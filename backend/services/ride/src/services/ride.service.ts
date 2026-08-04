@@ -69,18 +69,12 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Sum Haversine distance over an ordered array of waypoints, ignoring impossible jumps. */
+/** Sum Haversine distance over an ordered array of waypoints. */
 function totalDistanceKm(pts: Array<{ lat: number; lng: number }>): number {
   if (pts.length < 2) return 0;
   let total = 0;
-  let lastValidPt = pts[0];
   for (let i = 1; i < pts.length; i++) {
-    const dist = haversineKm(lastValidPt.lat, lastValidPt.lng, pts[i].lat, pts[i].lng);
-    // Ignore GPS glitches (jumps > 1km between consecutive telemetry pings)
-    if (dist < 1.0) {
-      total += dist;
-      lastValidPt = pts[i];
-    }
+    total += haversineKm(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
   }
   return total;
 }

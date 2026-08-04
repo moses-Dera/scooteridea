@@ -6,15 +6,15 @@ import { FiArrowRight, FiArrowLeft, FiAlertTriangle } from 'react-icons/fi';
 
 interface Ride {
   id: string;
-  userId: string;
-  bikeId: string;
-  startedAt: string;
-  endedAt: string | null;
-  startDockId: string | null;
-  endDockId: string | null;
-  distanceKm: number;
-  durationMinutes: number;
-  fareCents: number;
+  rider_id: string;
+  bike_id: string;
+  start_time: string;
+  end_time: string | null;
+  start_dock_id: string;
+  end_dock_id: string | null;
+  distance_km: number;
+  duration_minutes: number;
+  fare_amount: number;
   status: 'in_progress' | 'completed' | 'disputed';
 }
 
@@ -102,12 +102,12 @@ export function RideTableComponent() {
                       className="hover:bg-slate-700 transition-colors cursor-pointer"
                       onClick={() => setExpandedRide(expandedRide === ride.id ? null : ride.id)}
                     >
-                      <td className="px-4 py-3 text-white font-medium">{ride.userId}</td>
-                      <td className="px-4 py-3 text-white">{ride.bikeId}</td>
-                      <td className="px-4 py-3 text-slate-300">{ride.durationMinutes}m</td>
-                      <td className="px-4 py-3 text-slate-300">{ride.distanceKm?.toFixed(1) || '0.0'} km</td>
+                      <td className="px-4 py-3 text-white font-medium">{ride.rider_id}</td>
+                      <td className="px-4 py-3 text-white">{ride.bike_id}</td>
+                      <td className="px-4 py-3 text-slate-300">{ride.duration_minutes}m</td>
+                      <td className="px-4 py-3 text-slate-300">{ride.distance_km.toFixed(1)} km</td>
                       <td className="px-4 py-3 text-right text-white font-bold">
-                        ₦{(ride.fareCents / 100).toFixed(0)}
+                        ₦{ride.fare_amount.toFixed(0)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
@@ -134,7 +134,7 @@ export function RideTableComponent() {
                                 <div>
                                   <p className="text-xs text-slate-400">Duration</p>
                                   <p className="text-white font-bold">
-                                    {ride.durationMinutes} minutes
+                                    {ride.duration_minutes} minutes
                                   </p>
                                 </div>
                               </div>
@@ -144,7 +144,7 @@ export function RideTableComponent() {
                                 <div>
                                   <p className="text-xs text-slate-400">Distance</p>
                                   <p className="text-white font-bold">
-                                    {ride.distanceKm?.toFixed(2) || '0.00'} km
+                                    {ride.distance_km.toFixed(2)} km
                                   </p>
                                 </div>
                               </div>
@@ -154,7 +154,7 @@ export function RideTableComponent() {
                                 <div>
                                   <p className="text-xs text-slate-400">Fare</p>
                                   <p className="text-white font-bold">
-                                    ₦{(ride.fareCents / 100).toFixed(0)}
+                                    ₦{ride.fare_amount.toFixed(0)}
                                   </p>
                                 </div>
                               </div>
@@ -166,15 +166,15 @@ export function RideTableComponent() {
                               <div>
                                 <p className="text-xs text-slate-400">Start</p>
                                 <p className="text-white">
-                                  {formatDate(ride.startedAt)} {formatTime(ride.startedAt)}
+                                  {formatDate(ride.start_time)} {formatTime(ride.start_time)}
                                 </p>
                               </div>
 
                               <div>
                                 <p className="text-xs text-slate-400">End</p>
                                 <p className="text-white">
-                                  {ride.endedAt
-                                    ? `${formatDate(ride.endedAt)} ${formatTime(ride.endedAt)}`
+                                  {ride.end_time
+                                    ? `${formatDate(ride.end_time)} ${formatTime(ride.end_time)}`
                                     : '(In Progress)'}
                                 </p>
                               </div>
@@ -182,8 +182,8 @@ export function RideTableComponent() {
                               <div>
                                 <p className="text-xs text-slate-400">Dock Route</p>
                                 <p className="text-white">
-                                  {ride.startDockId || 'None'} <FiArrowRight className="inline mx-2" />{' '}
-                                  {ride.endDockId || '(Not ended)'}
+                                  {ride.start_dock_id} <FiArrowRight className="inline mx-2" />{' '}
+                                  {ride.end_dock_id || '(Not ended)'}
                                 </p>
                               </div>
                             </div>

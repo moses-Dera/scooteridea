@@ -300,43 +300,62 @@ export async function processPaymentCharge(
   const log = logger.child({ userId, rideId, amountCents, traceId: _traceId });
   log.info('[Payment] Processing charge');
 
-  // Fetch user outside transaction to get email
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
-  const isInsufficient = user.walletCents < amountCents;
-  const finalStatus = isInsufficient ? 'failed' : 'success';
-
   await prisma.$transaction(async (tx) => {
-    // ALWAYS deduct from wallet so they go into debt if balance is insufficient
+    const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
+
+    if (user.walletCents < amountCents) {
+      // Record failed payment
+      await tx.payment.create({
+        data: {
+          userId,
+          rideId,
+          amountCents,
+          currency: 'NGN',
+          status: 'failed',
+          provider: 'wallet',
+        },
+      });
+
+      // Emit failure so Notification + Ride services can handle it
+      await publish(TOPICS.PAYMENT_RESULT, {
+        rideId,
+        userId,
+        userEmail: user.email,
+        status: 'failed',
+        ts: Date.now(),
+      });
+
+      throw new InsufficientBalanceError(amountCents, user.walletCents);
+    }
+
+    // Deduct from wallet
     await tx.user.update({
       where: { id: userId },
       data: { walletCents: { decrement: amountCents } },
     });
 
-    // Record the payment
     await tx.payment.create({
       data: {
         userId,
         rideId,
         amountCents,
         currency: 'NGN',
-        status: finalStatus,
+        status: 'success',
         provider: 'wallet',
       },
     });
+
+    log.info('[Payment] Wallet deduction successful');
   });
 
-  if (isInsufficient) {
-    log.info('[Payment] Charge resulted in negative balance (debt). Status: failed');
-  } else {
-    log.info('[Payment] Wallet deduction successful');
-  }
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
 
-  // Emit the result ONCE, outside the transaction, without throwing an error
+  // Emit success result
   await publish(TOPICS.PAYMENT_RESULT, {
     rideId,
     userId,
     userEmail: user.email,
-    status: finalStatus,
+    status: 'success',
     ts: Date.now(),
   });
 }

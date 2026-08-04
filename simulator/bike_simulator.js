@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mqtt = require('mqtt');
 const chalk = require('chalk');
-const { randomPointInRadius, movePointWithHeading } = require('./utils/geo');
+const { randomPointInRadius, movePoint } = require('./utils/geo');
 
 const MQTT_BROKER = process.env.MQTT_BROKER || 'mqtt://localhost:1883';
 const NUM_BIKES = parseInt(process.env.NUM_BIKES) || 10;
@@ -20,8 +20,8 @@ class BikeSimulator {
     this.lockStatus = 'LOCKED';
     this.dockedAt = null;
     this.charging = false;
-    this.isMoving = false; // Bikes are stationary by default
-    this.heading = 0;
+    this.isMoving = Math.random() > 0.5; // 50% of bikes start moving
+    if (this.isMoving) this.lockStatus = 'UNLOCKED';
   }
 
   generateTelemetry() {
@@ -40,17 +40,29 @@ class BikeSimulator {
 
   updatePosition() {
     if (this.isMoving && this.lockStatus === 'UNLOCKED') {
-      // Allow manual movement if tethered/forced via commands, but don't auto-stop
-      const moved = movePointWithHeading(this.lat, this.lng, 0.01, this.heading);
+      // 10% chance to stop each tick
+      if (Math.random() < 0.1) {
+        this.isMoving = false;
+        this.lockStatus = 'LOCKED';
+        this.speed = 0;
+        return;
+      }
+      const moved = movePoint(this.lat, this.lng, 0.05);
       this.lat = moved.lat;
       this.lng = moved.lng;
-      this.speed = 15;
+      this.speed = Math.floor(Math.random() * 15) + 10;
       this.battery = Math.max(0, this.battery - 0.1);
     } else {
       this.speed = 0;
-      // If it's locked, simulate a slow charge if it was docked, otherwise no auto-unlocking
-      if (this.lockStatus === 'LOCKED' && !this.isMoving) {
-        this.charging = this.dockedAt != null;
+      // 5% chance to start riding if battery > 20%
+      if (this.battery > 20 && Math.random() < 0.05) {
+        this.isMoving = true;
+        this.lockStatus = 'UNLOCKED';
+        this.dockedAt = null;
+        this.charging = false;
+      } else {
+        // If it's locked and not moving, simulate a battery swap/charge
+        this.charging = true;
       }
       if (this.charging && this.battery < 100) {
         this.battery = Math.min(100, this.battery + 0.5);
