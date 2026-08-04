@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaClockRotateLeft, FaMapLocation, FaCoins } from 'react-icons/fa6';
 import { FiArrowRight, FiArrowLeft, FiAlertTriangle } from 'react-icons/fi';
 
@@ -97,7 +97,7 @@ export function RideTableComponent() {
                 }[ride.status];
 
                 return (
-                  <tbody key={ride.id}>
+                  <React.Fragment key={ride.id}>
                     <tr
                       className="hover:bg-slate-700 transition-colors cursor-pointer"
                       onClick={() => setExpandedRide(expandedRide === ride.id ? null : ride.id)}
@@ -203,7 +203,7 @@ export function RideTableComponent() {
                         </td>
                       </tr>
                     )}
-                  </tbody>
+                  </React.Fragment>
                 );
               })}
             </tbody>
