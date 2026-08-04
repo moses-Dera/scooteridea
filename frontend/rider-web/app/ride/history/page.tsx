@@ -15,7 +15,7 @@ export default function RideHistoryPage() {
       try {
         const res = await rideApi.getHistory(1, 20);
         // Backend wraps history inside res.data.items for PaginatedResponse
-        setHistory((res.data?.items as any[]) || []);
+        setHistory(((res.data as any)?.items as any[]) || []);
       } catch (err) {
         console.error('Failed to load ride history:', err);
       } finally {

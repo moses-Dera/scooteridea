@@ -18,6 +18,7 @@ import {
   Smartphone,
   Bike,
   X,
+  MapPin,
 } from 'lucide-react';
 import { DestinationSearch } from '@/components/Map/DestinationSearch';
 import { useGeofences } from '@/hooks/useGeofences';
@@ -207,10 +208,6 @@ export default function ActiveRide() {
       {/* 🧭 Top-Right: Nearest Dock Navigation */}
       <div className="flex flex-col items-end gap-2 absolute top-24 xl:top-8 right-6 z-20">
         {nearestDock && (
-          <div className="glass-panel rounded-2xl p-4 flex flex-col gap-2 w-[240px]">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-bold text-slate-400 uppercase">Nearest Dock</div>
-              <div className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-md font-bold">
           <div className="bg-[#0A0D14]/90 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" />
             <span className="text-sm font-semibold text-white">
