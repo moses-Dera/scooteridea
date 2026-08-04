@@ -110,7 +110,7 @@ export default function RideHistoryPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  {trip.distanceKm ? trip.distanceKm.toFixed(1) : '0.0'} km
+                  {trip.distanceKm ? Number(trip.distanceKm).toFixed(1) : '0.0'} km
                 </div>
               </div>
             </div>
