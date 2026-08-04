@@ -19,6 +19,7 @@ import {
   Bike,
   X,
 } from 'lucide-react';
+import { DestinationSearch } from '@/components/Map/DestinationSearch';
 import { useGeofences } from '@/hooks/useGeofences';
 
 type EndRideStep = 'idle' | 'ending' | 'done';
@@ -177,15 +178,17 @@ export default function ActiveRide() {
       </div>
 
       {/* ⏱️ Top-Left: Active Ride Timer & Cost */}
-      <div className="absolute top-safe-6 top-6 left-6 glass-panel rounded-2xl p-4 flex flex-col gap-1 z-20 min-w-[160px] max-w-[200px]">
+      <div className="absolute top-24 xl:top-8 left-6 glass-panel rounded-2xl p-4 flex flex-col gap-1 z-20 min-w-[200px] hidden md:flex">
         <RideTimer surgeMultiplier={state.activeRide?.surgeMultiplier || 1} />
       </div>
 
-      {/* ⚠️ Top-Center: Restricted Zone Warning */}
-      <div className="absolute top-safe-6 top-6 left-1/2 -translate-x-1/2 z-30 w-[90%] md:w-auto flex flex-col gap-4 pointer-events-none">
+      {/* 🔍 Top-Center: Destination Search */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 w-[90%] md:w-auto flex flex-col gap-4">
+        <DestinationSearch />
+
         {/* ⚠️ Restricted Zone Warning */}
         {restrictedTimer !== null && (
-          <div className="w-full max-w-[400px] mx-auto bg-red-500/90 backdrop-blur-md border-2 border-red-400 rounded-2xl p-4 shadow-2xl flex flex-col items-center text-center animate-in slide-in-from-top duration-300 pointer-events-auto">
+          <div className="w-full max-w-[400px] mx-auto bg-red-500/90 backdrop-blur-md border-2 border-red-400 rounded-2xl p-4 shadow-2xl flex flex-col items-center text-center animate-in slide-in-from-top duration-300">
             <div className="flex items-center gap-2 text-white mb-2">
               <AlertTriangle className="w-6 h-6 animate-pulse" />
               <h3 className="font-extrabold text-lg uppercase tracking-wider">Restricted Zone</h3>
@@ -251,13 +254,21 @@ export default function ActiveRide() {
         </div>
 
         {/* End Ride Button */}
-        <button
-          onClick={initiateEndRide}
-          disabled={isEndingRide}
-          className="h-14 px-6 bg-danger text-white font-bold rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.4)] flex items-center justify-center transform hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed text-sm whitespace-nowrap"
-        >
-          {nearestDock && nearestDock.distanceKm <= 0.03 ? 'End Ride' : 'End Ride (Free Park)'}
-        </button>
+        {nearestDock && nearestDock.distanceKm <= 0.03 ? (
+          <button
+            onClick={initiateEndRide}
+            disabled={isEndingRide}
+            className="h-14 px-6 bg-danger text-white font-bold rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.4)] flex items-center justify-center transform hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            End Ride
+          </button>
+        ) : (
+          <div className="h-14 px-4 bg-surface text-slate-400 border border-white/5 font-bold rounded-2xl flex items-center justify-center text-xs text-center leading-tight">
+            Park at a Dock
+            <br />
+            to End Ride
+          </div>
+        )}
       </div>
 
       {/* End Ride Modal */}

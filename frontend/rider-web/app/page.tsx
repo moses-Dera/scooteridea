@@ -7,7 +7,6 @@ import { UnlockModal } from '@/components/UnlockModal';
 import { DestinationSearch } from '@/components/Map/DestinationSearch';
 import { QRScannerOverlay } from '@/components/panels/QRScannerOverlay';
 import { ManualEntryModal } from '@/components/ManualEntryModal';
-import { useRide } from '@/context/RideContext';
 
 export default function RiderHome() {
   const searchParams = useSearchParams();
@@ -30,14 +29,6 @@ export default function RiderHome() {
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(userLoc);
   const searchLat = searchCenter?.lat ?? userLoc?.lat;
   const searchLng = searchCenter?.lng ?? userLoc?.lng;
-
-  const { state: rideState } = useRide();
-
-  useEffect(() => {
-    if (rideState.activeRide) {
-      router.replace('/ride/active');
-    }
-  }, [rideState.activeRide, router]);
 
   useEffect(() => {
     let fallbackTimer: NodeJS.Timeout;
@@ -100,11 +91,11 @@ export default function RiderHome() {
 
   const selectedBike = bikeId
     ? displayBikes.find((b) => b.id === bikeId) ||
-      (selectedLat && selectedLng
-        ? { id: bikeId, lat: selectedLat, lng: selectedLng, batteryPct: 100, status: 'available' }
-        : null)
+    (selectedLat && selectedLng
+      ? { id: bikeId, lat: selectedLat, lng: selectedLng, batteryPct: 100, status: 'available' }
+      : null)
     : null;
-  const selectedDock = dockId ? docks.find((d: any) => d.id === dockId) : null;
+  const selectedDock = dockId ? docks.find((d) => d.id === dockId) : null;
   // Dynamic Trip Estimations
   let estDistanceKm = 0;
   let estRideTimeMins = 0;
@@ -119,9 +110,9 @@ export default function RiderHome() {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((userLoc.lat * Math.PI) / 180) *
-        Math.cos((selectedLat * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((selectedLat * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const straightLine = R * c;
 
@@ -803,9 +794,9 @@ export default function RiderHome() {
                 {/* 2. Destination Docks Check */}
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${docks.some((d: any) => d.availableSlots > 0) ? 'bg-[#00B3FF]/20 border border-[#00B3FF]/30 text-[#00B3FF]' : 'bg-warning/20 border border-warning/30 text-warning'}`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${docks.some((d) => d.availableSlots > 0) ? 'bg-[#00B3FF]/20 border border-[#00B3FF]/30 text-[#00B3FF]' : 'bg-warning/20 border border-warning/30 text-warning'}`}
                   >
-                    {docks.some((d: any) => d.availableSlots > 0) ? (
+                    {docks.some((d) => d.availableSlots > 0) ? (
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -838,7 +829,7 @@ export default function RiderHome() {
                   <div>
                     <div className="text-white font-bold text-sm">Destination Parking</div>
                     <div className="text-slate-400 text-xs">
-                      {docks.some((d: any) => d.availableSlots > 0)
+                      {docks.some((d) => d.availableSlots > 0)
                         ? 'Parking docks available near destination'
                         : 'Free-parking permitted (Convenience fee applies)'}
                     </div>
