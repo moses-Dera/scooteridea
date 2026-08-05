@@ -19,7 +19,9 @@ export function RideTimer({ surgeMultiplier = 1, baseRate = 50 }: RideTimerProps
       const elapsed = state.elapsedSeconds + 1;
       updateTimer(elapsed);
 
-      const cost = ridesService.calculateCost(elapsed, baseRate, surgeMultiplier);
+      // We don't have live distance here without polling, but we can pass baseRate
+      // and ratePerMinute. Usually baseRate is 50, ratePerMinute is 50.
+      const cost = ridesService.calculateCost(elapsed, baseRate, 50, surgeMultiplier, 0, 20);
       updateCost(cost);
     }, 1000);
 

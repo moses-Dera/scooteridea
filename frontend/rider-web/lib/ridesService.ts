@@ -102,17 +102,25 @@ export const ridesService = {
   /**
    * Calculate cost for elapsed time
    * @param durationSeconds - Duration in seconds
-   * @param ratePerMinute - Rate per minute
+   * @param baseRate - Base rate per minute
    * @param surgeMultiplier - Surge pricing multiplier
+   * @param distanceKm - Total distance in km
+   * @param ratePerKm - Rate per kilometer
    * @returns Total cost
    */
   calculateCost(
     durationSeconds: number,
+    baseFare: number = 50, // Usually 50 NGN base
     ratePerMinute: number = 50,
     surgeMultiplier: number = 1,
+    distanceKm: number = 0,
+    ratePerKm: number = 0
   ): number {
     const minutes = durationSeconds / 60;
-    return parseFloat((minutes * ratePerMinute * surgeMultiplier).toFixed(2));
+    const timeCost = minutes * ratePerMinute;
+    const distanceCost = distanceKm * ratePerKm;
+    const total = Math.max(baseFare, (baseFare + timeCost + distanceCost) * surgeMultiplier);
+    return parseFloat(total.toFixed(2));
   },
 
   /**
