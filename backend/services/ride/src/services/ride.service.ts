@@ -234,7 +234,8 @@ export class RideService {
 
     // ── Distance: sum Haversine over Redis GPS waypoint track ─────────────────
     const waypoints = await redisGetWaypoints(rideId);
-    const distanceKm = totalDistanceKm(waypoints);
+    let distanceKm = totalDistanceKm(waypoints);
+    if (distanceKm > 9999.99) distanceKm = 9999.99; // Cap distance to prevent DB overflow
     if (waypoints.length < 2) {
       logger.warn(
         { rideId, waypointCount: waypoints.length },

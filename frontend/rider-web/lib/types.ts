@@ -123,7 +123,7 @@ export interface Ride {
   bikeId: string;
   startDockId: string;
   endDockId?: string;
-  startTime: string;
+  startedAt: string;
   endTime?: string;
   startLatitude: number;
   startLongitude: number;
