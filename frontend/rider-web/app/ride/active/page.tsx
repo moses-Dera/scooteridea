@@ -275,7 +275,7 @@ export default function ActiveRide() {
 
       {/* Extra Controls */}
       <div
-        className={`absolute bottom-28 right-6 flex flex-col gap-3 z-20 transition-transform duration-500 ${endStep !== 'idle' ? 'translate-x-24' : 'translate-x-0'}`}
+        className={`absolute top-1/2 -translate-y-1/2 right-6 flex flex-col gap-3 z-20 transition-transform duration-500 ${endStep !== 'idle' ? 'translate-x-24' : 'translate-x-0'}`}
       >
         {/* Developer Tether Mode */}
         <button

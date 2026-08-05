@@ -616,7 +616,7 @@ export default function RiderMap() {
 
         {/* Re-center Button (Appears when camera is unlocked during navigation) */}
         {isNavigating && !isCameraLocked && (
-          <div className="absolute bottom-[130px] right-[20px] z-20">
+          <div className="absolute top-1/2 -translate-y-1/2 right-[20px] z-20">
             <button
               onClick={() => {
                 setIsCameraLocked(true);
