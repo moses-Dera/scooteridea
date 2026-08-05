@@ -177,7 +177,7 @@ export default function ActiveRide() {
       </div>
 
       {/* ⏱️ Top-Left: Active Ride Timer & Cost */}
-      <div className="absolute top-24 xl:top-8 left-6 glass-panel rounded-2xl p-4 flex flex-col gap-1 z-20 min-w-[200px] hidden md:flex">
+      <div className="absolute top-24 xl:top-8 left-6 glass-panel rounded-2xl p-4 flex flex-col gap-1 z-20 min-w-[200px]">
         <RideTimer surgeMultiplier={state.activeRide?.surgeMultiplier || 1} />
       </div>
 
