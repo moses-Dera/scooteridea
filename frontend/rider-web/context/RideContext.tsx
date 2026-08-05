@@ -46,14 +46,23 @@ const initialState: RideState = {
 
 function rideReducer(state: RideState, action: RideAction): RideState {
   switch (action.type) {
-    case 'SET_ACTIVE_RIDE':
+    case 'SET_ACTIVE_RIDE': {
+      let initialElapsed = 0;
+      let initialCost = 0;
+      if (action.payload?.startedAt) {
+        initialElapsed = Math.floor((Date.now() - new Date(action.payload.startedAt).getTime()) / 1000);
+        // Base rate = 50, per minute = 50. Calculate initial cost matching backend.
+        const minutes = initialElapsed / 60;
+        initialCost = Math.max(50, (50 + minutes * 50) * (action.payload.surgeMultiplier || 1));
+      }
       return {
         ...state,
         activeRide: action.payload,
-        elapsedSeconds: 0,
-        cost: 0,
+        elapsedSeconds: Math.max(0, initialElapsed),
+        cost: initialCost,
         error: null,
       };
+    }
 
     case 'CLEAR_ACTIVE_RIDE':
       return {
