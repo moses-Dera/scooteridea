@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import RiderMap from '@/components/Map/RiderMap';
 import { RideTimer } from '@/components/rides/RideTimer';
 import { useRide } from '@/context/RideContext';
@@ -128,42 +129,47 @@ export default function ActiveRide() {
     setEndStep('ending');
     setIsEndingRide(true);
 
+    const endTheRide = async (lat?: number, lng?: number) => {
+      try {
+        const endDockId = nearestDock?.id || 'dock-002';
+        await ridesService.endRide(
+          state.activeRide!.id,
+          endDockId,
+          lat ?? 0,
+          lng ?? 0,
+        );
+
+        setEndStep('done');
+        toast.success('Ride ended successfully!');
+
+        setTimeout(() => {
+          router.push(`/ride/receipt/${state.activeRide!.id}`);
+        }, 1000);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to end ride';
+        setError(message);
+        toast.error(message);
+        setIsEndingRide(false);
+        setEndStep('idle');
+      }
+    };
+
     try {
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            // End ride using the nearest dock found by PostGIS!
-            const endDockId = nearestDock?.id || 'dock-002';
-            await ridesService.endRide(
-              state.activeRide!.id,
-              endDockId,
-              position.coords.latitude,
-              position.coords.longitude,
-            );
-
-            setEndStep('done');
-
-            setTimeout(() => {
-              // Redirect to receipt page
-              router.push(`/ride/receipt/${state.activeRide!.id}`);
-            }, 1000);
-          } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to end ride';
-            setError(message);
-            setIsEndingRide(false);
-            setEndStep('idle');
-          }
+        (position) => {
+          endTheRide(position.coords.latitude, position.coords.longitude);
         },
         (err) => {
-          setError(`Geolocation error: ${err.message}`);
-          setIsEndingRide(false);
-          setEndStep('idle');
+          console.warn('Geolocation error during end ride, proceeding without precise location:', err.message);
+          toast.error(`Could not get precise location. Proceeding...`);
+          endTheRide();
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to end ride';
+      const message = err instanceof Error ? err.message : 'Failed to get location';
       setError(message);
+      toast.error(message);
       setIsEndingRide(false);
       setEndStep('idle');
     }
