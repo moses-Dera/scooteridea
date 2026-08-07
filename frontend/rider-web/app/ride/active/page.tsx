@@ -113,7 +113,29 @@ export default function ActiveRide() {
     };
   }, [tetherEnabled, state.activeRide?.bikeId]);
 
-  // Redirect if no active ride
+  // On mount: verify with backend the ride is truly ACTIVE
+  // This auto-unsticks users whose ride was completed by a previous click
+  useEffect(() => {
+    if (!state.activeRide) {
+      router.push('/');
+      return;
+    }
+    const rideId = state.activeRide.id;
+    fetch(`/api/proxy/rides/${rideId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const status = data?.data?.status;
+        if (status && status !== 'ACTIVE' && status !== 'RESERVED') {
+          // Ride is no longer active on the backend — clear it and go to receipt
+          clearActiveRide();
+          router.push(`/ride/receipt/${rideId}`);
+        }
+      })
+      .catch(() => { /* network error – stay on page, user can retry */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Redirect if context clears (e.g. after successful end)
   useEffect(() => {
     if (!state.activeRide) {
       router.push('/');
