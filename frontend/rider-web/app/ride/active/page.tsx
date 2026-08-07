@@ -26,7 +26,7 @@ type EndRideStep = 'idle' | 'ending' | 'done';
 
 export default function ActiveRide() {
   const router = useRouter();
-  const { state, setError } = useRide();
+  const { state, setError, clearActiveRide } = useRide();
   const { bikes } = useLiveFleet(undefined, undefined, 2, state.activeRide?.bikeId);
   const [isEndingRide, setIsEndingRide] = useState(false);
   const [tetherEnabled, setTetherEnabled] = useState(false);
@@ -131,7 +131,7 @@ export default function ActiveRide() {
 
     const endTheRide = async (lat?: number, lng?: number) => {
       try {
-        const endDockId = nearestDock?.id || 'dock-002';
+        const endDockId = nearestDock?.id ?? null;
         await ridesService.endRide(
           state.activeRide!.id,
           endDockId,
@@ -141,6 +141,7 @@ export default function ActiveRide() {
 
         setEndStep('done');
         toast.success('Ride ended successfully!');
+        clearActiveRide(); // Clear context so redirect doesn't loop back
 
         setTimeout(() => {
           router.push(`/ride/receipt/${state.activeRide!.id}`);
