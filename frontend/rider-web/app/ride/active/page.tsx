@@ -147,9 +147,28 @@ export default function ActiveRide() {
           router.push(`/ride/receipt/${state.activeRide!.id}`);
         }, 1000);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to end ride';
-        setError(message);
-        toast.error(message);
+        const rawMessage = err instanceof Error ? err.message : 'Failed to end ride';
+
+        // If the ride is already completed, it means the first click worked!
+        // Treat this as a success and go to the receipt.
+        if (rawMessage.toLowerCase().includes('completed') || rawMessage.toLowerCase().includes('not active')) {
+          setEndStep('done');
+          clearActiveRide();
+          toast.success('Ride ended successfully!');
+          setTimeout(() => {
+            router.push(`/ride/receipt/${state.activeRide!.id}`);
+          }, 1000);
+          return;
+        }
+
+        // Strip raw database UUIDs from messages shown to users
+        const friendlyMessage = rawMessage
+          .replace(/'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'/gi, '')
+          .replace(/\s+/g, ' ')
+          .trim() || 'Unable to end ride. Please try again.';
+
+        setError(friendlyMessage);
+        toast.error(friendlyMessage);
         setIsEndingRide(false);
         setEndStep('idle');
       }

@@ -127,7 +127,11 @@ export class GatewayTimeoutError extends AppError {
 
 export class RideNotActiveError extends AppError {
   constructor(rideId: string, currentStatus: string) {
-    super(`Ride '${rideId}' is not active (status: ${currentStatus})`, {
+    // Don't expose internal IDs to users; keep them in context for logs only
+    const userMessage = currentStatus === 'COMPLETED'
+      ? 'This ride has already been ended.'
+      : `This ride cannot be ended (status: ${currentStatus}).`;
+    super(userMessage, {
       statusCode: 409,
       code: 'RIDE_NOT_ACTIVE',
       context: { rideId, currentStatus },
@@ -137,7 +141,7 @@ export class RideNotActiveError extends AppError {
 
 export class BikeUnavailableError extends AppError {
   constructor(bikeId: string, status: string) {
-    super(`Bike '${bikeId}' is not available (status: ${status})`, {
+    super(`This scooter is not available (status: ${status})`, {
       statusCode: 409,
       code: 'BIKE_UNAVAILABLE',
       context: { bikeId, status },
