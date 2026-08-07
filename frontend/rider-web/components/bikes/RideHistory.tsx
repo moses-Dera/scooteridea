@@ -133,7 +133,7 @@ function RideCard({ ride }: RideCardProps) {
           </div>
           <div>
             <div className="font-bold text-white">{ride.bikeId}</div>
-            <p className="text-sm text-slate-400">{formatDate(ride.startTime)}</p>
+            <p className="text-sm text-slate-400">{formatDate(ride.startedAt)}</p>
           </div>
         </div>
 
