@@ -52,10 +52,10 @@ export const ridesService = {
       latitude,
       longitude,
     )) as ApiResponse<Ride>;
-    if (!response.success || !response.data) {
+    if (!response.success) {
       throw new Error(response.error || 'Failed to end ride');
     }
-    return response.data;
+    return {} as Ride; // The backend doesn't return the ride object, so we just return an empty object or handle it gracefully
   },
 
   /**
