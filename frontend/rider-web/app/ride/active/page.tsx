@@ -131,7 +131,7 @@ export default function ActiveRide() {
 
     const endTheRide = async (lat?: number, lng?: number) => {
       try {
-        const endDockId = nearestDock?.id ?? null;
+        const endDockId = nearestDock?.id ?? '';
         await ridesService.endRide(
           state.activeRide!.id,
           endDockId,
