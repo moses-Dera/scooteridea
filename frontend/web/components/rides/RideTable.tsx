@@ -6,16 +6,15 @@ import { FiArrowRight, FiArrowLeft, FiAlertTriangle } from 'react-icons/fi';
 
 interface Ride {
   id: string;
-  rider_id: string;
-  bike_id: string;
-  start_time: string;
-  end_time: string | null;
-  start_dock_id: string;
-  end_dock_id: string | null;
-  distance_km: number;
-  duration_minutes: number;
-  fare_amount: number;
-  status: 'in_progress' | 'completed' | 'disputed';
+  userId: string;
+  bikeId: string;
+  startedAt: string;
+  endedAt: string | null;
+  startDockId: string | null;
+  endDockId: string | null;
+  distanceKm: number;
+  fareCents: number;
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 }
 
 export function RideTableComponent() {
@@ -36,10 +35,10 @@ export function RideTableComponent() {
         if (!res.ok) throw new Error(`Failed to fetch rides: ${res.statusText}`);
 
         const data = await res.json();
-        setRides(Array.isArray(data) ? data : data.data || []);
+        setRides(Array.isArray(data) ? data : data.data.items || []);
 
-        if (data.total) {
-          setTotalPages(Math.ceil(data.total / pageSize));
+        if (data.data?.totalPages) {
+          setTotalPages(data.data.totalPages);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch rides');
@@ -52,6 +51,7 @@ export function RideTableComponent() {
   }, [page]);
 
   const formatTime = (dateStr: string) => {
+    if (!dateStr) return '';
     return new Date(dateStr).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -60,11 +60,19 @@ export function RideTableComponent() {
   };
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
+  };
+
+  const calculateDuration = (start: string, end: string | null) => {
+    if (!start) return 0;
+    const startTime = new Date(start).getTime();
+    const endTime = end ? new Date(end).getTime() : Date.now();
+    return Math.max(0, Math.floor((endTime - startTime) / 60000));
   };
 
   if (loading && rides.length === 0) return <div className="text-slate-400">Loading rides...</div>;
@@ -91,10 +99,10 @@ export function RideTableComponent() {
             <tbody className="divide-y divide-slate-700">
               {rides.map((ride) => {
                 const statusColor = {
-                  in_progress: 'bg-blue-900 text-blue-200',
-                  completed: 'bg-green-900 text-green-200',
-                  disputed: 'bg-red-900 text-red-200',
-                }[ride.status];
+                  IN_PROGRESS: 'bg-blue-900 text-blue-200',
+                  COMPLETED: 'bg-green-900 text-green-200',
+                  CANCELLED: 'bg-red-900 text-red-200',
+                }[ride.status] || 'bg-slate-700 text-slate-300';
 
                 return (
                   <React.Fragment key={ride.id}>
@@ -102,12 +110,12 @@ export function RideTableComponent() {
                       className="hover:bg-slate-700 transition-colors cursor-pointer"
                       onClick={() => setExpandedRide(expandedRide === ride.id ? null : ride.id)}
                     >
-                      <td className="px-4 py-3 text-white font-medium">{ride.rider_id}</td>
-                      <td className="px-4 py-3 text-white">{ride.bike_id}</td>
-                      <td className="px-4 py-3 text-slate-300">{ride.duration_minutes}m</td>
-                      <td className="px-4 py-3 text-slate-300">{ride.distance_km.toFixed(1)} km</td>
+                      <td className="px-4 py-3 text-white font-medium">{ride.userId.substring(0, 8)}...</td>
+                      <td className="px-4 py-3 text-white">{ride.bikeId}</td>
+                      <td className="px-4 py-3 text-slate-300">{calculateDuration(ride.startedAt, ride.endedAt)}m</td>
+                      <td className="px-4 py-3 text-slate-300">{Number(ride.distanceKm || 0).toFixed(1)} km</td>
                       <td className="px-4 py-3 text-right text-white font-bold">
-                        ₦{ride.fare_amount.toFixed(0)}
+                        ₦{((ride.fareCents || 0) / 100).toFixed(0)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
@@ -134,7 +142,7 @@ export function RideTableComponent() {
                                 <div>
                                   <p className="text-xs text-slate-400">Duration</p>
                                   <p className="text-white font-bold">
-                                    {ride.duration_minutes} minutes
+                                    {calculateDuration(ride.startedAt, ride.endedAt)} minutes
                                   </p>
                                 </div>
                               </div>
@@ -144,7 +152,7 @@ export function RideTableComponent() {
                                 <div>
                                   <p className="text-xs text-slate-400">Distance</p>
                                   <p className="text-white font-bold">
-                                    {ride.distance_km.toFixed(2)} km
+                                    {Number(ride.distanceKm || 0).toFixed(2)} km
                                   </p>
                                 </div>
                               </div>
@@ -154,7 +162,7 @@ export function RideTableComponent() {
                                 <div>
                                   <p className="text-xs text-slate-400">Fare</p>
                                   <p className="text-white font-bold">
-                                    ₦{ride.fare_amount.toFixed(0)}
+                                    ₦{((ride.fareCents || 0) / 100).toFixed(0)}
                                   </p>
                                 </div>
                               </div>
@@ -166,15 +174,15 @@ export function RideTableComponent() {
                               <div>
                                 <p className="text-xs text-slate-400">Start</p>
                                 <p className="text-white">
-                                  {formatDate(ride.start_time)} {formatTime(ride.start_time)}
+                                  {formatDate(ride.startedAt)} {formatTime(ride.startedAt)}
                                 </p>
                               </div>
 
                               <div>
                                 <p className="text-xs text-slate-400">End</p>
                                 <p className="text-white">
-                                  {ride.end_time
-                                    ? `${formatDate(ride.end_time)} ${formatTime(ride.end_time)}`
+                                  {ride.endedAt
+                                    ? `${formatDate(ride.endedAt)} ${formatTime(ride.endedAt)}`
                                     : '(In Progress)'}
                                 </p>
                               </div>
@@ -182,17 +190,17 @@ export function RideTableComponent() {
                               <div>
                                 <p className="text-xs text-slate-400">Dock Route</p>
                                 <p className="text-white">
-                                  {ride.start_dock_id} <FiArrowRight className="inline mx-2" />{' '}
-                                  {ride.end_dock_id || '(Not ended)'}
+                                  {ride.startDockId || 'None'} <FiArrowRight className="inline mx-2" />{' '}
+                                  {ride.endDockId || '(Not ended)'}
                                 </p>
                               </div>
                             </div>
                           </div>
 
-                          {ride.status === 'disputed' && (
+                          {ride.status === 'CANCELLED' && (
                             <div className="mt-4 p-3 bg-red-900 rounded-lg">
                               <p className="text-red-200 text-sm flex items-center gap-2">
-                                <FiAlertTriangle /> This ride has been disputed. Review flagged for
+                                <FiAlertTriangle /> This ride has been disputed and cancelled. Review flagged for
                                 further investigation.
                               </p>
                               <button className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-bold">

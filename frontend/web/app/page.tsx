@@ -64,11 +64,9 @@ export default function DashboardOverview() {
   const [riders, setRiders] = useState<Rider[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [maintenance, setMaintenance] = useState<MaintenanceIssue[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddBike, setShowAddBike] = useState(false);
-
-  // Real data for chart will require analytics service
-  const chartData: any[] = [];
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -102,6 +100,13 @@ export default function DashboardOverview() {
         const json = await maintRes.json();
         if (json.success && json.data) setMaintenance(json.data);
       }
+      
+      // Fetch analytics for chart
+      const analyticsRes = await fetch(`/api/proxy/rides/analytics?timeRange=today`).catch(() => null);
+      if (analyticsRes?.ok) {
+        const json = await analyticsRes.json();
+        if (json.success && json.data) setAnalytics(json.data);
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard data', err);
     } finally {
@@ -121,6 +126,12 @@ export default function DashboardOverview() {
   ).length;
   const lowBatteryCount = bikes.filter((b) => b.battery_pct < 20).length;
   const totalFleet = bikes.length;
+
+  const chartData = analytics?.revenueTrend?.map((item: any) => ({
+    time: item.time,
+    active: item.rides,
+    available: Math.max(0, totalFleet - item.rides),
+  })) || [];
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 font-sans text-slate-200">

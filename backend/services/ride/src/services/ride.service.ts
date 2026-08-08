@@ -541,9 +541,9 @@ export class RideService {
     // Use SQL for duration and time-series aggregation to avoid memory limits (M7)
     // 1. Average Ride Duration
     const durationRes: any[] = await prisma.$queryRaw`
-      SELECT COALESCE(AVG(EXTRACT(EPOCH FROM ("endedAt" - "startedAt")) / 60), 0) as avg_duration
-      FROM "Ride"
-      WHERE "createdAt" >= ${startDate} AND status = 'COMPLETED' AND "endedAt" IS NOT NULL AND "startedAt" IS NOT NULL
+      SELECT COALESCE(AVG(EXTRACT(EPOCH FROM ("ended_at" - "started_at")) / 60), 0) as avg_duration
+      FROM "rides"
+      WHERE "created_at" >= ${startDate} AND status = 'COMPLETED' AND "ended_at" IS NOT NULL AND "started_at" IS NOT NULL
     `;
     const avgRideDurationMins =
       durationRes.length > 0 ? Math.round(Number(durationRes[0].avg_duration) * 10) / 10 : 0;
@@ -553,11 +553,11 @@ export class RideService {
 
     const revenueByDate: any[] = await prisma.$queryRawUnsafe(
       `
-      SELECT DATE_TRUNC($1, "createdAt") as time_bucket,
-             SUM("fareCents") as revenue,
+      SELECT DATE_TRUNC($1, "created_at") as time_bucket,
+             SUM("fare_cents") as revenue,
              COUNT(*) as rides
-      FROM "Ride"
-      WHERE "createdAt" >= $2 AND status = 'COMPLETED'
+      FROM "rides"
+      WHERE "created_at" >= $2 AND status = 'COMPLETED'
       GROUP BY time_bucket
       ORDER BY time_bucket ASC
     `,
@@ -567,10 +567,10 @@ export class RideService {
 
     const usersByDate: any[] = await prisma.$queryRawUnsafe(
       `
-      SELECT DATE_TRUNC($1, "createdAt") as time_bucket,
-             COUNT(DISTINCT "userId") as users
-      FROM "Ride"
-      WHERE "createdAt" >= $2
+      SELECT DATE_TRUNC($1, "created_at") as time_bucket,
+             COUNT(DISTINCT "user_id") as users
+      FROM "rides"
+      WHERE "created_at" >= $2
       GROUP BY time_bucket
       ORDER BY time_bucket ASC
     `,

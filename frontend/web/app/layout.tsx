@@ -19,13 +19,8 @@ import SessionProviderWrapper from '@/components/SessionProviderWrapper';
 import DesktopProfileActions from '@/components/DesktopProfileActions';
 
 import { Toaster } from 'react-hot-toast';
-import { Outfit } from 'next/font/google';
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-outfit',
-});
+// Removed Google Font import due to build timeouts
+const outfit = { variable: 'font-sans' };
 
 export const metadata: Metadata = {
   title: 'Scooterfy Operator Dashboard',
