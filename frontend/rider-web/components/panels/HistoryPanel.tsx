@@ -78,11 +78,11 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
                   </div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-300">
                     <Calendar className="w-4 h-4 text-primary" />{' '}
-                    {new Date(trip.startTime || trip.createdAt).toLocaleDateString()}
+                    {new Date(trip.startedAt || trip.createdAt).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="text-lg font-black text-white">
-                  ₦ {(trip.costCents ? trip.costCents / 100 : trip.cost || 0).toFixed(2)}
+                  ₦ {((trip.fareCents || 0) / 100).toFixed(2)}
                 </div>
               </div>
 
@@ -102,12 +102,12 @@ export default function HistoryPanel({ onClose }: HistoryPanelProps) {
               <div className="flex items-center gap-6 pt-4 border-t border-white/5 text-sm text-slate-400 font-medium">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  {trip.endTime
+                  {trip.endedAt
                     ? Math.max(
                         1,
                         Math.round(
-                          (new Date(trip.endTime).getTime() -
-                            new Date(trip.startTime || trip.createdAt).getTime()) /
+                          (new Date(trip.endedAt).getTime() -
+                            new Date(trip.startedAt || trip.createdAt).getTime()) /
                             60000,
                         ),
                       )

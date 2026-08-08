@@ -121,8 +121,12 @@ function RideCard({ ride }: RideCardProps) {
     });
   };
 
-  const duration = ride.duration / 60;
-  const distance = ride.distance || 0;
+  const startedAt = ride.startedAt || (ride as any).createdAt;
+  const endedAt = (ride as any).endedAt;
+  const duration = endedAt && startedAt
+    ? Math.max(1, Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60000))
+    : 0;
+  const distance = (ride as any).distanceKm ? Number((ride as any).distanceKm) : 0;
 
   return (
     <div className="bg-surfaceLight border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
@@ -133,12 +137,12 @@ function RideCard({ ride }: RideCardProps) {
           </div>
           <div>
             <div className="font-bold text-white">{ride.bikeId}</div>
-            <p className="text-sm text-slate-400">{formatDate(ride.startedAt)}</p>
+            <p className="text-sm text-slate-400">{formatDate(startedAt)}</p>
           </div>
         </div>
 
         <div className="text-right">
-          <div className="text-xl font-bold text-primary">₦ {ride.fare.toFixed(2)}</div>
+          <div className="text-xl font-bold text-primary">₦ {((ride as any).fareCents ? (ride as any).fareCents / 100 : 0).toFixed(2)}</div>
           <div
             className={`text-xs font-medium px-2 py-1 rounded-md ${
               ride.status === 'completed'
@@ -162,7 +166,7 @@ function RideCard({ ride }: RideCardProps) {
         </div>
         <div>
           <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">Surge</p>
-          <p className="font-bold text-white">{ride.surgeMultiplier}x</p>
+          <p className="font-bold text-white">{(ride as any).surgeMult || 1}x</p>
         </div>
       </div>
 

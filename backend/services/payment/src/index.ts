@@ -301,39 +301,13 @@ export async function processPaymentCharge(
   log.info('[Payment] Processing charge');
 
   await prisma.$transaction(async (tx) => {
-    const user = await tx.user.findUniqueOrThrow({ where: { id: userId } });
-
-    if (user.walletCents < amountCents) {
-      // Record failed payment
-      await tx.payment.create({
-        data: {
-          userId,
-          rideId,
-          amountCents,
-          currency: 'NGN',
-          status: 'failed',
-          provider: 'wallet',
-        },
-      });
-
-      // Emit failure so Notification + Ride services can handle it
-      await publish(TOPICS.PAYMENT_RESULT, {
-        rideId,
-        userId,
-        userEmail: user.email,
-        status: 'failed',
-        ts: Date.now(),
-      });
-
-      throw new InsufficientBalanceError(amountCents, user.walletCents);
-    }
-
-    // Deduct from wallet
+    // Always deduct, allowing wallet to go into debt
     await tx.user.update({
       where: { id: userId },
       data: { walletCents: { decrement: amountCents } },
     });
 
+    // Record successful payment
     await tx.payment.create({
       data: {
         userId,
@@ -345,18 +319,15 @@ export async function processPaymentCharge(
       },
     });
 
-    log.info('[Payment] Wallet deduction successful');
-  });
-
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
-
-  // Emit success result
-  await publish(TOPICS.PAYMENT_RESULT, {
-    rideId,
-    userId,
-    userEmail: user.email,
-    status: 'success',
-    ts: Date.now(),
+    // Emit success so Ride service can finalize billing states if needed
+    await publish(TOPICS.PAYMENT_RESULT, {
+      rideId,
+      userId,
+      success: true,
+      amountCents,
+      ts: Date.now(),
+    });
+    log.info('[Payment] Charge successful, wallet deducted');
   });
 }
 

@@ -36,7 +36,7 @@ export class RideController {
   static async end(req: Request, res: Response, next: NextFunction) {
     try {
       const { dockId } = req.body;
-      await RideService.endRide(req.params.id, dockId);
+      const ride = await RideService.endRide(req.params.id, dockId === '' ? null : dockId);
       res.json({ success: true, message: 'Ride ended' });
     } catch (err) {
       next(err);

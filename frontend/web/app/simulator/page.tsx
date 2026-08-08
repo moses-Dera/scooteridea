@@ -94,7 +94,7 @@ export default function SimulatorPage() {
     lockStatus: string,
   ) => {
     try {
-      await fetch(`/api/proxy/fleet/simulator/telemetry`, {
+      await fetch('/api/proxy/fleet/simulator/telemetry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
