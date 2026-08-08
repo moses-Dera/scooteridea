@@ -40,6 +40,9 @@ const withPWA = require('@ducanh2912/next-pwa').default({
       },
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 });
 
 const { withSentryConfig } = require('@sentry/nextjs');

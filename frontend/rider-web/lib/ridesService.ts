@@ -42,7 +42,7 @@ export const ridesService = {
    */
   async endRide(
     rideId: string,
-    endDockId: string,
+    endDockId: string | undefined,
     latitude: number,
     longitude: number,
   ): Promise<Ride> {

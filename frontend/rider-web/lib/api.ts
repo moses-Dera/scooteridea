@@ -240,7 +240,7 @@ export const rideApi = {
 
   start: (rideId: string) => api.post(`/rides/${rideId}/start`, {}),
 
-  end: (rideId: string, endDockId: string, latitude: number, longitude: number) =>
+  end: (rideId: string, endDockId: string | undefined, latitude: number, longitude: number) =>
     api.post(`/rides/${rideId}/end`, { dockId: endDockId, latitude, longitude }),
 
   getHistory: (page = 1, limit = 20) =>
