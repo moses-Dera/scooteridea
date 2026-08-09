@@ -3,7 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { RideProvider } from '@/context/RideContext';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect, Suspense } from 'react';
 import RiderMap from '@/components/Map/RiderMap';
 import MenuPanel from '@/components/panels/MenuPanel';
@@ -43,6 +43,7 @@ type PanelType =
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [activePanel, setActivePanel] = useState<PanelType>(null);
   const [authFeature, setAuthFeature] = useState<string | null>(null);
 
@@ -58,6 +59,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const closePanel = useCallback(() => {
     setActivePanel(null);
   }, []);
+
+  const handleLogoClick = useCallback(() => {
+    if (pathname !== '/') {
+      router.push('/');
+    }
+    closePanel();
+  }, [pathname, router, closePanel]);
 
   const openPanel = useCallback((panel: PanelType) => {
     setActivePanel(panel);
@@ -189,7 +197,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         {/* Center: Custom Brand Logo */}
                         <div className="flex items-center justify-center shrink-0 mx-2">
                           <button
-                            onClick={closePanel}
+                            onClick={handleLogoClick}
                             className="relative group cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"
                           >
                             <img

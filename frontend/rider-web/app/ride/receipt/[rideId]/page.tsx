@@ -95,10 +95,10 @@ export default function RideReceipt({ params }: { params: { rideId: string } }) 
   const bikeLabel = ride.bike?.label || ride.bikeId;
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+    <div className="w-full h-full overflow-y-auto bg-gradient-to-br from-slate-900 to-slate-800 p-6 pt-28 pointer-events-auto">
       <div className="max-w-md mx-auto pb-8">
         {/* Success Header */}
-        <div className="text-center mb-8 mt-8">
+        <div className="text-center mb-8">
           <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary shadow-glow-primary mx-auto mb-6 relative">
             <CheckCircle className="w-12 h-12 text-primary" />
             <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-20" />
