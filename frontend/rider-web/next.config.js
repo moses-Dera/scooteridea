@@ -18,28 +18,6 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
-  workboxOptions: {
-    // Prevent service worker from masking 400/500 API errors as "ERR_FAILED"
-    navigateFallback: null,
-    runtimeCaching: [
-      {
-        urlPattern: /^\/api\/.*/i,
-        handler: 'NetworkOnly',
-      },
-      {
-        urlPattern: /.*/i,
-        handler: 'NetworkFirst',
-        options: {
-          cacheName: 'others',
-          expiration: {
-            maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
-          },
-          networkTimeoutSeconds: 10,
-        },
-      },
-    ],
-  },
   eslint: {
     ignoreDuringBuilds: true,
   },
